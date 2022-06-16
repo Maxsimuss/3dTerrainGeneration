@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31911.260
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dTerrainGeneration", "3dTerrainGeneration\3dTerrainGeneration.csproj", "{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{649EE5AC-8319-4765-8927-548D52A48988} = {649EE5AC-8319-4765-8927-548D52A48988}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TerrainServer", "TerrainServer\TerrainServer.csproj", "{649EE5AC-8319-4765-8927-548D52A48988}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Debug|x64.Build.0 = Debug|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Release|x64.ActiveCfg = Release|Any CPU
+		{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}.Release|x64.Build.0 = Release|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Debug|x64.Build.0 = Debug|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Release|Any CPU.Build.0 = Release|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Release|x64.ActiveCfg = Release|Any CPU
+		{649EE5AC-8319-4765-8927-548D52A48988}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9DAE7D21-8B64-4B12-B503-915D196437DE}
+	EndGlobalSection
+EndGlobal
