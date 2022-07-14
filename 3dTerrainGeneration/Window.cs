@@ -20,16 +20,23 @@ using OpenTK.Input;
 
 namespace _3dTerrainGeneration
 {
-    internal class Window : GameWindow
+    internal unsafe class Window : GameWindow
     {
         public static Window Instance { get; private set; }
 
-        Shader GBufferShader, GBufferInstancedShader, ShadowMapShader, ShadowMapInstancedShader, LightingShader, ShadowShader, 
-            FXAA, Final, Bloom, Downsample, Upsample, Motionblur;
-        public Shader Sky, Stars;
-        DepthAttachedFramebuffer GBuffer, ShadowBuffer0, ShadowBuffer1;
-        Framebuffer SourceBuffer, TempBuffer0, BloomBuffer0, BloomBuffer1, HUDBuffer;
+        public FragmentShader Sky, Stars;
+        private FragmentShader GBufferShader, GBufferInstancedShader, ShadowMapShader, ShadowMapInstancedShader, LightingShader, VolumetricsShader, 
+            ShadowShader, TAA, Final3D, Final2D, BloomShader, DownsampleShader, UpsampleShader, Motionblur, TonemappingShader, OcclusionShader;
+        private ComputeShader LuminanceCompute;
+
+        private DepthAttachedFramebuffer GBuffer, ShadowBuffer0, ShadowBuffer1;
+        
+        private Framebuffer SourceBuffer0, SourceBuffer1, VolumetricBuffer, TempBuffer0, BloomBuffer0, BloomBuffer1, HUDBuffer, 
+            OcclusionBuffer0, OcclusionBuffer1, TAABuffer0, TAABuffer1;
         public Framebuffer SkyBuffer, StarBuffer;
+
+        int FireBallSSBO, LuminanceSSBO;
+
         private Camera camera;
         private bool _firstMove = true;
 
@@ -48,6 +55,7 @@ namespace _3dTerrainGeneration
         int shadowRes = 4096;
         float resolutionScale = 1f;
         float shadowResolutionScale = 1f;
+        bool pingPong = true;
 
         private void InitBuffers(int w, int h)
         {
@@ -56,7 +64,7 @@ namespace _3dTerrainGeneration
 
             if(GBuffer != null) GBuffer.Dispose();
             GBuffer = new DepthAttachedFramebuffer(w, h,
-                new Texture(w, h, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent),
+                new Texture(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba));
 
@@ -64,15 +72,21 @@ namespace _3dTerrainGeneration
             int sr = (int)(shadowRes * shadowResolutionScale);
             if (ShadowBuffer0 != null) ShadowBuffer0.Dispose();
             ShadowBuffer0 = new DepthAttachedFramebuffer(sr, sr, 
-                new Texture(sr, sr, PixelInternalFormat.DepthComponent16, PixelFormat.DepthComponent, filtered: true, border: true, mode: TextureCompareMode.CompareRefToTexture));
+                new Texture(sr, sr, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent, filtered: true, border: true, mode: TextureCompareMode.None));
 
             if (ShadowBuffer1 != null) ShadowBuffer1.Dispose();
             ShadowBuffer1 = new DepthAttachedFramebuffer(sr, sr,
-                new Texture(sr, sr, PixelInternalFormat.DepthComponent16, PixelFormat.DepthComponent, filtered: true, border: true, mode: TextureCompareMode.CompareRefToTexture));
+                new Texture(sr, sr, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent, filtered: true, border: true, mode: TextureCompareMode.None));
 
 
-            if (SourceBuffer != null) SourceBuffer.Dispose();
-            SourceBuffer = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgb16f));
+            if (SourceBuffer0 != null) SourceBuffer0.Dispose();
+            SourceBuffer0 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgba16f, Mipmapped: true));
+
+            if (SourceBuffer1 != null) SourceBuffer1.Dispose();
+            SourceBuffer1 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgba16f));
+
+            if (VolumetricBuffer != null) VolumetricBuffer.Dispose();
+            VolumetricBuffer = new Framebuffer(w / 2, h / 2, new Texture(w / 2, h / 2, PixelInternalFormat.R8, PixelFormat.Red));
 
             if (TempBuffer0 != null) TempBuffer0.Dispose();
             TempBuffer0 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgb8));
@@ -84,13 +98,24 @@ namespace _3dTerrainGeneration
             BloomBuffer1 = new Framebuffer(w / 4, h / 4, new Texture(w / 4, h / 4, PixelInternalFormat.Rgb16f));
 
             if (SkyBuffer != null) SkyBuffer.Dispose();
-            SkyBuffer = new Framebuffer(w / 16, h / 16, new Texture(w / 16, h / 16, PixelInternalFormat.Rgb));
+            SkyBuffer = new Framebuffer(w / 16, h / 16, new Texture(w / 16, h / 16, PixelInternalFormat.Rgb16f));
 
             if (StarBuffer != null) StarBuffer.Dispose();
             StarBuffer = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgb));
 
             if (HUDBuffer != null) HUDBuffer.Dispose();
-            HUDBuffer = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgba, PixelFormat.Rgba));
+            HUDBuffer = new Framebuffer(Width, Height, new Texture(Width, Height, PixelInternalFormat.Rgba, PixelFormat.Rgba));
+
+            if (OcclusionBuffer0 != null) OcclusionBuffer0.Dispose();
+            OcclusionBuffer0 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.R8, PixelFormat.Red));
+
+            if (OcclusionBuffer1 != null) OcclusionBuffer1.Dispose();
+            OcclusionBuffer1 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.R8, PixelFormat.Red));
+
+            if (TAABuffer0 != null) TAABuffer0.Dispose();
+            TAABuffer0 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba, border: true));
+            if (TAABuffer1 != null) TAABuffer1.Dispose();
+            TAABuffer1 = new Framebuffer(w, h, new Texture(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba, border: true));
         }
 
         private void InitShaders()
@@ -100,53 +125,73 @@ namespace _3dTerrainGeneration
 #else
             string path = "shaders/";
 #endif
-            GBufferShader = new Shader(path + "gbuffer.vert", path + "gbuffer.frag");
-            GBufferInstancedShader = new Shader(path + "gbufferinstanced.vert", path + "gbuffer.frag");
-            ShadowMapShader = new Shader(path + "shadowmap.vert", path + "empty.frag");
-            ShadowMapInstancedShader = new Shader(path + "shadowmapinstanced.vert", path + "empty.frag");
+            GBufferShader = new FragmentShader(path + "gbuffer.vert", path + "gbuffer.frag");
+            GBufferInstancedShader = new FragmentShader(path + "gbufferinstanced.vert", path + "gbuffer.frag");
+            ShadowMapShader = new FragmentShader(path + "shadowmap.vert", path + "empty.frag");
+            ShadowMapInstancedShader = new FragmentShader(path + "shadowmapinstanced.vert", path + "empty.frag");
 
-            ShadowShader = new Shader(path + "post.vert", path + "shadow.frag");
+            ShadowShader = new FragmentShader(path + "post.vert", path + "shadow.frag");
             ShadowShader.SetInt("depthTex", 0);
             ShadowShader.SetInt("normalTex", 2);
             ShadowShader.SetInt("colortex4", 3);
             ShadowShader.SetInt("colortex5", 4);
 
-            LightingShader = new Shader(path + "post.vert", path + "lighting.frag");
+            LightingShader = new FragmentShader(path + "post.vert", path + "lighting.frag");
             LightingShader.SetInt("depthTex", 0);
             LightingShader.SetInt("colorTex", 1);
             LightingShader.SetInt("normalTex", 2);
             LightingShader.SetInt("shadowTex", 3);
             LightingShader.SetInt("skyTex", 4);
             LightingShader.SetInt("starTex", 5);
-            LightingShader.SetInt("shadowMapTex", 6);
+            LightingShader.SetInt("fogTex", 6);
+            LightingShader.SetInt("occlusionTex", 7);
 
-            FXAA = new Shader(path + "post.vert", path + "post/fxaa.frag");
-            FXAA.SetInt("colortex0", 0);
+            OcclusionShader = new FragmentShader(path + "post.vert", path + "occlusion.frag");
+            OcclusionShader.SetInt("depthTex", 0);
+            OcclusionShader.SetInt("normalTex", 2);
+            OcclusionShader.SetInt("occlusionTex", 3);
 
-            Bloom = new Shader(path + "post.vert", path + "post/bloom.frag");
-            Bloom.SetInt("colortex0", 0);
+            VolumetricsShader = new FragmentShader(path + "post.vert", path + "volumetrics.frag");
+            VolumetricsShader.SetInt("depthTex", 0);
+            VolumetricsShader.SetInt("normalTex", 2);
+            VolumetricsShader.SetInt("shadowMapTex", 3);
 
-            Downsample = new Shader(path + "post.vert", path + "post/downsample.frag");
-            Downsample.SetInt("colortex0", 0);
+            TAA = new FragmentShader(path + "post.vert", path + "post/taa.frag");
+            TAA.SetInt("depthTex", 0);
+            TAA.SetInt("colorTex0", 3);
+            TAA.SetInt("colorTex1", 4);
 
-            Upsample = new Shader(path + "post.vert", path + "post/upsample.frag");
-            Upsample.SetInt("colortex0", 0);
+            BloomShader = new FragmentShader(path + "post.vert", path + "post/bloom.frag");
+            BloomShader.SetInt("colortex0", 0);
 
-            Final = new Shader(path + "post.vert", path + "post/final.frag");
-            Final.SetInt("colortex0", 0);
-            Final.SetInt("colortex1", 1);
-            Final.SetInt("colortex2", 2);
+            DownsampleShader = new FragmentShader(path + "post.vert", path + "post/downsample.frag");
+            DownsampleShader.SetInt("colortex0", 0);
 
-            Motionblur = new Shader(path + "post.vert", path + "post/motionblur.frag");
+            UpsampleShader = new FragmentShader(path + "post.vert", path + "post/upsample.frag");
+            UpsampleShader.SetInt("colortex0", 0);
+
+            Final3D = new FragmentShader(path + "post.vert", path + "post/final3d.frag");
+            Final3D.SetInt("colortex0", 0);
+            Final3D.SetInt("colortex1", 1);
+
+            Final2D = new FragmentShader(path + "post.vert", path + "post/final2d.frag");
+            Final2D.SetInt("colortex0", 0);
+            Final2D.SetInt("colortex1", 1);
+
+            Motionblur = new FragmentShader(path + "post.vert", path + "post/motionblur.frag");
             Motionblur.SetInt("colortex0", 0);
             Motionblur.SetInt("colortex1", 1);
 
-            Sky = new Shader(path + "post.vert", path + "sky.frag");
-            Stars = new Shader(path + "post.vert", path + "stars.frag");
+            TonemappingShader = new FragmentShader(path + "post.vert", path + "tonemapping.frag");
+            TonemappingShader.SetInt("colorTex", 0);
+
+            Sky = new FragmentShader(path + "post.vert", path + "sky.frag");
+            Stars = new FragmentShader(path + "post.vert", path + "stars.frag");
+
+            LuminanceCompute = new ComputeShader(path + "luminance.comp");
 
             Renderer2D.LoadShader(path);
         }
-        int SSBO;
 
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
@@ -175,6 +220,8 @@ namespace _3dTerrainGeneration
             base.OnMouseDown(e);
         }
 
+        private int farlandVBO, farlandVAO, farlandLen;
+
         protected override void OnLoad(EventArgs e)
         {
             Materials.Init();
@@ -202,9 +249,60 @@ namespace _3dTerrainGeneration
             ParticleSystem = new ParticleSystem();
             currentScreen = new LoginScreen(FontRenderer, this);
 
-            world = new World(GBufferShader, new InstancedRenderer());
+            world = new World(new InstancedRenderer());
 
-            SSBO = GL.GenBuffer();
+            FireBallSSBO = GL.GenBuffer();
+            LuminanceSSBO = GL.GenBuffer();
+
+            farlandVBO = GL.GenBuffer();
+            farlandVAO = GL.GenVertexArray();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, farlandVBO);
+            GL.BindVertexArray(farlandVAO);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, farlandVBO);
+            var dataLocation = GBufferShader.GetAttribLocation("aData");
+            GL.EnableVertexAttribArray(dataLocation);
+            GL.VertexAttribPointer(dataLocation, 4, VertexAttribPointerType.UnsignedShort, false, 4 * sizeof(ushort), 0);
+
+            MeshData meshData = new MeshData();
+            for (int x = 0; x < 64; x++)
+            {
+                int X = x * 64 - 2048;
+                for (int z = 0; z < 64; z++)
+                {
+                    int Z = z * 64 - 2048;
+
+                    float h = GetHeight(X, Z);
+                    
+                    float temp = Chunk.smoothstep(0, 1, Chunk.GetPerlin(X, Z, .00025f) - (h / 512f));
+                    if (temp < .16)
+                    {
+                        meshData.SetBlock(x, 0, z, Color.ToInt(255, 255, 255));
+                    }
+                    else
+                    {
+                        temp -= .16f;
+                        temp /= 1f - .16f;
+
+                        float humidity = Chunk.smoothstep(0, 1, Chunk.GetPerlin(X + 12312, Z - 124124, .00025f));
+
+                        meshData.SetBlock(x, 0, z, Color.HsvToRgb(
+                                150 - (byte)((byte)(temp * 8) * 13),
+                                166 + (byte)((byte)(humidity * 4) * 16),
+                                220 - (byte)((byte)(humidity * 4) * 15)
+                            )
+                        );
+                    }
+                }
+            }
+
+            float GetHeight(int x, int z)
+            {
+                return (float)Math.Pow(Chunk.OcataveNoise(x, z, .0005f / 4, 8) * 1.2, 7) * Chunk.GetPerlin(x, z, .0005f / 4) * 255 * 4;
+            }
+
+            ushort[] mesh = meshData.Mesh(0);
+            GL.BufferData(BufferTarget.ArrayBuffer, mesh.Length * sizeof(ushort), mesh, BufferUsageHint.StaticDraw);
+            farlandLen = mesh.Length / 4;
 
             Task.Run(() =>
             {
@@ -220,7 +318,7 @@ namespace _3dTerrainGeneration
         Matrix4 prevProj, prevView;
         bool altEnter, pr, mr, psr, msr;
 
-        public static string exception = "";
+        public static string message = "";
         private LoginScreen currentScreen;
 
         public static bool login = false;
@@ -229,8 +327,17 @@ namespace _3dTerrainGeneration
 
         double dT = 1 / 20f;
 
+        float luma = 2;
+
+        Vector3[] offsets = new Vector3[] { new(-1, 1, 0), new(0, 1, 0), new(1, 1, 0),
+                                            new(-1, 0, 0), new(0, 0, 0), new(1, 0, 0),
+                                            new(-1, -1, 0), new(0, -1, 0), new(1, -1, 0)};
+        int counter = 0;
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            counter++;
+            pingPong = !pingPong;
+
             SoundManager.Update(camera, e.Time);
 
             double frameDelta = Math.Min(frameCounter * 20, 1);
@@ -351,15 +458,19 @@ namespace _3dTerrainGeneration
                 ShadowMapShader.Dispose();
                 ShadowMapInstancedShader.Dispose();
                 LightingShader.Dispose();
+                OcclusionShader.Dispose();
+                VolumetricsShader.Dispose();
                 ShadowShader.Dispose();
-                FXAA.Dispose();
-                Final.Dispose();
-                Bloom.Dispose();
-                Upsample.Dispose();
-                Downsample.Dispose();
+                TAA.Dispose();
+                Final3D.Dispose();
+                BloomShader.Dispose();
+                UpsampleShader.Dispose();
+                DownsampleShader.Dispose();
                 Motionblur.Dispose();
                 Sky.Dispose();
                 Stars.Dispose();
+                TonemappingShader.Dispose();
+                LuminanceCompute.Dispose();
                 InitShaders();
                 InitBuffers(Width, Height);
             }
@@ -417,21 +528,34 @@ namespace _3dTerrainGeneration
 
             int chunksShadow = 0;
             // render shadowmap
-            float shadowRadiusNear = Chunk.Size / 2f;
-            float shadowRadiusFar = World.renderDist;
+            float shadowRadiusNear = 64f;
+            float shadowRadiusFar = 1024;
 
+            Vector3 randVec = offsets[counter % 9] * new Vector3(1f / GBuffer.Width, 1f / GBuffer.Height, 0f);
+            randVec = new Vector3(0);
             world.player.Visible = true;
-            Matrix4 matrixFar = RenderShadowmap(ShadowBuffer0, shadowRadiusFar, frameDelta);
-            ShadowShader.SetMatrix4("matrix1", matrixFar);
-            ShadowShader.SetMatrix4("matrix0", RenderShadowmap(ShadowBuffer1, shadowRadiusNear, frameDelta));
+            ShadowMapShader.SetVector3("rand", randVec);
+            ShadowMapShader.SetMatrix4("view", camera.GetViewMatrix());
+            ShadowMapShader.SetMatrix4("projection", camera.GetProjectionMatrix());
+            //Matrix4 matrixFar = RenderShadowmap(ShadowBuffer0, shadowRadiusFar, frameDelta);
+            //ShadowShader.SetMatrix4("matrix1", matrixFar);
+            //ShadowShader.SetMatrix4("matrix0", RenderShadowmap(ShadowBuffer1, shadowRadiusNear, frameDelta));
             ShadowShader.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
             ShadowShader.SetFloat("shadowRes", (int)(shadowRes * shadowResolutionScale));
-            ShadowShader.SetMatrix4("projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()).Inverted());
+            ShadowShader.SetMatrix4("projection", camera.GetProjectionMatrix().Inverted() * camera.GetViewMatrix().Inverted());
 
 
             GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
             GBuffer.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+            float s = MathHelper.Clamp(Vector3.Dot(Vector3.UnitY, world.sunPos), 0, 1);
+            float dy = (float)Math.Pow(MathHelper.Clamp(world.sunPos.Y, 0, 1), 1 / 2.2);
+            float v = (float)Math.Pow(s / 2f, 2f) * 2.2f / (1 + dy * 5) + dy + .25f;
+            Vector3 sky = new Vector3((float)Math.Pow(v, 1.6), (float)Math.Pow(v, 2.2), (float)Math.Pow(v, 2.8)) / 2;
+            Vector3 sunColor = new Vector3(8.6f, 8f, 7f);
+            sky = Color.Saturate(sky, 2.5f);
+            LightingShader.SetVector3("skyLight", sky);
 
 
             //setting uniforms 700us
@@ -441,40 +565,35 @@ namespace _3dTerrainGeneration
             GBufferInstancedShader.SetMatrix4("projection", camera.GetProjectionMatrix());
             GBufferShader.SetVector3("viewPos", camera.Position);
             GBufferShader.SetVector3("viewDir", camera.Front);
+            GBufferShader.SetVector3("rand", randVec);
+
 
             LightingShader.SetVector3("viewPos", camera.Position);
-            LightingShader.SetMatrix4("matrixFar", matrixFar);
             LightingShader.SetVector3("sun.position", world.sunPos);
-            LightingShader.SetVector3("sun.color", new Vector3(1));
+            LightingShader.SetVector3("sun.color", sunColor);
             LightingShader.SetMatrix4("projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()).Inverted());
-            LightingShader.SetMatrix4("_projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()));
             LightingShader.SetInt("lightCount", fireBalls.Length);
-            LightingShader.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
-            LightingShader.SetFloat("timeL", (float)(TimeUtil.Unix() / 5000d % 86400d));
-            LightingShader.SetFloat("shadowRes", (int)(shadowRes * shadowResolutionScale));
-
-            float s = MathHelper.Clamp(Vector3.Dot(Vector3.UnitY, world.sunPos), 0, 1);
-            float dy = (float)Math.Pow(MathHelper.Clamp(world.sunPos.Y, 0, 1), 1 / 2.2);
-            float v = (float)Math.Pow(s / 2f, 2f) * 2.2f / (1 + dy * 5) + dy + .25f;
-            Vector3 sky = new Vector3((float)Math.Pow(v, 1.6), (float)Math.Pow(v, 2.2), (float)Math.Pow(v, 2.8)) / 2;
-
-            LightingShader.SetVector3("skyLight", sky);
 
 
-            FXAA.SetInt("width", GBuffer.Width);
-            FXAA.SetInt("height", GBuffer.Height);
-            Final.SetFloat("aspect", (float)GBuffer.Width / GBuffer.Height);
-            Final.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
+            TAA.SetInt("width", (int)(GBuffer.Width));
+            TAA.SetInt("height", (int)(GBuffer.Height));
+            TAA.SetVector3("rand", randVec);
+            Final3D.SetFloat("aspect", (float)GBuffer.Width / GBuffer.Height);
+            Final3D.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
 
 
             // render camera world
             world.player.Visible = rangeCurrent > 2;
             int chunks = world.Render(GBufferShader, GBufferInstancedShader, LightingShader, camera, e.Time, frameDelta);
+            ParticleSystem.Update(camera, (float)e.Time);
+            ParticleSystem.Render();
 
+            GBufferShader.SetMatrix4("model", Matrix4.CreateTranslation(-32f, 0, -32f) * Matrix4.CreateScale(64, 1, 64));
+            GL.BindVertexArray(farlandVAO);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, farlandLen);
 
             Matrix4 rot = Matrix4.CreateTranslation(-new Vector3(.5f)) * Matrix4.CreateRotationX((float)(TimeUtil.Unix() / 1000D % Math.PI * 2)) * Matrix4.CreateRotationY((float)(TimeUtil.Unix() / 1000D % Math.PI * 2));
 
-            ParticleSystem.Render(camera, (float)e.Time);
 
             GL.Disable(EnableCap.Blend);
             FragmentPass.BeginPostStage();
@@ -498,31 +617,86 @@ namespace _3dTerrainGeneration
             Stars.SetFloat("time", (float)(TimeUtil.Unix() / 100000d % 3600d));
             FragmentPass.Apply(Stars, StarBuffer);
 
+            GL.Viewport(0, 0, VolumetricBuffer.Width, VolumetricBuffer.Height);
+
+            VolumetricsShader.SetVector3("viewPos", camera.Position);
+            //VolumetricsShader.SetMatrix4("matrixFar", matrixFar);
+            VolumetricsShader.SetVector3("sun.color", sunColor);
+            VolumetricsShader.SetVector3("sun.position", world.sunPos);
+            VolumetricsShader.SetMatrix4("projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()).Inverted());
+            VolumetricsShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 86400d));
+            VolumetricsShader.SetFloat("shadowRes", (int)(shadowRes * shadowResolutionScale));
+            VolumetricsShader.SetFloat("fogQuality", 64);
+
+            FragmentPass.Apply(VolumetricsShader, VolumetricBuffer, GBuffer, ShadowBuffer0);
+
+
+            GL.Viewport(0, 0, OcclusionBuffer0.Width, OcclusionBuffer0.Height);
+
+            OcclusionShader.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
+            OcclusionShader.SetMatrix4("_projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()));
+            OcclusionShader.SetMatrix4("projectionPrev", prevProj);
+            OcclusionShader.SetMatrix4("projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()).Inverted());
+            FragmentPass.Apply(OcclusionShader, pingPong ? OcclusionBuffer0 : OcclusionBuffer1, GBuffer, pingPong ? OcclusionBuffer1 : OcclusionBuffer0);
 
             GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
 
-            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, SSBO);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, FireBallSSBO);
             GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(float) * data.Length, data, BufferUsageHint.DynamicDraw);
-            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 3, SSBO);
-            FragmentPass.Apply(LightingShader, SourceBuffer, GBuffer, TempBuffer0, SkyBuffer, StarBuffer, ShadowBuffer0);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 3, FireBallSSBO);
+            FragmentPass.Apply(LightingShader, SourceBuffer0, GBuffer, TempBuffer0, SkyBuffer, StarBuffer, VolumetricBuffer, pingPong ? OcclusionBuffer0 : OcclusionBuffer1);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
+            LuminanceCompute.Use();
+            int[] luminanceData = new int[1];
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LuminanceSSBO);
+            GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(int) * 1, luminanceData, BufferUsageHint.DynamicDraw);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 1, LuminanceSSBO);
+            GL.BindImageTexture(0, SourceBuffer0.colorTex[0].Handle, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
+            GL.DispatchCompute(SourceBuffer0.Width / 8, SourceBuffer0.Width / 8, 1);
+            //GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, sizeof(int) * 1, luminanceData);
+
+            GL.Viewport(0, 0, SourceBuffer0.Width, SourceBuffer0.Height);
+
+            //float maxLuma = Math.Clamp(luminanceData[0] / 512f, .4f, 5f);
+            //luma = (luma * 49 + maxLuma) / 50f;
+
+            TonemappingShader.SetFloat("maxLuma", luma);
+            FragmentPass.Apply(TonemappingShader, SourceBuffer1, SourceBuffer0);
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
             GL.Viewport(0, 0, BloomBuffer0.Width, BloomBuffer0.Height);
-            FragmentPass.Apply(Bloom, BloomBuffer0, SourceBuffer);
+            FragmentPass.Apply(BloomShader, BloomBuffer0, SourceBuffer1);
 
-            Downsample.SetFloat("tw", 1f / BloomBuffer0.Width);
-            Downsample.SetFloat("th", 1f / BloomBuffer0.Height);
-            Upsample.SetFloat("tw", 1f / BloomBuffer0.Width);
-            Upsample.SetFloat("th", 1f / BloomBuffer0.Height);
+            DownsampleShader.SetFloat("tw", 1f / BloomBuffer0.Width);
+            DownsampleShader.SetFloat("th", 1f / BloomBuffer0.Height);
+            UpsampleShader.SetFloat("tw", 1f / BloomBuffer0.Width);
+            UpsampleShader.SetFloat("th", 1f / BloomBuffer0.Height);
 
-            Downsample.SetFloat("radius", .001f * Width * resolutionScale);
-            FragmentPass.Apply(Downsample, BloomBuffer1, BloomBuffer0);
-            Downsample.SetFloat("radius", .002f * Width * resolutionScale);
-            FragmentPass.Apply(Downsample, BloomBuffer0, BloomBuffer1);
-            Upsample.SetFloat("radius", .001f * Width * resolutionScale);
-            FragmentPass.Apply(Upsample, BloomBuffer1, BloomBuffer0);
-            Upsample.SetFloat("radius", .002f * Width * resolutionScale);
-            FragmentPass.Apply(Upsample, BloomBuffer0, BloomBuffer1);
+            DownsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(DownsampleShader, BloomBuffer1, BloomBuffer0);
+            DownsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(DownsampleShader, BloomBuffer0, BloomBuffer1);
+            DownsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(DownsampleShader, BloomBuffer1, BloomBuffer0);
+            DownsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(DownsampleShader, BloomBuffer0, BloomBuffer1);
+            UpsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(UpsampleShader, BloomBuffer1, BloomBuffer0);
+            UpsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(UpsampleShader, BloomBuffer0, BloomBuffer1);
+            UpsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(UpsampleShader, BloomBuffer1, BloomBuffer0);
+            UpsampleShader.SetFloat("radius", .001f * Width * resolutionScale);
+            FragmentPass.Apply(UpsampleShader, BloomBuffer0, BloomBuffer1);
+
+            GL.Viewport(0, 0, SourceBuffer1.Width, SourceBuffer1.Height);
+            FragmentPass.Apply(Final3D, TempBuffer0, SourceBuffer1, BloomBuffer0);
+
+            TAA.SetMatrix4("projection", (camera.GetViewMatrix() * camera.GetProjectionMatrix()).Inverted());
+            TAA.SetMatrix4("projectionPrev", prevProj);
+
+            FragmentPass.Apply(TAA, pingPong ? TAABuffer0 : TAABuffer1, GBuffer, TempBuffer0, pingPong ? TAABuffer1 : TAABuffer0);
 
             GL.Viewport(0, 0, Width, Height);
 
@@ -545,26 +719,27 @@ namespace _3dTerrainGeneration
 
             Renderer2D.DrawRect(-.3f, -.85f, .3f, -1, new(0, 0, 0, .5f));
 
-            FontRenderer.DrawTextWithShadow(-.95f, -.95f, .02f, "Type here to chat.");
+            //FontRenderer.DrawTextWithShadow(-.95f, -.95f, .02f, "Type here to chat.");
+            FontRenderer.DrawTextWithShadow(-.95f, -.95f, .02f, string.Format("{0:0.0} {1:0.0} {2:0.0}", world.player.x, world.player.y, world.player.z));
             Renderer2D.DrawRect(-.975f, -.975f, -.325f, -.97f, new(1, 1, 1, 1));
 
-            FontRenderer.DrawTextWithShadowCentered(0, 0, .05f, exception, new(1, 0, 0, 1));
+            FontRenderer.DrawTextWithShadowCentered(0, 0, .05f, message, new(1, 0, 0, 1));
 
             FragmentPass.BeginPostStage();
-            FragmentPass.Apply(Final, null, SourceBuffer, BloomBuffer0, HUDBuffer);
 
+            //GL.Viewport(0, 0, TempBuffer0.Width, TempBuffer0.Height);
             //Motionblur.SetMatrix4("gbufferPreviousProjection", prevProj);
             //Motionblur.SetMatrix4("gbufferPreviousModelView", prevView);
+            //prevProj = camera.GetProjectionMatrix();
+            //prevView = camera.GetViewMatrix();
+            //Motionblur.SetMatrix4("gbufferProjectionInverse", camera.GetProjectionMatrix().Inverted());
+            //Motionblur.SetMatrix4("gbufferModelViewInverse", camera.GetViewMatrix().Inverted());
+            //FragmentPass.Apply(Motionblur, TempBuffer0, SourceBuffer, GBuffer);
+            
+            FragmentPass.Apply(Final2D, null, pingPong ? TAABuffer0 : TAABuffer1, HUDBuffer);
+            //FragmentPass.Apply(Final2D, null, ShadowBuffer0, ShadowBuffer0);
 
-            //prevProj = _camera.GetProjectionMatrix();
-            //prevView = _camera.GetViewMatrix();
-            //Motionblur.SetMatrix4("gbufferProjectionInverse", _camera.GetProjectionMatrix().Inverted());
-            //Motionblur.SetMatrix4("gbufferModelViewInverse", _camera.GetViewMatrix().Inverted());
-            //FragmentPass.Apply(Motionblur, null, StarBuffer, GBuffer);
-
-            //FragmentPass.Apply(FXAA, TempBuffer0, TempBuffer1);
-            //FragmentPass.Apply(FXAA, null, TempBuffer0);
-
+            prevProj = (camera.GetViewMatrix() * camera.GetProjectionMatrix());
             SwapBuffers();
 
 
@@ -573,11 +748,11 @@ namespace _3dTerrainGeneration
 
         private Matrix4 RenderShadowmap(DepthAttachedFramebuffer shadowBuffer, float r, double frameDelta)
         {
-            Vector3 lightPos = world.sunPos * World.renderDist * 1.41f;
+            Vector3 lightPos = world.sunPos * 4096 * 1.41f;
 
             Vector3 cameraPos = new Vector3((int)camera.Position.X / 4 * 4, (int)camera.Position.Y / 8 * 8, (int)camera.Position.Z / 4 * 4);
             Matrix4 lsm = Matrix4.LookAt(lightPos + cameraPos, cameraPos, new Vector3(1, 0, 0)) *
-                Matrix4.CreateOrthographicOffCenter(-r, r, -r, r, .0f, World.renderDist * 3);
+                Matrix4.CreateOrthographicOffCenter(-r, r, -r, r, 1f, 8192f);
             ShadowMapShader.SetMatrix4("lightSpaceMatrix", lsm);
             ShadowMapInstancedShader.SetMatrix4("lightSpaceMatrix", lsm);
 
@@ -585,7 +760,10 @@ namespace _3dTerrainGeneration
             shadowBuffer.Use();
             GL.Clear(ClearBufferMask.DepthBufferBit);
             world.RenderWorld(camera.Position, World.renderDist / Chunk.Size + 1.4f, ShadowMapShader, ShadowMapInstancedShader, frameDelta);
-
+            ParticleSystem.Render();
+            ShadowMapShader.SetMatrix4("model", Matrix4.CreateTranslation(-32f, 0, -32f) * Matrix4.CreateScale(64, 1, 64));
+            GL.BindVertexArray(farlandVAO);
+            GL.DrawArrays(PrimitiveType.Triangles, 0, farlandLen);
             return lsm;
         }
 

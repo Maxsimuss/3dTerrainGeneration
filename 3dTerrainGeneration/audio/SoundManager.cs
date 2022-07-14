@@ -1,4 +1,5 @@
-﻿using _3dTerrainGeneration.world;
+﻿using _3dTerrainGeneration.rendering;
+using _3dTerrainGeneration.world;
 using OpenAL;
 using OpenTK;
 using System;

@@ -26,31 +26,31 @@ namespace _3dTerrainGeneration.world
         public byte[] blocks;
         public object dataLock = new object();
         public object meshLock = new object();
-        public static int lodCount = 1;
+        public static int lodCount = 3;
 
         public int X, Y, Z;
-        public Buffer Buffer;
         private int loadedLod = -1;
         public bool empty = true;
         public bool full = true;
         public List<byte> sounds;
         public List<byte> particles;
+        public InderectDraw mem;
 
-        private static float GetPerlin(float x, float z, float scale)
+        public static float GetPerlin(float x, float z, float scale)
         {
             return perlin.GetValue(x * scale, z * scale) / 2 + .5f;
         }
-        private static float GetPerlin(float x, float scale)
+        public static float GetPerlin(float x, float scale)
         {
             return perlin.GetValue(x * scale);
         }
 
-        private static float GetNoise(float x, float y, float z, float scale)
+        public static float GetNoise(float x, float y, float z, float scale)
         {
             return smoothstep(0, 1, bevins.GetValue(x * scale, y * scale, z * scale) / 2 + .5f);
         }
 
-        static float smoothstep(float edge0, float edge1, float x)
+        public static float smoothstep(float edge0, float edge1, float x)
         {
             // Scale, bias and saturate x to 0..1 range
             x = clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
@@ -58,7 +58,7 @@ namespace _3dTerrainGeneration.world
             return x * x * (3 - 2 * x);
         }
 
-        static float clamp(float x, float lowerlimit, float upperlimit)
+        public static float clamp(float x, float lowerlimit, float upperlimit)
         {
             if (x < lowerlimit)
                 x = lowerlimit;
@@ -67,7 +67,7 @@ namespace _3dTerrainGeneration.world
             return x;
         }
 
-        static float OcataveNoise(float x, float z, float scale, int octaves)
+        public static float OcataveNoise(float x, float z, float scale, int octaves)
         {
             float noise = 0;
             for (int i = 1; i < octaves; i++)
@@ -90,13 +90,12 @@ namespace _3dTerrainGeneration.world
             arr[(x * Size + z) * Size + y] = val;
         }
 
-        public Chunk(int X, int Y, int Z, Buffer Buffer, World world)
+        public Chunk(int X, int Y, int Z, World world)
         {
             Random rnd = new Random((X * Size + Y) * Size + Z);
             this.X = X;
             this.Y = Y;
             this.Z = Z;
-            this.Buffer = Buffer;
 
             if (World.Load(this, world)) return;
 
@@ -240,25 +239,22 @@ namespace _3dTerrainGeneration.world
             return !empty && GetValue(blocks, x, z, y) != 0;
         }
 
-        public int Render(Shader shader, int lod)
+        public int Render(int lod)
         {
             if (empty || full) return 0;
             
             lod = Math.Min(lodCount - 1, lod);
 
-            GL.BindVertexArray(Buffer.VAO);
             int cubeLenght = lengths[lod];
             if (lod != loadedLod)
             {
-                GL.NamedBufferData(Buffer.VBO, 0, (IntPtr)0, BufferUsageHint.DynamicDraw);
-                GL.NamedBufferData(Buffer.VBO, cubeLenght * sizeof(short), mesh[lod], BufferUsageHint.DynamicDraw);
+                mem = World.chunkRenderer.SubmitMesh(mesh[lod], Matrix4.CreateTranslation(X * Size, Y * Size, Z * Size), mem);
                 loadedLod = lod;
             }
 
-            shader.SetMatrix4("model", Matrix4.CreateTranslation(X * Size, Y * Size, Z * Size));
-            GL.DrawArrays(PrimitiveType.Triangles, 0, cubeLenght / 4);
+            mem.draw = true;
 
-            return 1;
+            return cubeLenght;
         }
     }
 }

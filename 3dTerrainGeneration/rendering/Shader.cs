@@ -1,69 +1,34 @@
-﻿using System;
-using System.IO;
-using System.Text;
+﻿using OpenTK;
+using OpenTK.Graphics.OpenGL;
+using System;
 using System.Collections.Generic;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace _3dTerrainGeneration
+namespace _3dTerrainGeneration.rendering
 {
     public class Shader
     {
         public int Handle;
-
         private Dictionary<string, int> _uniformLocations;
 
-        string vertPath, fragPath;
-
-        public Shader(string vertPath, string fragPath)
+        public Shader()
         {
-            this.vertPath = vertPath;
-            this.fragPath = fragPath;
-
-            Init();
-        }
-
-        private void Init()
-        {
-            var shaderSource = LoadSource(vertPath);
-
-            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-
-            GL.ShaderSource(vertexShader, shaderSource);
-
-            CompileShader(vertexShader);
-
-            shaderSource = LoadSource(fragPath);
-            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, shaderSource);
-            CompileShader(fragmentShader);
-
             Handle = GL.CreateProgram();
 
-            GL.AttachShader(Handle, vertexShader);
-            GL.AttachShader(Handle, fragmentShader);
+        }
 
-            LinkProgram(Handle);
-
-            GL.DetachShader(Handle, vertexShader);
-            GL.DetachShader(Handle, fragmentShader);
-            GL.DeleteShader(fragmentShader);
-            GL.DeleteShader(vertexShader);
-
-            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
-
-            _uniformLocations = new Dictionary<string, int>();
-
-            for (var i = 0; i < numberOfUniforms; i++)
+        protected static string LoadSource(string path)
+        {
+            using (var sr = new StreamReader(path, Encoding.UTF8))
             {
-                var key = GL.GetActiveUniform(Handle, i, out _, out _);
-                var location = GL.GetUniformLocation(Handle, key);
-
-                _uniformLocations.Add(key, location);
+                return sr.ReadToEnd();
             }
         }
 
-        private static void CompileShader(int shader)
+        protected static void CompileShader(int shader)
         {
             GL.CompileShader(shader);
             GL.GetShader(shader, ShaderParameter.CompileStatus, out var code);
@@ -74,7 +39,7 @@ namespace _3dTerrainGeneration
             }
         }
 
-        private static void LinkProgram(int program)
+        protected static void LinkProgram(int program)
         {
             GL.LinkProgram(program);
 
@@ -95,11 +60,18 @@ namespace _3dTerrainGeneration
             return GL.GetAttribLocation(Handle, attribName);
         }
 
-        private static string LoadSource(string path)
+        public void Init()
         {
-            using (var sr = new StreamReader(path, Encoding.UTF8))
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+
+            _uniformLocations = new Dictionary<string, int>();
+
+            for (var i = 0; i < numberOfUniforms; i++)
             {
-                return sr.ReadToEnd();
+                var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                var location = GL.GetUniformLocation(Handle, key);
+
+                _uniformLocations.Add(key, location);
             }
         }
 

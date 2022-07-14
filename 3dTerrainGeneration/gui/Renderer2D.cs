@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using _3dTerrainGeneration.rendering;
+using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,12 @@ namespace _3dTerrainGeneration.gui
     public unsafe class Renderer2D
     {
         static int VAO, VBO;
-        static Shader shader;
+        static FragmentShader shader;
 
         private static float* buffer;
-        private static int index = 0, bufferSize = 6 * 4 * 10000000;
+        private static int index = 0, prev = 0, bufferSize = 6 * 4 * 10000000;
+        private static IntPtr sync = IntPtr.Zero;
+
         public static void Init()
         {
             VAO = GL.GenVertexArray();
@@ -36,10 +39,8 @@ namespace _3dTerrainGeneration.gui
         public static void LoadShader(string path)
         {
             if(shader != null) shader.Dispose();
-            shader = new Shader(path + "rect.vert", path + "rect.frag");
+            shader = new FragmentShader(path + "rect.vert", path + "rect.frag");
         }
-
-        static IntPtr sync = IntPtr.Zero;
 
         public static void DrawRect(float x, float y, float x2, float y2, Vector4 color, bool flush = true)
         {
@@ -81,8 +82,8 @@ namespace _3dTerrainGeneration.gui
                 Flush(shader);
             }
         }
-        static int prev = 0;
-        public static void Flush(Shader shader = null)
+
+        public static void Flush(FragmentShader shader = null)
         {
             sync = GL.FenceSync(SyncCondition.SyncGpuCommandsComplete, 0);
             GL.ClientWaitSync(sync, ClientWaitSyncFlags.SyncFlushCommandsBit, 1000000);

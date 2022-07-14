@@ -53,7 +53,7 @@ namespace _3dTerrainGeneration.network
 
         private void Events_Disconnected(object sender, ConnectionEventArgs e)
         {
-            Window.exception = "Reconnecting...";
+            Window.message = "Reconnecting...";
 
             foreach (Dictionary<int, DrawableEntity> en in world.entities.Values)
             {
@@ -81,7 +81,7 @@ namespace _3dTerrainGeneration.network
 
         private void Events_Connected(object sender, ConnectionEventArgs e)
         {
-            Window.exception = "";
+            Window.message = "";
         }
 
         private double tickCounter = 0;

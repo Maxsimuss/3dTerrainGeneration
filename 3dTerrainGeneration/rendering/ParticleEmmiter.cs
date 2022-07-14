@@ -49,7 +49,7 @@ namespace _3dTerrainGeneration.rendering
         }
 
 
-        public void Render(float dT)
+        public void Update(float dT)
         {
             time = (time + dT / 10) % (float)(Math.PI * 2);
 

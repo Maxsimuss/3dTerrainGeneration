@@ -1,13 +1,13 @@
-#version 420
+#version 460
 
 layout (location = 0) in vec4 aData;
+layout (location = 1) in mat4 model;
 
-uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec3 rand;
 
 out vec3 Normal;
-out vec3 FragPos;
 out vec3 Color;
 out float Emission;
 
@@ -20,6 +20,6 @@ void main()
     Normal = normalMatrix * vec3(int(aData.w) >> 8 & 0x00000001, int(aData.w) >> 9 & 0x00000001, int(aData.w) >> 10 & 0x00000001);
     Emission = (int(aData.w) & 0x000000FF) / 255.;
 
-    gl_Position = vec4(pos, 1.0) * model * view * projection;
-    FragPos = vec3(vec4(pos, 1.0) * model);
+    vec4 clipPos = model * vec4(pos, 1.0) * view * projection;
+    gl_Position = clipPos + vec4(rand.xy, 0, 0) * clipPos.w;
 }

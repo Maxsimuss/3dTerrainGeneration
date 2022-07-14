@@ -1,4 +1,5 @@
-﻿using _3dTerrainGeneration.network;
+﻿using _3dTerrainGeneration.audio;
+using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
@@ -35,10 +36,11 @@ namespace _3dTerrainGeneration.entity
             DistanceTraveled += (LastAnimationPosition - GetPosition()).Length;
             LastAnimationPosition = GetPosition();
 
-            if (DistanceTraveled > 2)
+            if (DistanceTraveled > 2 && isOnGround)
             {
                 DistanceTraveled = DistanceTraveled % 2;
                 AnimationFrame = MathHelper.Clamp(1 - AnimationFrame, 0, 1);
+                Window.Instance.SoundManager.PlaySound(SoundType.Walk, false, rnd.NextSingle() / 2 + .75f, .1f);
             }
             else
             {

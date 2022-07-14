@@ -30,55 +30,31 @@ namespace _3dTerrainGeneration.world
         public EntityType type;
     }
 
-
-    public struct Buffer
-    {
-        public int VBO, VAO;
-
-        public Buffer(int VBO, int VAO)
-        {
-            this.VBO = VBO;
-            this.VAO = VAO;
-        }
-    }
     public class World
     {
         public static float renderDist = GameSettings.VIEW_DISTANCE;
-        static int size = (int)(renderDist / Chunk.Size * 2);
-        int[] VAOs = new int[size * size * size * 16];
-        int[] VBOs = new int[size * size * size * 16];
+        public static int size = (int)(renderDist / Chunk.Size * 2);
         private List<Vector3> iterationOrder = new List<Vector3>();
         public List<Structure> structures = new List<Structure>();
         public Dictionary<EntityType, Dictionary<int, DrawableEntity>> entities = new Dictionary<EntityType, Dictionary<int, DrawableEntity>>();
         public Player player;
 
         public ConcurrentDictionary<Vector3, Chunk> chunks = new ConcurrentDictionary<Vector3, Chunk>();
-        object queueLock = new object();
         object delayLock = new object();
         public object structureLock = new object();
-        Queue<Buffer> buffers = new Queue<Buffer>();
 
         public Vector3 sunPos = new Vector3(0, 1, 0);
 
-        private Shader gbuffer;
         public Network network;
 
+        public static ChunkRenderer chunkRenderer;
+
         int chunksLen = 0;
-        public World(Shader gbuffer, InstancedRenderer renderer)
+        public World(InstancedRenderer renderer)
         {
-            this.gbuffer = gbuffer;
-            player = new Player(this, GenerateVBO());
+            chunkRenderer = new ChunkRenderer();
+            player = new Player(this);
             player.IsResponsible = true;
-
-            GL.GenBuffers(VBOs.Length, VBOs);
-            GL.GenVertexArrays(VAOs.Length, VAOs);
-
-            for (int i = 0; i < VBOs.Length; i++)
-            {
-                PrepareVBO(VBOs[i], VAOs[i]);
-
-                buffers.Enqueue(new(VBOs[i], VAOs[i]));
-            }
 
             foreach (EntityType entityType in Enum.GetValues<EntityType>())
             {
@@ -99,29 +75,6 @@ namespace _3dTerrainGeneration.world
             iterationOrder.Sort((a, b)=> { return (int)((a.Length  - b.Length) * 1000); });
             chunksLen = iterationOrder.Count;
             this.renderer = renderer;
-        }
-
-        private int GenerateVBO()
-        {
-            int VBO = GL.GenBuffer();
-            int VAO = GL.GenVertexArray();
-
-            PrepareVBO(VBO, VAO);
-
-            return VBO;
-        }
-
-        private void PrepareVBO(int VBO, int VAO)
-        {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BindVertexArray(VAO);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-
-            var dataLocation = gbuffer.GetAttribLocation("aData");
-            GL.EnableVertexAttribArray(dataLocation);
-            GL.VertexAttribPointer(dataLocation, 4, VertexAttribPointerType.UnsignedShort, false, 4 * sizeof(ushort), 0);
-            gbuffer.Use();
         }
 
         public void SpawnEntity(int entityId, EntityType entityType, float x, float y, float z, float mx, float my, float mz)
@@ -194,7 +147,7 @@ namespace _3dTerrainGeneration.world
             return GetChunkDir() + X + "." + Y + "." + Z + ".ch";
         }
 
-        private static int version = 1337;
+        private static int version = 1336;
 
         public static void Save(Chunk chunk)
         {
@@ -469,12 +422,18 @@ namespace _3dTerrainGeneration.world
 
         double pitch = ToRadians(25);
 
-        public double time = 0;
-        public int Render(Shader shader, Shader instancedShader, Shader post, Camera camera, double fT, double frameDelta)
+        public double time = 1000 * 420;
+        Queue<ParticleEmmiter> emmiters = new Queue<ParticleEmmiter>();
+        public int Render(FragmentShader shader, FragmentShader instancedShader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
+            //Window.Instance.network.SpawnEntity(EntityType.Frog, player.x, player.y, player.z, 0, 0, 0);
+            if(emmiters.Count > 200)
+            {
+                Window.Instance.ParticleSystem.RemoveEmmiter(emmiters.Dequeue());
+            }
+            //emmiters.Enqueue(Window.Instance.ParticleSystem.Emit((float)player.x, (float)player.y + 2, (float)player.z, 2));
             //time += fT * 100000;
-            time = 1050 * 1000;
-
+            time = 600000;
             double t = time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(pitch);
@@ -508,13 +467,11 @@ namespace _3dTerrainGeneration.world
 
             for (int i = 0; i < removeChunks.Count; i++)
             {
-                Chunk ch = null;
+                Chunk ch;
                 chunks.TryRemove(removeChunks[i], out ch);
-                if (ch == null) continue;
-
-                lock (queueLock)
+                if(ch != null)
                 {
-                    buffers.Enqueue(ch.Buffer);
+                    chunkRenderer.FreeMemory(ch.mem);
                 }
             }
             lock (structureLock)
@@ -536,18 +493,12 @@ namespace _3dTerrainGeneration.world
 
         InstancedRenderer renderer;
 
-        public int RenderWorld(Vector3 Position, float radius, Shader shader, Shader instancedShader, double frameDelta)
+        public int RenderWorld(Vector3 Position, float radius, FragmentShader shader, FragmentShader instancedShader, double frameDelta)
         {
             int verticlesRendered = 0;
             int chunksRendered = 0;
 
-            Vector3 origin = new Vector3((int)Position.X / Chunk.Size, (int)Position.Y / Chunk.Size, (int)Position.Z / Chunk.Size);
-            for (int i = 0; i < chunksLen; i++)
-            {
-                Vector3 iPos = iterationOrder[i];
-                Render(iPos.X + origin.X, iPos.Y + origin.Y, iPos.Z + origin.Z);
-            }
-
+            //draw
 
             void Render(float x, float y, float z)
             {
@@ -565,7 +516,7 @@ namespace _3dTerrainGeneration.world
                         {
                             chunksRendered++;
                             int lod = (int)Math.Clamp(differenceVector.Length / size * Chunk.lodCount, 0, Chunk.lodCount);
-                            verticlesRendered += chunk.Render(shader, lod);
+                            verticlesRendered += chunk.Render(lod);
                         }
                     }
                 }
@@ -588,7 +539,7 @@ namespace _3dTerrainGeneration.world
             return verticlesRendered;
         }
 
-        public int RenderWorld(Vector3 Position, Vector3 lodPoint, Vector3 Front, float Fov, Shader shader, Shader instancedShader, bool gen, double frameDelta)
+        public int RenderWorld(Vector3 Position, Vector3 lodPoint, Vector3 Front, float Fov, FragmentShader shader, FragmentShader instancedShader, bool gen, double frameDelta)
         {
             bool allRendered = true, canGen = true;
             int verticlesRendered = 0;
@@ -602,6 +553,8 @@ namespace _3dTerrainGeneration.world
                 Vector3 iPos = iterationOrder[i];
                 Render(iPos.X + origin.X, iPos.Y + origin.Y, iPos.Z + origin.Z);
             }
+            //draw
+            chunkRenderer.Draw(shader);
 
             void Render(float x, float y, float z)
             {
@@ -619,7 +572,7 @@ namespace _3dTerrainGeneration.world
                         {
                             chunksRendered++;
                             int lod = (int)Math.Clamp(differenceVector.Length / size * Chunk.lodCount, 0, Chunk.lodCount);
-                            verticlesRendered += chunk.Render(shader, lod);
+                            verticlesRendered += chunk.Render(lod);
                         }
 
                         if (allRendered)
@@ -648,7 +601,7 @@ namespace _3dTerrainGeneration.world
                                 if (task.IsFaulted)
                                 {
                                     System.Diagnostics.Debug.WriteLine(task.Exception);
-                                    Window.exception = "Error generating chunk!";
+                                    Window.message = "Error generating chunk!";
                                 }
                             });
                         }
@@ -660,7 +613,7 @@ namespace _3dTerrainGeneration.world
 
             //if (!gen)
             //{
-                player.Render(renderer, frameDelta);
+            player.Render(renderer, frameDelta);
             //}
             foreach (Dictionary<int, DrawableEntity> item in entities.Values)
             {
@@ -677,20 +630,7 @@ namespace _3dTerrainGeneration.world
 
         private void generate(int x, int y, int z)
         {
-            Buffer buf;
-
-            lock (queueLock)
-            {
-                if(buffers.Count < 1)
-                {
-                    genDelay--;
-                    Window.exception = "Error: not enough buffers!";
-                    return;
-                }
-                buf = buffers.Dequeue();
-            }
-
-            Chunk ch = new Chunk(x, y, z, buf, this);
+            Chunk ch = new Chunk(x, y, z, this);
 
             chunks[new Vector3(x, y, z)] = ch;
             lock (delayLock)

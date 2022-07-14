@@ -6,8 +6,8 @@ in vec2 TexCoords;
 
 uniform sampler2D depthTex; //pos
 uniform sampler2D normalTex; //normal   
-uniform sampler2DShadow colortex4; //shadowmap
-uniform sampler2DShadow colortex5; //shadowmap2
+uniform sampler2D colortex4; //shadowmap
+uniform sampler2D colortex5; //shadowmap2
 
 uniform float time;
 uniform float shadowRes;
@@ -27,56 +27,61 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-float sampleTexNear(vec2 shadowCoord, vec2 off, float b) {
-    return texture(colortex4, vec3(shadowCoord + off * vec2(rand(TexCoords + off + time + 1), rand(TexCoords + off + time)) * .0002, b));
-}
-
-float sampleTexFar(vec2 shadowCoord, vec2 off, float b) {
-    return texture(colortex5, vec3(shadowCoord + off * vec2(rand(TexCoords + off + time + 1), rand(TexCoords + off + time)) * .0012, b));
-}
-
-float sampleTex(bool far, vec2 shadowCoord, vec2 off, float b) {
-    if(!far) {
-        return sampleTexFar(shadowCoord, off, b);
-    } else {
-        return sampleTexNear(shadowCoord, off, b);
-    }
-}
-
-float sampleRow(bool far, vec2 shadowCoord, float y, float b) {
-    return 
-        sampleTex(far, shadowCoord, vec2(-1.25, y), b) + 
-        sampleTex(far, shadowCoord, vec2(-.75, y), b) + 
-        sampleTex(far, shadowCoord, vec2(.75, y), b) + 
-        sampleTex(far, shadowCoord, vec2(1.25, y), b);
-}
-
 vec4 get(vec3 position, mat4 matrix, float normalOffset) {
-    vec4 ShadowCoord = vec4(position.xyz + (texture(normalTex, TexCoords).rgb * vec3(2, 2, 2) - vec3(1, 1, 1)) * normalOffset / shadowRes, 1.) * matrix;
+    vec4 ShadowCoord = vec4(position.xyz, 1.) * matrix;
     ShadowCoord /= ShadowCoord.w;
     ShadowCoord.xyz = ShadowCoord.xyz * .5 + .5;
     return ShadowCoord;
 }
 
-void main() {
-    vec3 position = depthToView(TexCoords, texture(depthTex, TexCoords).r, projection);
+const float zNear = .2;
+const float zFar = 4096;
+float linearize_depth(float d) {
+    float z_n = 2.0 * d - 1.0;
+    return 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
+}
 
-    bool far = false;
-    vec4 ShadowCoord = get(position, matrix0, 500);
-    if(ShadowCoord.x < 0.1 || ShadowCoord.y < 0.1 || ShadowCoord.z < 0.1 || ShadowCoord.x > .9 || ShadowCoord.y > .9 || ShadowCoord.z >= .9) {
-        ShadowCoord = get(position, matrix1, 2000);
-        far = true;
+#define BIAS .000005
+
+float findAvgBlockerDistance(vec3 ShadowCoord) {
+    int blockers = 0;
+    float d = 0;
+    for (int i = 0; i < 8; i++) {
+        vec2 offset = vec2(rand(TexCoords + vec2(i, 0)) * 2 - 1, rand(TexCoords + vec2(0, i)) * 2 - 1) * .00125;
+        float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z;
+        if(dist + BIAS * (1 + length(offset) * 1000) < 0) {
+            d -= dist;
+            blockers++;
+        }
     }
+    if(blockers < 1) {
+        return blockers;
+    } else {
+        return min(d / blockers, .00125);
+    }
+}
+
+void main() {
+    float depth = texture(depthTex, TexCoords).r;
+    vec3 position = depthToView(TexCoords, depth, projection);
 
     float shadow = 0;
-    float b = ShadowCoord.z;
+    vec3 ShadowCoord = get(position, matrix0, 500).xyz;
+    if(ShadowCoord.x < 0.1 || ShadowCoord.y < 0.1 || ShadowCoord.z < 0.1 || ShadowCoord.x > .9 || ShadowCoord.y > .9 || ShadowCoord.z >= .9) {
+        ShadowCoord = get(position, matrix1, 2000).xyz;
+        shadow = (texture(colortex4, ShadowCoord.xy).r - ShadowCoord.z + BIAS * 2) > 0 ? 1 : 0;
+    } else {
+        float blockerDistance = findAvgBlockerDistance(ShadowCoord);
 
-    shadow += sampleRow(far, ShadowCoord.st, -1.25, b);
-    shadow += sampleRow(far, ShadowCoord.st, -.75, b);
-    shadow += sampleRow(far, ShadowCoord.st, .75, b);
-    shadow += sampleRow(far, ShadowCoord.st, 1.25, b);
-    shadow /= 16;
-    // shadow = sampleTex(far, ShadowCoord.st, vec2(0), b);
+        for (int i = 0; i < 4; i++) {
+            vec2 offset = vec2(rand(TexCoords + vec2(i, 0)) * 2 - 1, rand(TexCoords + vec2(0, i)) * 2 - 1) * blockerDistance;
+            float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z + BIAS * (1 + length(offset) * 3400);
+            shadow += dist > 0 ? 1 : 0;
+        }
+
+        shadow /= 4;
+        // shadow = blockerDistance * 100;
+    }
 
     FragColor = vec4(shadow.rrr, 1.);
 }

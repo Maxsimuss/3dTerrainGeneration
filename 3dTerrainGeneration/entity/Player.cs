@@ -29,7 +29,7 @@ namespace _3dTerrainGeneration.entity
             mesh = data.Data;
         }
 
-        public Player(World world, int Buffer = -1) : base(world, EntityType.Player, Buffer) 
+        public Player(World world) : base(world, EntityType.Player) 
         {
         }
 

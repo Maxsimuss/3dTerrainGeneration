@@ -32,7 +32,6 @@ namespace _3dTerrainGeneration.rendering
             Use();
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, format, Width, Height, 0, pixelFormat, pixelType, data);
-
             if (Mipmapped)
             {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);

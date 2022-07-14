@@ -80,19 +80,23 @@ namespace _3dTerrainGeneration.entity
                 double _motionZ = motionZ / subdevision;
                 for (int i = 0; i < subdevision; i++)
                 {
-                    if ((Box.isColliding(x + _motionX, y, z, world) && !Box.isColliding(x + _motionX, y + 1.1, z, world)) || (Box.isColliding(x, y, z + _motionZ, world) && !Box.isColliding(x, y + 1.1, z + _motionZ, world)))
-                    {
-                        y += 1.01;
-                    }
-
                     if (!Box.isColliding(x + _motionX, y, z, world))
                     {
                         x += _motionX;
                     }
                     else
                     {
-                        //motionX = 0;
-                        //x = Math.Round(x + m.X);
+                        double _m = 0;
+                        double step = _motionX > 0 ? .01 : -.01;
+                        while ((!Box.isColliding(x + _m, y, z, world) || !Box.isColliding(x + _m, y + 1, z, world)) && Math.Abs(_m) < Math.Abs(_motionX))
+                        {
+                            if(Box.isColliding(x + _m, y, z, world) && !Box.isColliding(x + _m, y + 1, z, world))
+                            {
+                                y++;
+                            }
+                            _m += step;
+                        }
+                        x += _m - step;
                     }
 
                     if (!Box.isColliding(x, y + _motionY, z, world))
@@ -120,8 +124,17 @@ namespace _3dTerrainGeneration.entity
                     }
                     else
                     {
-                        //motionZ = 0;
-                        //z = Math.Round(z + m.Z);
+                        double _m = 0;
+                        double step = _motionZ > 0 ? .01 : -.01;
+                        while ((!Box.isColliding(x, y, z + _m, world) || !Box.isColliding(x, y + 1, z + _m, world)) && Math.Abs(_m) < Math.Abs(_motionZ))
+                        {
+                            if (Box.isColliding(x, y, z + _m, world) && !Box.isColliding(x, y + 1, z + _m, world))
+                            {
+                                y++;
+                            }
+                            _m += step;
+                        }
+                        z += _m - step;
                     }
 
                     if (Box.isColliding(x, y, z, world))
@@ -129,6 +142,10 @@ namespace _3dTerrainGeneration.entity
                         x += _motionX;
                         y += _motionY;
                         z += _motionZ;
+
+                        //_motionX /= 10;
+                        //_motionY /= 10;
+                        //_motionZ /= 10;
                     }
                 }
             }

@@ -11,7 +11,7 @@ namespace _3dTerrainGeneration.rendering
     class FragmentPass
     {
 
-        public static void Apply(Shader shader, Framebuffer targetFramebuffer, params Framebuffer[] sourceFramebuffers)
+        public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, params Framebuffer[] sourceFramebuffers)
         {
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, targetFramebuffer == null ? 0 : targetFramebuffer.FBO);
 

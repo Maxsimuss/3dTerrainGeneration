@@ -7,7 +7,6 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 Normal;
-out vec3 FragPos;
 out vec3 Color;
 out float Emission;
 
@@ -21,5 +20,4 @@ void main()
     Emission = (int(aData.w) & 0x000000FF) / 255.;
 
     gl_Position = vec4(pos, 1.0) * model * view * projection;
-    FragPos = vec3(vec4(pos, 1.0) * model);
 }

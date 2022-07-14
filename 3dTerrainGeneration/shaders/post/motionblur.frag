@@ -12,7 +12,7 @@ uniform mat4 gbufferPreviousProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferPreviousModelView;
 
-#define MOTIONBLUR_QUALITY 2
+#define MOTIONBLUR_QUALITY 20
 #define MOTIONBLUR_LENGTH .2
 
 float rand(vec2 co){

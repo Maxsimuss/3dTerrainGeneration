@@ -5,7 +5,6 @@ in vec2 TexCoords;
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex1;
-uniform sampler2D colortex2;
 uniform float aspect;
 uniform float time;
 
@@ -33,11 +32,28 @@ vec3 tonemapFilmic(const vec3 color) {
 	return (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
 }
 
+const float gamma = 2.2;
+vec3 lumaBasedReinhardToneMapping(vec3 color)
+{
+	float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+	float toneMappedLuma = luma / (1. + luma);
+	color *= toneMappedLuma / luma;
+	color = pow(color, vec3(1. / gamma));
+	return color;
+}
+
+const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+float luminance(vec3 rgb) {
+    return dot(rgb, W);
+}
+
 void main() {
-	vec3 color = texture(colortex1, TexCoords).rgb + texture(colortex0, TexCoords).rgb;
+	vec3 color = texture(colortex0, TexCoords).rgb + texture(colortex1, TexCoords).rgb / 2.;
+	// color = sqrt(color);
+	// color /= color + 1;
+	// color *= 1.5;
 
-	// color = tonemapFilmic(color);
+	color = tonemapFilmic(pow(color, vec3(1/.7))) / .85;
 
-	vec4 overlay = texture(colortex2, TexCoords);
-    FragColor = vec4(mix(color, overlay.rgb, overlay.a), 1.0);
+    FragColor = vec4(color, 1.0);
 }

@@ -39,14 +39,10 @@ vec3 depthToView() {
 void main() {
     vec3 p = depthToView();
 
-	float s = clamp(dot(normalize(p), sun_dir), 0, 1);
+    vec3 c = vec3(.055, .130, .224);
+    
+    vec3 col = pow(vec3(pow(smoothstep(0., 1., sun_dir.y / 2 + .5), 24.) * 80.), c);
 
-	float dy = clamp(pow(sun_dir.y, 1 / 2.2), 0, 1);
-	vec3 sky = pow(pow(s / 2., 2.).rrr * 2.2 / (1 + dy * 5) + dy + .25, coef) / 2;
-	sky = rgb2hsv(sky);
-	sky.g *= 2.5;
-	sky = hsv2rgb(sky);
-
-// * sun_dir.y
-	FragColor = vec4(sky * 1.3, 1);
+    // Output to screen
+    FragColor = vec4(col / 10. + c / 20.,1.0);
 }

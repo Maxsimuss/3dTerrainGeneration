@@ -56,7 +56,7 @@ namespace _3dTerrainGeneration.rendering
             draws[type][animationFrame].Add(matrix);
         }
 
-        public void Render(Shader shader)
+        public void Render(FragmentShader shader)
         {
             shader.Use();
             foreach (var type in draws.Keys)

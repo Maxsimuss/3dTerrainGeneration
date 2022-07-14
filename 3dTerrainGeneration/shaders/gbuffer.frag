@@ -3,7 +3,6 @@
 out vec4 FragColor[];
 
 in vec3 Normal;
-in vec3 FragPos;
 in vec3 Color;
 in float Emission;
 

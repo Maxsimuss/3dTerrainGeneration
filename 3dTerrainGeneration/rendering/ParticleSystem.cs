@@ -19,16 +19,26 @@ namespace _3dTerrainGeneration.rendering
             emmiters = new List<ParticleEmmiter>();
         }
 
-        public void Emit(float x, float y, float z, float radius)
+        public ParticleEmmiter Emit(float x, float y, float z, float radius)
         {
-            lock(emmiterLock)
-                emmiters.Add(new ParticleEmmiter(renderer, new(x, y, z), radius, .5f));
+            ParticleEmmiter emmiter = new ParticleEmmiter(renderer, new(x, y, z), radius, .5f);
+
+            lock (emmiterLock)
+                emmiters.Add(emmiter);
+
+            return emmiter;
         }
 
-        public void Render(Camera camera, float dT)
+        public void RemoveEmmiter(ParticleEmmiter emmiter)
         {
+            lock (emmiterLock)
+                emmiters.Remove(emmiter);
+        }
 
-            lock(emmiterLock)
+        public void Update(Camera camera, float dT)
+        {
+            renderer.Reset();
+            lock (emmiterLock)
                 foreach (var item in emmiters)
                 {
                     Vector3 diff = item.Position - camera.Position;
@@ -36,13 +46,16 @@ namespace _3dTerrainGeneration.rendering
                     {
                         double fr = Math.Cos(1.65806);
 
-                        if(Vector3.Dot(camera.Front, diff.Normalized()) >= fr)
+                        if (Vector3.Dot(camera.Front, diff.Normalized()) >= fr)
                         {
-                            item.Render(dT);
+                            item.Update(dT);
                         }
                     }
                 }
+        }
 
+        public void Render()
+        {
             renderer.Render();
         }
     }

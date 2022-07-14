@@ -21,7 +21,7 @@ namespace _3dTerrainGeneration.gui
         GuiTextField passwordField;
         Window window;
         Camera camera;
-        Shader shader;
+        FragmentShader shader;
 
         public LoginScreen(FontRenderer renderer, Window window)
         {
@@ -33,7 +33,7 @@ namespace _3dTerrainGeneration.gui
             registerButton = new GuiButton(renderer, 0, -.7f, usernameField.width, .04f, new Vector4(248 / 255f, 101 / 255f, 101 / 255f, 1f), "Register");
             camera = new Camera(Vector3.Zero, renderer.aspectRatio);
             camera.Fov = 70;
-            shader = new Shader("Shaders/post.vert", "Shaders/loginMenu.frag");
+            shader = new FragmentShader("Shaders/post.vert", "Shaders/loginMenu.frag");
             shader.SetInt("colortex0", 0);
             shader.SetInt("colortex1", 1);
 

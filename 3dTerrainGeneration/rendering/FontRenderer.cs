@@ -10,7 +10,7 @@ namespace _3dTerrainGeneration.rendering
 {
     public class FontRenderer
     {
-        private Shader TextShader;
+        private FragmentShader TextShader;
         private Texture texture;
 
         private int GlyphSize;
@@ -47,7 +47,7 @@ namespace _3dTerrainGeneration.rendering
                 texture = new Texture(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba, OpenTK.Graphics.OpenGL4.PixelFormat.Bgra, PixelType.UnsignedByte, false, data.Scan0, filtered: false);
                 bitmap.UnlockBits(data);
             }
-            TextShader = new Shader("Shaders/post.vert", "Shaders/text.frag");
+            TextShader = new FragmentShader("Shaders/post.vert", "Shaders/text.frag");
             TextShader.SetInt("colortex0", 0);
             texture.Use();
 

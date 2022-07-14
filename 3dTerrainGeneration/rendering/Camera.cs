@@ -2,7 +2,7 @@ using System;
 using _3dTerrainGeneration.world;
 using OpenTK;
 
-namespace _3dTerrainGeneration
+namespace _3dTerrainGeneration.rendering
 {
     public class Camera
     {
@@ -35,8 +35,10 @@ namespace _3dTerrainGeneration
         // This is simply the aspect ratio of the viewport, used for the projection matrix
         public float AspectRatio { private get; set; }
 
-        public Vector3 Front {
-            get { 
+        public Vector3 Front
+        {
+            get
+            {
                 Vector3 vec = new Vector3(_front.X, _front.Y / AspectRatio, _front.Z);
                 vec.Normalize();
                 return vec;
@@ -95,7 +97,7 @@ namespace _3dTerrainGeneration
         // Get the projection matrix using the same method we have used up until this point
         public Matrix4 GetProjectionMatrix()
         {
-            return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .05f, World.renderDist * 1.41f);
+            return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .2f, 4096);
         }
 
         // This function is going to update the direction vertices using some of the math learned in the web tutorials

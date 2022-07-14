@@ -71,8 +71,11 @@ namespace _3dTerrainGeneration.rendering
             GL.BindBuffer(BufferTarget.ArrayBuffer, instanceVBO);
             GL.BufferData(BufferTarget.ArrayBuffer, index * 64, transforms, BufferUsageHint.DynamicDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, cubeVBO);
-            GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 24, index);
+            GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 36, index);
+        }
 
+        public void Reset()
+        {
             index = 0;
         }
     }
