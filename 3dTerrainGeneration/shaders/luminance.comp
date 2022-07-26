@@ -13,7 +13,12 @@ float luminance(vec3 rgb) {
 }
 
 void main() {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    int lum = int(luminance(imageLoad(image, pixel_coords).rgb) * 512.);
-    atomicMax(maxLuma, lum);
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy * 4);
+    int lum = 0;
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 4; y++) {
+            lum += int(luminance(imageLoad(image, pixel_coords + ivec2(x, y)).rgb) * 512.);
+        }
+    }
+    atomicMax(maxLuma, lum / 16);
 }

@@ -23,7 +23,7 @@ namespace _3dTerrainGeneration.world
 
         public ushort[][] mesh;
         public int[] lengths = new int[lodCount];
-        public byte[] blocks;
+        public byte[] blocks = null;
         public object dataLock = new object();
         public object meshLock = new object();
         public static int lodCount = 3;
@@ -35,6 +35,7 @@ namespace _3dTerrainGeneration.world
         public List<byte> sounds;
         public List<byte> particles;
         public InderectDraw mem;
+        private Matrix4 modelMatrix;
 
         public static float GetPerlin(float x, float z, float scale)
         {
@@ -90,102 +91,114 @@ namespace _3dTerrainGeneration.world
             arr[(x * Size + z) * Size + y] = val;
         }
 
-        public Chunk(int X, int Y, int Z, World world)
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public static byte GetValue(Octree arr, int x, int z, int y)
+        //{
+        //    return arr.GetValue((byte)x, (byte)y, (byte)z);
+        //}
+
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //public static void SetValue(Octree arr, int x, int z, int y, byte val)
+        //{
+        //    arr.SetValue((byte)x, (byte)y, (byte)z, val);
+        //}
+
+        public Chunk(int X, int Y, int Z)
         {
             Random rnd = new Random((X * Size + Y) * Size + Z);
             this.X = X;
             this.Y = Y;
             this.Z = Z;
 
-            if (World.Load(this, world)) return;
+            modelMatrix = Matrix4.CreateTranslation(X * Size, Y * Size, Z * Size);
+
+            if (World.Load(this)) return;
 
             sounds = new List<byte>();
             particles = new List<byte>();
 
-            for (int x = 0; x < Size; x++)
+            for (int _x = 0; _x < Size; _x++)
             {
-                int aX = x + X * Size;
-                for (int z = 0; z < Size; z++)
+                int x = _x + X * Size;
+                for (int _z = 0; _z < Size; _z++)
                 {
-                    int aZ = z + Z * Size;
-                    SetRow(aX, Y * Size, aZ);
-                }
-            }
+                    int z = _z + Z * Size;
+                    int yO = Y * Size;
+                    float h = GetHeight(x, z);
 
-            lock (world.structureLock)
-            {
-                foreach (var s in world.structures)
-                {
-                    if (s.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size))
+                    for (int i = 0; i < Size; i++)
                     {
-                        empty = false;
+                        int y = yO + i;
+
+                        if (y < h)
+                        {
+                            SetBlock(x, y, z, Materials.IdOf(0x877F6C));
+                        }
+                        else if (y - 1 < h)
+                        {
+
+                            float temp = smoothstep(0, 1, GetPerlin(x, z, .00025f) - (y / 512f) + rnd.NextSingle() * .05f - .025f);
+                            if (temp < .16)
+                            {
+                                SetBlock(x, y, z, Materials.IdOf(255, 255, 255));
+                            }
+                            else
+                            {
+                                temp -= .16f;
+                                temp /= 1f - .16f;
+
+                                float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f) + rnd.NextSingle() * .05f - .025f);
+
+                                //if(temp > .85 && humidity < .3 && rnd.NextSingle() < .001)
+                                //{
+                                //    ImportedStructure str = new ImportedStructure("trees/cactus0/cactus0.vox", x, y + 1, z);
+                                //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
+                                //}
+
+                                SetBlock(x, y, z, Materials.IdOf(
+                                    Color.HsvToRgb(
+                                        150 - (byte)((byte)(temp * 8) * 13),
+                                        166 + (byte)((byte)(humidity * 4) * 16),
+                                        220 - (byte)((byte)(humidity * 4) * 15)
+                                    )
+                                ));
+                            }
+                        }
                     }
                 }
             }
+
+            //lock (world.structureLock)
+            //{
+            //    foreach (var s in world.structures)
+            //    {
+            //        if (s.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size))
+            //        {
+            //            empty = false;
+            //        }
+            //    }
+            //}
 
             Mesh();
 
             World.Save(this);
+        }
 
-            void SetBlock(int x, int y, int z, byte type)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void SetBlock(int x, int y, int z, byte type)
+        {
+            if (empty)
             {
-                if(blocks == null)
-                {
-                    blocks = new byte[Size * Size * Size];
-                }
+                blocks = new byte[Size * Size * Size];
                 empty = false;
-                SetValue(blocks, x - X * Size, z - Z * Size, y - Y * Size, type);
             }
+            SetValue(blocks, x - X * Size, z - Z * Size, y - Y * Size, type);
+        }
 
-            void SetRow(int x, int yO, int z)
-            {
-                float h = GetHeight(x, z);
-
-                for (int i = 0; i < Size; i++)
-                {
-                    int y = yO + i;
-
-                    if (y < h)
-                    {
-                        SetBlock(x, y, z, Materials.IdOf(0x877F6C));
-                    }
-                    else if (y - 1 < h)
-                    {
-
-                        float temp = smoothstep(0, 1, GetPerlin(x, z, .00025f) - (y / 512f) + rnd.NextSingle() * .05f - .025f);
-                        if (temp < .16)
-                        {
-                            SetBlock(x, y, z, Materials.IdOf(255, 255, 255));
-                        }
-                        else
-                        {
-                            temp -= .16f;
-                            temp /= 1f - .16f;
-
-                            float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f) + rnd.NextSingle() * .05f - .025f);
-
-                            if(temp > .85 && humidity < .3 && rnd.NextSingle() < .001)
-                            {
-                                ImportedStructure str = new ImportedStructure("trees/cactus0/cactus0.vox", x, y + 1, z);
-                                str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
-                            }
-
-                            SetBlock(x, y, z, Materials.IdOf(
-                                Color.HsvToRgb(
-                                    150 - (byte)((byte)(temp * 8) * 13), 
-                                    166 + (byte)((byte)(humidity * 4) * 16), 
-                                    220 - (byte)((byte)(humidity * 4) * 15)
-                                )
-                            ));
-                        }
-                    }
-                }
-            }
-
-            float GetHeight(int x, int z)
-            {
-                return (float)Math.Pow(OcataveNoise(x, z, .0005f / 4, 8) * 1.2, 7) * GetPerlin(x, z, .0005f / 4) * 255 * 4;
-            }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float GetHeight(int x, int z)
+        {
+            return (float)Math.Pow(OcataveNoise(x, z, .0005f / 4, 8) * 1.2, 7) * GetPerlin(x, z, .0005f / 4) * 255 * 4;
         }
 
         public void Mesh()
@@ -248,11 +261,11 @@ namespace _3dTerrainGeneration.world
             int cubeLenght = lengths[lod];
             if (lod != loadedLod)
             {
-                mem = World.chunkRenderer.SubmitMesh(mesh[lod], Matrix4.CreateTranslation(X * Size, Y * Size, Z * Size), mem);
+                mem = World.gameRenderer.SubmitMesh(mesh[lod], mem);
                 loadedLod = lod;
             }
 
-            mem.draw = true;
+            World.gameRenderer.QueueRender(mem, modelMatrix);
 
             return cubeLenght;
         }

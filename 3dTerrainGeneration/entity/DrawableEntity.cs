@@ -19,6 +19,7 @@ namespace _3dTerrainGeneration.entity
         public bool Visible = true;
 
         public virtual float Scale { get => 1; }
+        public abstract InderectDraw[] InderectDraws { get; }
 
         public int EntityId;
         protected int AnimationFrame = 0;
@@ -75,11 +76,13 @@ namespace _3dTerrainGeneration.entity
             return Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(-pitch)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(-yaw)) * Matrix4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
-        public virtual void Render(InstancedRenderer renderer, double frameDelta)
+        public virtual void Render(double frameDelta)
         {
             if (!Visible) return;
 
-            renderer.Submit(type, AnimationFrame, GetModelMatrix(frameDelta));
+            InderectDraw draw = InderectDraws[AnimationFrame];
+
+            World.gameRenderer.QueueRender(draw, GetModelMatrix(frameDelta));
         }
     }
 }

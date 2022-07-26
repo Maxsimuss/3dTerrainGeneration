@@ -11,7 +11,7 @@ namespace _3dTerrainGeneration.rendering
     {
         private int RBO;
 
-        public RenderBufferFramebuffer(int Width, int Height, params Texture[] textures) : base(Width, Height, textures)
+        public RenderBufferFramebuffer(int Width, int Height, DrawBuffersEnum[] drawBuffers, params Texture[] textures) : base(Width, Height, drawBuffers, textures)
         {
             RBO = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RBO);

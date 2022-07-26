@@ -44,15 +44,15 @@ namespace _3dTerrainGeneration.entity
             prevZ = z; 
             frameTime = fT;
 
-            if(false)
+            if(true)
             {
                 motionX *= .8;
                 motionY *= .8;
                 motionZ *= .8;
 
-                x += motionX;
-                y += motionY * 10;
-                z += motionZ;
+                x += motionX / 10;
+                y += motionY * 2;
+                z += motionZ / 10;
             }
             else
             {

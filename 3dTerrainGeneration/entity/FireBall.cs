@@ -13,16 +13,18 @@ namespace _3dTerrainGeneration.entity
 {
     public class FireBall : DrawableEntity
     {
+        private static AxisAlignedBB aabb;
         public override AxisAlignedBB Box => aabb;
+
+        private static float scale;
         public override float Scale => scale;
 
+        private static ushort[][] mesh;
+        private static InderectDraw[] draws;
+        public override InderectDraw[] InderectDraws => draws;
+
         public float Radius = 50;
-
-        static float scale;
-        static AxisAlignedBB aabb;
         public bool Dead = false;
-
-        public static ushort[][] mesh;
 
         SoundSource source;
         static FireBall()
@@ -36,6 +38,15 @@ namespace _3dTerrainGeneration.entity
 
         public FireBall(World world, Vector3 position, Vector3 motion, int EntityId = -1) : base(world, EntityType.FireBall, EntityId)
         {
+            if (draws == null)
+            {
+                draws = new InderectDraw[mesh.Length];
+                for (int i = 0; i < mesh.Length; i++)
+                {
+                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+                }
+            }
+
             maxHealth = 10;
             health = maxHealth;
             x = position.X; y = position.Y; z = position.Z;
@@ -118,10 +129,10 @@ namespace _3dTerrainGeneration.entity
             base.Despawn();
         }
 
-        public override void Render(InstancedRenderer renderer, double frameDelta)
+        public override void Render(double frameDelta)
         {
             if(!Dead)
-                base.Render(renderer, frameDelta);
+                base.Render(frameDelta);
         }
     }
 }

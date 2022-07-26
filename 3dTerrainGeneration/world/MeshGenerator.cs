@@ -1,6 +1,4 @@
-﻿#define GREEDY_MESH
-
-using _3dTerrainGeneration.rendering;
+﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using OpenTK;
 using OpenTK.Graphics.ES20;
@@ -154,83 +152,15 @@ namespace _3dTerrainGeneration.world
             }
         }
 
-        private static void QuickMesh(List<ushort> quads, byte[][][] blocks, int Size, short scale, List<uint> colors, byte emission)
-        {
-            for (int x = 0; x < Size / scale; x++)
-            {
-                for (int z = 0; z < Size / scale; z++)
-                {
-                    int y = -1;
-
-                    int _x = x < Size ? x : x - 1;
-                    int _z = z < Size ? z : z - 1;
-
-                    for (byte i = 0; i < Size; i++)
-                    {
-                        if (blocks[_x][_z][i] != 0)
-                        {
-                            y = i;
-                        }
-                    }
-
-                    if (y == -1) continue;
-
-                    uint color = colors[blocks[_x][_z][y] - 1];
-                    byte r = (byte)(color >> 16 & 0xFF);
-                    byte g = (byte)(color >> 8 & 0xFF);
-                    byte b = (byte)(color & 0xFF);
-
-                    PlacePoint(x, z, y, r, g, b);
-                    PlacePoint(x, z + 1, y, r, g, b);
-                    PlacePoint(x + 1, z + 1, y, r, g, b);
-                    PlacePoint(x + 1, z, y, r, g, b);
-                }
-            }
-
-            void PlacePoint(int x, int z, int _y, byte r, byte g, byte b)
-            {
-                int y = -1;
-
-                int _x = x < Size ? x : x - 1;
-                int _z = z < Size ? z : z - 1;
-
-                for (byte i = 0; i < Size; i++)
-                {
-                    if (blocks[_x][_z][i] != 0)
-                    {
-                        y = i;
-                    }
-                }
-
-                if (y == -1)
-                {
-                    y = _y;
-                }
-
-                AddPoint(new Vector3(x, y, z), r, g, b, 0, 1, 0);
-            }
-
-            void AddPoint(Vector3 p, byte r, byte g, byte b, byte nx, byte ny, byte nz)
-            {
-                quads.Add((ushort)((ushort)p.X * scale | (ushort)p.Y << 8));
-                quads.Add((ushort)((ushort)p.Z * scale | r << 8));
-                quads.Add((ushort)(g | b << 8));
-                quads.Add((ushort)(emission | nx << 8 | ny << 9 | nz << 10));
-            }
-        }
-
         public static ushort[] GenerateMeshFromBlocks(MeshData meshData, int Width, int Height, byte emission, int scale = 1)
         {
             List<ushort> quads = new List<ushort>();
 
-#if GREEDY_MESH
             for (int i = 0; i < Height / Width; i++)
             {
                 GreedyMesh(quads, meshData.blocks, Width, (short)scale, meshData.pallette, emission, i);
             }
-#else
-        QuickMesh(quads, meshData.blocks, Width, (short)scale, meshData.pallette, emission);
-#endif
+     
             return quads.ToArray();
         }
     }

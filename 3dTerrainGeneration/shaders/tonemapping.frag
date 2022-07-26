@@ -5,12 +5,10 @@ in vec2 TexCoords;
 
 
 uniform sampler2D colorTex;
-layout(std430, binding = 1) buffer outputData
-{
-    int maxLuma;
-};
+uniform float maxLuma;
+
 void main() {
-    vec3 color = texture(colorTex, TexCoords).rgb / (maxLuma / 512.);
+    vec3 color = texture(colorTex, TexCoords).rgb / (maxLuma);
     
     FragColor = color;
 }

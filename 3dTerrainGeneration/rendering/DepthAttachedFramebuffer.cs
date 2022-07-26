@@ -11,16 +11,10 @@ namespace _3dTerrainGeneration.rendering
     {
         public Texture depthTex0;
 
-        public DepthAttachedFramebuffer(int Width, int Height, Texture depthTexture, params Texture[] textures) : base(Width, Height, textures)
+        public DepthAttachedFramebuffer(int Width, int Height, DrawBuffersEnum[] drawBuffers, Texture depthTexture, params Texture[] textures) : base(Width, Height, drawBuffers, textures)
         {
             depthTex0 = depthTexture;
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, depthTex0.Handle, 0);
-        }
-
-        public override int UseTextures(int offset = 0)
-        {
-            depthTex0.Use(TextureUnit.Texture0 + offset);
-            return base.UseTextures(1 + offset);
         }
 
         public override void Dispose()

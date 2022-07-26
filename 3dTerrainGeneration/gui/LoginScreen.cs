@@ -60,7 +60,6 @@ namespace _3dTerrainGeneration.gui
 
         public void Render()
         {
-            GL.Enable(EnableCap.Blend);
             camera.AspectRatio = renderer.aspectRatio;
             camera.Yaw = (float)(TimeUtil.Unix() / 360 % 360);
             camera.Pitch = (float)MathHelper.RadiansToDegrees(Math.Sin(TimeUtil.Unix() / 36000 % Math.PI * 2)) / 2;
@@ -87,7 +86,7 @@ namespace _3dTerrainGeneration.gui
             window.Stars.SetVector3("sun_dir", sunPos);
             window.Stars.SetFloat("time", (float)(TimeUtil.Unix() / 5000D % 3600));
             FragmentPass.Apply(window.Stars, window.StarBuffer);
-            FragmentPass.Apply(shader, null, window.StarBuffer, window.SkyBuffer);
+            FragmentPass.Apply(shader, null, window.StarBuffer.colorTex[0], window.SkyBuffer.colorTex[0]);
 
 
 

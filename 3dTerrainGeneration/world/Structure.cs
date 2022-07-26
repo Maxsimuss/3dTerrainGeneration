@@ -82,7 +82,7 @@ namespace _3dTerrainGeneration.world
                     inData = new byte[Chunk.Size * Chunk.Size * Chunk.Size];
                 }
 
-                Chunk.SetValue(inData, X, Z, Y, item.Value);
+                //Chunk.SetValue(inData, X, Z, Y, item.Value);
                 blocks--;
                 modified = true;
             }

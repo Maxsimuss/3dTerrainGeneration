@@ -2,17 +2,14 @@
 using _3dTerrainGeneration.entity;
 using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
-using _3dTerrainGeneration.util;
 using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
-using OpenTK.Input;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TerrainServer.network;
 
@@ -47,12 +44,12 @@ namespace _3dTerrainGeneration.world
 
         public Network network;
 
-        public static ChunkRenderer chunkRenderer;
+        public static GameRenderer gameRenderer;
 
         int chunksLen = 0;
-        public World(InstancedRenderer renderer)
+        public World()
         {
-            chunkRenderer = new ChunkRenderer();
+            gameRenderer = new GameRenderer();
             player = new Player(this);
             player.IsResponsible = true;
 
@@ -74,7 +71,6 @@ namespace _3dTerrainGeneration.world
 
             iterationOrder.Sort((a, b)=> { return (int)((a.Length  - b.Length) * 1000); });
             chunksLen = iterationOrder.Count;
-            this.renderer = renderer;
         }
 
         public void SpawnEntity(int entityId, EntityType entityType, float x, float y, float z, float mx, float my, float mz)
@@ -147,7 +143,7 @@ namespace _3dTerrainGeneration.world
             return GetChunkDir() + X + "." + Y + "." + Z + ".ch";
         }
 
-        private static int version = 1336;
+        private static int version = 1338;
 
         public static void Save(Chunk chunk)
         {
@@ -159,7 +155,7 @@ namespace _3dTerrainGeneration.world
                 byte[] read = File.ReadAllBytes(file);
                 if (read.Length == 6)
                 {
-                    if(BitConverter.ToInt32(read) == version)
+                    if (BitConverter.ToInt32(read) == version)
                         return;
                 }
                 else
@@ -213,7 +209,7 @@ namespace _3dTerrainGeneration.world
             return output.ToArray();
         }
 
-        public static bool Load(Chunk chunk, World world)
+        public static bool Load(Chunk chunk)
         {
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
             if (File.Exists(file))
@@ -222,7 +218,7 @@ namespace _3dTerrainGeneration.world
 
                 int offset = 0;
 
-                if(data.Length == 6)
+                if (data.Length == 6)
                 {
                     if (BitConverter.ToInt32(data, offset) != version)
                     {
@@ -424,7 +420,7 @@ namespace _3dTerrainGeneration.world
 
         public double time = 1000 * 420;
         Queue<ParticleEmmiter> emmiters = new Queue<ParticleEmmiter>();
-        public int Render(FragmentShader shader, FragmentShader instancedShader, FragmentShader post, Camera camera, double fT, double frameDelta)
+        public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
             //Window.Instance.network.SpawnEntity(EntityType.Frog, player.x, player.y, player.z, 0, 0, 0);
             if(emmiters.Count > 200)
@@ -471,7 +467,7 @@ namespace _3dTerrainGeneration.world
                 chunks.TryRemove(removeChunks[i], out ch);
                 if(ch != null)
                 {
-                    chunkRenderer.FreeMemory(ch.mem);
+                    gameRenderer.FreeMemory(ch.mem);
                 }
             }
             lock (structureLock)
@@ -486,83 +482,34 @@ namespace _3dTerrainGeneration.world
 
             showDist = 0;
 
-            return RenderWorld(camera.Position, camera.Position, camera.Front, camera.Fov, shader, instancedShader, true, frameDelta);
+            return RenderWorld(camera.Position, 9999, camera.Front, camera.Fov, shader, true, frameDelta);
 
             //System.Diagnostics.Debug.WriteLine("Verticles renderd: " + verticlesRendered);
         }
 
-        InstancedRenderer renderer;
-
-        public int RenderWorld(Vector3 Position, float radius, FragmentShader shader, FragmentShader instancedShader, double frameDelta)
-        {
-            int verticlesRendered = 0;
-            int chunksRendered = 0;
-
-            //draw
-
-            void Render(float x, float y, float z)
-            {
-                Vector3 v = new Vector3((int)x, (int)y, (int)z);
-                if (chunks.ContainsKey(v))
-                {
-                    Vector3 differenceVector = v - (Position / Chunk.Size);
-                    if (chunks[v] != null /*&& differenceVector.Length < radius*/)
-                    {
-                        Chunk chunk = chunks[v];
-
-                        if (!chunks.ContainsKey(v + new Vector3(0, 1, 0)) ||
-                            chunks[v + new Vector3(0, 1, 0)] == null ||
-                            !chunks[v + new Vector3(0, 1, 0)].full)
-                        {
-                            chunksRendered++;
-                            int lod = (int)Math.Clamp(differenceVector.Length / size * Chunk.lodCount, 0, Chunk.lodCount);
-                            verticlesRendered += chunk.Render(lod);
-                        }
-                    }
-                }
-            }
-
-            //if (!gen)
-            //{
-            player.Render(renderer, frameDelta);
-            //}
-            foreach (Dictionary<int, DrawableEntity> item in entities.Values)
-            {
-                foreach (DrawableEntity entity in item.Values)
-                {
-                    entity.Render(renderer, frameDelta);
-                }
-            }
-
-            renderer.Render(instancedShader);
-
-            return verticlesRendered;
-        }
-
-        public int RenderWorld(Vector3 Position, Vector3 lodPoint, Vector3 Front, float Fov, FragmentShader shader, FragmentShader instancedShader, bool gen, double frameDelta)
+        public int RenderWorld(Vector3 Position, float radius, Vector3 Front, float Fov, FragmentShader shader, bool gen, double frameDelta)
         {
             bool allRendered = true, canGen = true;
             int verticlesRendered = 0;
             int chunksRendered = 0;
+            double fr = Math.Cos(ToRadians(Fov));
 
             Vector3 origin = new Vector3((int)Position.X / Chunk.Size, (int)Position.Y / Chunk.Size, (int)Position.Z / Chunk.Size);
-            Vector3 front = Front.Normalized();
+            System.Numerics.Vector3 front = System.Numerics.Vector3.Normalize(new(Front.X, Front.Y, Front.Z));
 
             for (int i = 0; i < chunksLen; i++)
             {
                 Vector3 iPos = iterationOrder[i];
                 Render(iPos.X + origin.X, iPos.Y + origin.Y, iPos.Z + origin.Z);
             }
-            //draw
-            chunkRenderer.Draw(shader);
 
             void Render(float x, float y, float z)
             {
                 Vector3 v = new Vector3((int)x, (int)y, (int)z);
                 if (chunks.ContainsKey(v))
                 {
-                    Vector3 differenceVector = v - (lodPoint / Chunk.Size);
-                    if (chunks[v] != null && (!gen || inFov(front, differenceVector, Fov)))
+                    System.Numerics.Vector3 differenceVector = new System.Numerics.Vector3(x, y, z) - (new System.Numerics.Vector3(Position.X, Position.Y, Position.Z) / Chunk.Size);
+                    if (chunks[v] != null && differenceVector.Length() < radius && (!gen || inFov(front, differenceVector, fr)))
                     {
                         Chunk chunk = chunks[v];
                         
@@ -571,12 +518,12 @@ namespace _3dTerrainGeneration.world
                             !chunks[v + new Vector3(0, 1, 0)].full)
                         {
                             chunksRendered++;
-                            int lod = (int)Math.Clamp(differenceVector.Length / size * Chunk.lodCount, 0, Chunk.lodCount);
+                            int lod = (int)Math.Clamp(differenceVector.Length() / size * Chunk.lodCount, 0, Chunk.lodCount);
                             verticlesRendered += chunk.Render(lod);
                         }
 
-                        if (allRendered)
-                            showDist = Math.Max(showDist, Math.Min(Math.Abs((x + .5f) - (int)(lodPoint.X / Chunk.Size)) * Chunk.Size, Math.Abs((z + .5f) - (int)(lodPoint.Z / Chunk.Size)) * Chunk.Size));
+                        //if (allRendered)
+                            //showDist = Math.Max(showDist, Math.Min(Math.Abs((x + .5f) - (int)(lodPoint.X / Chunk.Size)) * Chunk.Size, Math.Abs((z + .5f) - (int)(lodPoint.Z / Chunk.Size)) * Chunk.Size));
                     }
                 }
                 else
@@ -600,7 +547,7 @@ namespace _3dTerrainGeneration.world
                             {
                                 if (task.IsFaulted)
                                 {
-                                    System.Diagnostics.Debug.WriteLine(task.Exception);
+                                    Console.WriteLine(task.Exception);
                                     Window.message = "Error generating chunk!";
                                 }
                             });
@@ -613,24 +560,24 @@ namespace _3dTerrainGeneration.world
 
             //if (!gen)
             //{
-            player.Render(renderer, frameDelta);
+            player.Render(frameDelta);
             //}
             foreach (Dictionary<int, DrawableEntity> item in entities.Values)
             {
                 foreach (DrawableEntity entity in item.Values)
                 {
-                    entity.Render(renderer, frameDelta);
+                    entity.Render(frameDelta);
                 }
             }
 
-            renderer.Render(instancedShader);
+            gameRenderer.Draw(shader);
 
             return verticlesRendered;
         }
 
         private void generate(int x, int y, int z)
         {
-            Chunk ch = new Chunk(x, y, z, this);
+            Chunk ch = new Chunk(x, y, z);
 
             chunks[new Vector3(x, y, z)] = ch;
             lock (delayLock)
@@ -646,27 +593,17 @@ namespace _3dTerrainGeneration.world
 
         //}
 
-        private static bool inFov(Vector3 front, Vector3 d1, double fov)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool inFov(System.Numerics.Vector3 front, System.Numerics.Vector3 d1, double fr)
         {
-            double fr = Math.Cos(ToRadians(fov));
-
-            return  DotProduct(front, (d1 + new Vector3(0, 0, 0)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(0, 0, 1)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(0, 1, 0)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(0, 1, 1)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(1, 0, 0)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(1, 0, 1)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(1, 1, 0)).Normalized()) >= fr ||
-                    DotProduct(front, (d1 + new Vector3(1, 1, 1)).Normalized()) >= fr;
-        }
-        private static double DotProduct(Vector3 vec1, Vector3 vec2)
-        {
-            double tVal = 0;
-            tVal += vec1.X * vec2.X;
-            tVal += vec1.Y * vec2.Y;
-            tVal += vec1.Z * vec2.Z;
-
-            return tVal;
+            return  System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(0, 0, 0))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(0, 0, 1))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(0, 1, 0))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(0, 1, 1))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(1, 0, 0))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(1, 0, 1))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(1, 1, 0))) >= fr ||
+                    System.Numerics.Vector3.Dot(front, System.Numerics.Vector3.Normalize(d1 + new System.Numerics.Vector3(1, 1, 1))) >= fr;
         }
     }
 }

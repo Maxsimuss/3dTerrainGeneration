@@ -12,7 +12,7 @@ struct Light {
 
 uniform sampler2D depthTex; //depth
 uniform sampler2D normalTex; //normal
-uniform sampler2DShadow shadowMapTex;
+uniform sampler2D shadowMapTex;
 uniform float shadowRes;
 uniform float fogQuality;
 
@@ -54,7 +54,8 @@ void main() {
     for (int x = 0; x < fogQuality; x++) {
         vec3 _pos = viewPos * (1 - x/fogQuality) + position * (x/fogQuality);
 
-        fog += (texture(shadowMapTex, get(_pos).xyz) * sunStr * .9 + .1);
+        vec3 sh = get(_pos).xyz;
+        fog += ((texture(shadowMapTex, sh.xy).r <= sh.z ? 0 : 1) * .9 + .1);
     }
     
     FragColor = fog / fogQuality;

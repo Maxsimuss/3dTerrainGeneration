@@ -17,13 +17,16 @@ namespace _3dTerrainGeneration.entity
         private double AIUpdateTimer, AttackCooldownTimer;
         private DrawableEntity Target;
 
-        static AxisAlignedBB aabb;
-        static float scale;
-
-        public override float Scale => scale;
+        private static AxisAlignedBB aabb;
         public override AxisAlignedBB Box => aabb;
+        
+        private static float scale;
+        public override float Scale => scale;
 
-        public static ushort[][] mesh; 
+        private static ushort[][] mesh;
+        private static InderectDraw[] draws;
+        public override InderectDraw[] InderectDraws => draws;
+
         static BlueSlime()
         {
             Mesh data = MeshLoader.Load("blue-slime");
@@ -35,6 +38,15 @@ namespace _3dTerrainGeneration.entity
 
         public BlueSlime(World world, Vector3 position, int EntityId) : base(world, EntityType.BlueSlime, EntityId)
         {
+            if(draws == null)
+            {
+                draws = new InderectDraw[mesh.Length];
+                for (int i = 0; i < mesh.Length; i++)
+                {
+                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+                }
+            }
+
             x = position.X; y = position.Y; z = position.Z; 
         }
 

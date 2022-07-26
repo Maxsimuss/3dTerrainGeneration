@@ -5,7 +5,6 @@ in vec2 TexCoords;
 
 uniform sampler2D depthTex;
 uniform sampler2D normalTex;
-uniform sampler2D occlusionTex;
 uniform float time;
 
 uniform mat4 projection;
@@ -65,5 +64,6 @@ void main() {
     // } else {
     //     occlusion = ((1 - occlusion / 4.) + texture(occlusionTex, prev.xy).r * 3.) / 4.;
     // }
-        occlusion = (1 - occlusion / 8.);
+    occlusion = (1 - occlusion / 8.);
+    occlusion = 1;
 }

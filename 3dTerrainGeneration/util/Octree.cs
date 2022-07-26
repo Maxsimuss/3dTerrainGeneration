@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.util
 {
-    class Octree
+    public class Octree
     {
         private byte size, value = 0;
         private Octree[,,] nodes = null;
@@ -17,7 +17,7 @@ namespace _3dTerrainGeneration.util
             this.value = value;
         }
 
-        public bool CanMerge(byte value)
+        public bool Merge(byte value)
         {
             if(nodes == null)
             {
@@ -30,7 +30,7 @@ namespace _3dTerrainGeneration.util
                 {
                     for (int Z = 0; Z < 2; Z++)
                     {
-                        if(!nodes[X, Y, Z].CanMerge(value))
+                        if(!nodes[X, Y, Z].Merge(value))
                         {
                             return false;
                         }
@@ -44,15 +44,15 @@ namespace _3dTerrainGeneration.util
             return true;
         }
 
-        public void SetValue(byte x, byte y, byte z, byte value)
+        public void SetValue(int x, int y, int z, byte value)
         {
             if (this.value == value) return;
 
             if(size > 1)
             {
-                int _x = x * 2 / size;
-                int _y = y * 2 / size;
-                int _z = z * 2 / size;
+                int _x = x * 2 >= size ? 1 : 0;
+                int _y = y * 2 >= size ? 1 : 0;
+                int _z = z * 2 >= size ? 1 : 0;
 
                 if (nodes == null)
                 {
@@ -69,17 +69,9 @@ namespace _3dTerrainGeneration.util
                         }
                     }
 
-                    nodes[_x, _y, _z].SetValue(x, y, z, value);
                 }
-                else
-                {
-                    nodes[_x, _y, _z].SetValue(x, y, z, value);
-                    if(CanMerge(value))
-                    {
-                        this.value = value;
-                        nodes = null;
-                    }
-                }
+                nodes[_x, _y, _z].SetValue(x - _x * size / 2, y - _y * size / 2, z - _z * size / 2, value);
+                Merge(value);
             }
             else
             {
@@ -87,18 +79,18 @@ namespace _3dTerrainGeneration.util
             }
         }
 
-        public byte GetValue(byte x, byte y, byte z)
+        public byte GetValue(int x, int y, int z)
         {
             if(nodes == null)
             {
                 return value;
             }
 
-            int _x = x * 2 / size;
-            int _y = y * 2 / size;
-            int _z = z * 2 / size;
-            
-            return nodes[_x, _y, _z].GetValue(x, y, z);
+            int _x = x * 2 >= size ? 1 : 0;
+            int _y = y * 2 >= size ? 1 : 0;
+            int _z = z * 2 >= size ? 1 : 0;
+
+            return nodes[_x, _y, _z].GetValue(x - _x * size / 2, y - _y * size / 2, z - _z * size / 2);
         }
     }
 }

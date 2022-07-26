@@ -24,7 +24,7 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
 }
 
 float rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(dot(co + time, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 vec4 get(vec3 position, mat4 matrix, float normalOffset) {
@@ -69,17 +69,17 @@ void main() {
     vec3 ShadowCoord = get(position, matrix0, 500).xyz;
     if(ShadowCoord.x < 0.1 || ShadowCoord.y < 0.1 || ShadowCoord.z < 0.1 || ShadowCoord.x > .9 || ShadowCoord.y > .9 || ShadowCoord.z >= .9) {
         ShadowCoord = get(position, matrix1, 2000).xyz;
-        shadow = (texture(colortex4, ShadowCoord.xy).r - ShadowCoord.z + BIAS * 2) > 0 ? 1 : 0;
+        shadow = (texture(colortex4, ShadowCoord.xy).r - ShadowCoord.z + BIAS * 10) > 0 ? 1 : 0;
     } else {
         float blockerDistance = findAvgBlockerDistance(ShadowCoord);
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 16; i++) {
             vec2 offset = vec2(rand(TexCoords + vec2(i, 0)) * 2 - 1, rand(TexCoords + vec2(0, i)) * 2 - 1) * blockerDistance;
-            float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z + BIAS * (1 + length(offset) * 3400);
+            float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z + BIAS * (1 + length(offset) * 10000);
             shadow += dist > 0 ? 1 : 0;
         }
 
-        shadow /= 4;
+        shadow /= 16;
         // shadow = blockerDistance * 100;
     }
 

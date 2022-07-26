@@ -17,13 +17,16 @@ namespace _3dTerrainGeneration.entity
         private double AIUpdateTimer, AttackCooldownTimer;
         private Player Target;
 
-        static AxisAlignedBB aabb;
-        static float scale;
-
-        public override float Scale => scale;
+        private static AxisAlignedBB aabb;
         public override AxisAlignedBB Box => aabb;
 
-        public static ushort[][] mesh;
+        private static float scale;
+        public override float Scale => scale;
+
+        private static ushort[][] mesh;
+        private static InderectDraw[] draws;
+        public override InderectDraw[] InderectDraws => draws;
+
         static Demon()
         {
             Mesh data = MeshLoader.Load("demon");
@@ -35,6 +38,15 @@ namespace _3dTerrainGeneration.entity
 
         public Demon(World world, Vector3 position, int EntityId) : base(world, EntityType.Demon, EntityId)
         {
+            if (draws == null)
+            {
+                draws = new InderectDraw[mesh.Length];
+                for (int i = 0; i < mesh.Length; i++)
+                {
+                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+                }
+            }
+
             x = position.X; y = position.Y; z = position.Z; 
         }
 

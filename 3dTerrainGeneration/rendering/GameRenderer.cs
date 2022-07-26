@@ -11,9 +11,7 @@ namespace _3dTerrainGeneration.rendering
 {
     public class InderectDraw
     {
-        public int memStart, memEnd, first, count;
-        public Matrix4 matrix;
-        public bool draw;
+        public int memStart, memEnd, first, count, instanceCount;
     }
 
     struct DrawArraysIndirectCommand
@@ -21,14 +19,19 @@ namespace _3dTerrainGeneration.rendering
         public uint count, instanceCount, first, baseInstance;
     }
 
-    public class ChunkRenderer
+    public class GameRenderer
     {
-        private readonly int alloc = 1073741824, matrixCount = 4096;
+        private readonly int matrixCount = 4096;
 
-        private int VAO, MeshVBO, MatrixVBO, inderectBuffer, memoryTop;
+        private int VAO, MeshVBO, MatrixVBO, inderectBuffer;
         private List<InderectDraw> memory = new List<InderectDraw>();
-        
-        public ChunkRenderer()
+        private List<Matrix4> matrices = new List<Matrix4>();
+        private Queue<InderectDraw> queue = new Queue<InderectDraw>();
+
+        public int VramUsage = 0;
+        public readonly int VramAllocated = 1073741824 / 4;
+
+        public GameRenderer()
         {
             VAO = GL.GenVertexArray();
             MeshVBO = GL.GenBuffer();
@@ -37,7 +40,7 @@ namespace _3dTerrainGeneration.rendering
 
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MeshVBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, alloc, IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, VramAllocated, IntPtr.Zero, BufferUsageHint.StaticDraw);
 
             GL.EnableVertexAttribArray(0);
             GL.VertexAttribPointer(0, 4, VertexAttribPointerType.UnsignedShort, false, 4 * sizeof(ushort), 0);
@@ -60,7 +63,7 @@ namespace _3dTerrainGeneration.rendering
             GL.VertexAttribDivisor(4, 1);
         }
 
-        public InderectDraw SubmitMesh(ushort[] mesh, Matrix4 matrix, InderectDraw old)
+        public InderectDraw SubmitMesh(ushort[] mesh, InderectDraw old)
         {
             memory.Remove(old);
 
@@ -86,13 +89,10 @@ namespace _3dTerrainGeneration.rendering
             draw.memEnd = end + size;
             draw.first = end / 4 / sizeof(ushort);
             draw.count = size / 4 / sizeof(ushort);
-            draw.matrix = matrix;
-
-            memoryTop = Math.Max(memoryTop, draw.memEnd);
-            Window.message = string.Format("{0}mb / {1}mb", memoryTop / 1024 / 1024, alloc / 1024 / 1024);
 
             memory.Insert(index, draw);
-            GL.NamedBufferSubData(MeshVBO, (IntPtr)draw.memStart, size, mesh);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, MeshVBO);
+            GL.BufferSubData(BufferTarget.ArrayBuffer, (IntPtr)draw.memStart, size, mesh);
 
             return draw;
         }
@@ -102,30 +102,52 @@ namespace _3dTerrainGeneration.rendering
             memory.Remove(draw);
         }
 
+        public void QueueRender(InderectDraw draw, Matrix4 matrix)
+        {
+            if(draw.instanceCount == 0)
+            {
+                queue.Enqueue(draw);
+            }
+
+            draw.instanceCount++;
+            matrices.Add(matrix);
+        }
+
         public void Draw(FragmentShader shader)
         {
             GL.BindVertexArray(VAO);
             shader.Use();
 
-            Matrix4[] matrices = new Matrix4[memory.Count];
-            DrawArraysIndirectCommand[] inderect = new DrawArraysIndirectCommand[memory.Count];
+            DrawArraysIndirectCommand[] inderect = new DrawArraysIndirectCommand[queue.Count];
+
+            uint baseInst = 0;
             for (int i = 0; i < inderect.Length; i++)
             {
-                InderectDraw draw = memory[i];
+                InderectDraw draw = queue.Dequeue();
 
                 DrawArraysIndirectCommand cmd;
                 cmd.first = (uint)draw.first;
                 cmd.count = (uint)draw.count;
-                cmd.baseInstance = (uint)i;
-                cmd.instanceCount = (uint)(draw.draw ? 1 : 0);
-                draw.draw = false;
+                cmd.baseInstance = baseInst;
+                cmd.instanceCount = (uint)draw.instanceCount;
+
                 inderect[i] = cmd;
-                matrices[i] = draw.matrix;
+
+                baseInst += (uint)draw.instanceCount;
+                draw.instanceCount = 0;
             }
-            GL.NamedBufferData(MatrixVBO, 64 * matrices.Length, matrices, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, MatrixVBO);
+            GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrices.Count, matrices.ToArray(), BufferUsageHint.StaticDraw);
+            matrices.Clear();
 
             GL.BindBuffer(BufferTarget.DrawIndirectBuffer, inderectBuffer);
             GL.BufferData(BufferTarget.DrawIndirectBuffer, inderect.Length * sizeof(uint) * 4, inderect, BufferUsageHint.DynamicDraw);
+
+            if(memory.Count > 0)
+            {
+                InderectDraw d = memory[memory.Count - 1];
+                VramUsage = d.first * sizeof(ushort) * 4 + d.count * 4 * sizeof(ushort);
+            }
 
             GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
         }

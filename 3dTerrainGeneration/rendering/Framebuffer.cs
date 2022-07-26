@@ -8,7 +8,7 @@ namespace _3dTerrainGeneration.rendering
         public int FBO, Width, Height;
         public Texture[] colorTex;
 
-        public Framebuffer(int Width, int Height, params Texture[] textures)
+        public Framebuffer(int Width, int Height, DrawBuffersEnum[] drawBuffers, params Texture[] textures)
         {
             this.Width = Width;
             this.Height = Height;
@@ -16,16 +16,14 @@ namespace _3dTerrainGeneration.rendering
             FBO = GL.GenFramebuffer();
             Use();
 
-            DrawBuffersEnum[] drawBuffersEnums = new DrawBuffersEnum[textures.Length];
             colorTex = new Texture[textures.Length];
             for (int i = 0; i < textures.Length; i++)
             {
                 colorTex[i] = textures[i];
                 GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0 + i, TextureTarget.Texture2D, colorTex[i].Handle, 0);
-                drawBuffersEnums[i] = DrawBuffersEnum.ColorAttachment0 + i;
             }
 
-            GL.DrawBuffers(textures.Length, drawBuffersEnums);
+            GL.DrawBuffers(drawBuffers.Length, drawBuffers);
         }
 
         public void Use()

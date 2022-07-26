@@ -200,6 +200,12 @@
     <None Update="Resources\textures\button.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="shaders\dofweight.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="shaders\dofblur.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="shaders\luminance.comp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -215,6 +221,9 @@
     <None Update="shaders\post\taa.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="shaders\ssr.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="shaders\tonemapping.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -225,9 +234,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="shaders\empty.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="shaders\gbufferinstanced.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="shaders\gbuffer.frag">
@@ -272,9 +278,6 @@
     <None Update="shaders\shadow.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="shaders\shadowmapinstanced.vert">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="shaders\shadowmap.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -293,7 +296,6 @@
     <PackageReference Include="LibNoise" Version="0.2.0" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="6.0.0" />
     <PackageReference Include="MP3Sharp" Version="1.0.5" />
-    <PackageReference Include="NetOctree" Version="1.1.0" />
     <PackageReference Include="OpenAL-Soft" Version="1.16.0" />
     <PackageReference Include="OpenTK" Version="3.3.1" />
     <PackageReference Include="OpenTK.Input" Version="4.7.1" />

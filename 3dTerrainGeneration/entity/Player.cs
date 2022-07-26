@@ -14,12 +14,16 @@ namespace _3dTerrainGeneration.entity
 {
     public class Player : DrawableEntity
     {
+        private static AxisAlignedBB aabb;
         public override AxisAlignedBB Box => aabb;
-        public override float Scale => scale;
-        static float scale;
-        static AxisAlignedBB aabb;
 
-        public static ushort[][] mesh;
+        private static float scale;
+        public override float Scale => scale;
+
+        private static ushort[][] mesh;
+        private static InderectDraw[] draws;
+        public override InderectDraw[] InderectDraws => draws;
+
         static Player()
         {
             Mesh data = MeshLoader.Load("player");
@@ -31,6 +35,14 @@ namespace _3dTerrainGeneration.entity
 
         public Player(World world) : base(world, EntityType.Player) 
         {
+            if (draws == null)
+            {
+                draws = new InderectDraw[mesh.Length];
+                for (int i = 0; i < mesh.Length; i++)
+                {
+                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+                }
+            }
         }
 
         public void Update(KeyboardState input, double deltaYaw, double deltaPitch, bool LMB, bool RMB, double frameDelta)

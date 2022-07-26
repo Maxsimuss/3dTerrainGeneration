@@ -11,16 +11,16 @@ namespace _3dTerrainGeneration.rendering
     class FragmentPass
     {
 
-        public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, params Framebuffer[] sourceFramebuffers)
+        public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, params Texture[] sourceTextures)
         {
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, targetFramebuffer == null ? 0 : targetFramebuffer.FBO);
 
             shader.Use();
 
-            int i = 0;
-            foreach (Framebuffer framebuffer in sourceFramebuffers)
+            for (int i = 0; i < sourceTextures.Length; i++)
             {
-                i = framebuffer.UseTextures(i);
+                sourceTextures[i].Use(TextureUnit.Texture0 + i);
+
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
