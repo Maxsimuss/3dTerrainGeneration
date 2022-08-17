@@ -1,7 +1,7 @@
 ﻿using _3dTerrainGeneration.rendering;
-using OpenTK;
 using OpenTK.Graphics.OpenGL4;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -85,9 +85,9 @@ namespace _3dTerrainGeneration.gui
 
         public static void Flush(FragmentShader shader = null)
         {
-            sync = GL.FenceSync(SyncCondition.SyncGpuCommandsComplete, 0);
-            GL.ClientWaitSync(sync, ClientWaitSyncFlags.SyncFlushCommandsBit, 1000000);
-            GL.DeleteSync(sync);
+            //sync = GL.FenceSync(SyncCondition.SyncGpuCommandsComplete, 0);
+            //GL.ClientWaitSync(sync, ClientWaitSyncFlags.SyncFlushCommandsBit, 1000000);
+            //GL.DeleteSync(sync);
 
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);

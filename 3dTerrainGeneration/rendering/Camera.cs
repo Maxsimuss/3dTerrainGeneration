@@ -1,6 +1,6 @@
 using System;
 using _3dTerrainGeneration.world;
-using OpenTK;
+using System.Numerics;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -17,10 +17,10 @@ namespace _3dTerrainGeneration.rendering
         private float _pitch;
 
         // Rotation around the Y axis (radians)
-        private float _yaw = -MathHelper.PiOver2; // Without this you would be started rotated 90 degrees right
+        private float _yaw = -OpenTK.MathHelper.PiOver2; // Without this you would be started rotated 90 degrees right
 
         // The field of view of the camera (radians)
-        private float _fov = MathHelper.PiOver2;
+        private float _fov = OpenTK.MathHelper.PiOver2;
 
         public Camera(Vector3 position, float aspectRatio)
         {
@@ -33,15 +33,13 @@ namespace _3dTerrainGeneration.rendering
         public Vector3 Velocity;
 
         // This is simply the aspect ratio of the viewport, used for the projection matrix
-        public float AspectRatio { private get; set; }
+        public float AspectRatio { get; set; }
 
         public Vector3 Front
         {
             get
             {
-                Vector3 vec = new Vector3(_front.X, _front.Y / AspectRatio, _front.Z);
-                vec.Normalize();
-                return vec;
+                return Vector3.Normalize(new Vector3(_front.X, _front.Y / AspectRatio, _front.Z));
             }
         }
 
@@ -52,14 +50,14 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Pitch
         {
-            get => MathHelper.RadiansToDegrees(_pitch);
+            get => OpenTK.MathHelper.RadiansToDegrees(_pitch);
             set
             {
                 // We clamp the pitch value between -89 and 89 to prevent the camera from going upside down, and a bunch
                 // of weird "bugs" when you are using euler angles for rotation.
                 // If you want to read more about this you can try researching a topic called gimbal lock
-                var angle = MathHelper.Clamp(value, -89.999f, 89.999f);
-                _pitch = MathHelper.DegreesToRadians(angle);
+                var angle = OpenTK.MathHelper.Clamp(value, -89.999f, 89.999f);
+                _pitch = OpenTK.MathHelper.DegreesToRadians(angle);
                 UpdateVectors();
             }
         }
@@ -67,10 +65,10 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Yaw
         {
-            get => MathHelper.RadiansToDegrees(_yaw);
+            get => OpenTK.MathHelper.RadiansToDegrees(_yaw);
             set
             {
-                _yaw = MathHelper.DegreesToRadians(value);
+                _yaw = OpenTK.MathHelper.DegreesToRadians(value);
                 UpdateVectors();
             }
         }
@@ -80,24 +78,24 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Fov
         {
-            get => MathHelper.RadiansToDegrees(_fov);
+            get => OpenTK.MathHelper.RadiansToDegrees(_fov);
             set
             {
-                var angle = MathHelper.Clamp(value, 30f, 179f);
-                _fov = MathHelper.DegreesToRadians(angle);
+                var angle = OpenTK.MathHelper.Clamp(value, 30f, 179f);
+                _fov = OpenTK.MathHelper.DegreesToRadians(angle);
             }
         }
 
         // Get the view matrix using the amazing LookAt function described more in depth on the web tutorials
-        public Matrix4 GetViewMatrix()
+        public Matrix4x4 GetViewMatrix()
         {
-            return Matrix4.LookAt(Position, Position + _front, _up);
+            return Matrix4x4.CreateLookAt(Position, Position + _front, _up);
         }
 
         // Get the projection matrix using the same method we have used up until this point
-        public Matrix4 GetProjectionMatrix()
+        public Matrix4x4 GetProjectionMatrix()
         {
-            return Matrix4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .2f, 4096);
+            return Matrix4x4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .2f, 3072);
         }
 
         // This function is going to update the direction vertices using some of the math learned in the web tutorials

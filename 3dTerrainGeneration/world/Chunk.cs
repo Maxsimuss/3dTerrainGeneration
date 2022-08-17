@@ -1,11 +1,9 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Numerics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -21,7 +19,7 @@ namespace _3dTerrainGeneration.world
 
         public static int Size = GameSettings.CHUNK_SIZE;
 
-        public ushort[][] mesh;
+        public ushort[][][] mesh;
         public int[] lengths = new int[lodCount];
         public byte[] blocks = null;
         public object dataLock = new object();
@@ -34,8 +32,8 @@ namespace _3dTerrainGeneration.world
         public bool full = true;
         public List<byte> sounds;
         public List<byte> particles;
-        public InderectDraw mem;
-        private Matrix4 modelMatrix;
+        public InderectDraw[] drawCall = new InderectDraw[6];
+        private Matrix4x4 modelMatrix;
 
         public static float GetPerlin(float x, float z, float scale)
         {
@@ -110,13 +108,14 @@ namespace _3dTerrainGeneration.world
             this.Y = Y;
             this.Z = Z;
 
-            modelMatrix = Matrix4.CreateTranslation(X * Size, Y * Size, Z * Size);
+            modelMatrix = Matrix4x4.CreateTranslation(X * Size, Y * Size, Z * Size);
 
-            if (World.Load(this)) return;
+            //if (ChunkIO.Load(this)) return;
 
             sounds = new List<byte>();
             particles = new List<byte>();
 
+            goto newgen;
             for (int _x = 0; _x < Size; _x++)
             {
                 int x = _x + X * Size;
@@ -167,6 +166,42 @@ namespace _3dTerrainGeneration.world
                     }
                 }
             }
+            goto mesh;
+            newgen:
+            for (int x = 0; x < Size; x++)
+            {
+                int _x = x + X * Size;
+                for (int z = 0; z < Size; z++)
+                {
+                    int _z = z + Z * Size;
+                    for (int y = 0; y < Size; y++)
+                    {
+                        int _y = y + Y * Size;
+                        if(GetNoise(_x, _y, _z, .025f) < .25f)
+                        {
+                            if (GetNoise(_x, _y + 2, _z, .025f) >= .25f)
+                            {
+                                float temp = GetNoise(_x + 1000, _y, _z, .0125f);
+                                float humidity = GetNoise(_x + 4000, _y, _z, .0125f);
+
+                                SetBlock(_x, _y, _z, Materials.IdOf(
+                                        Color.HsvToRgb(
+                                            150 - (byte)((byte)(temp * 8) * 13),
+                                            166 + (byte)((byte)(humidity * 4) * 16),
+                                            220 - (byte)((byte)(humidity * 4) * 15)
+                                        )
+                                ));
+                            }
+                            else
+                            {
+                                SetBlock(_x, _y, _z, Materials.IdOf(0x877F6C));   
+                            }
+                        }
+                    }
+                }
+            }
+
+            mesh:
 
             //lock (world.structureLock)
             //{
@@ -181,7 +216,7 @@ namespace _3dTerrainGeneration.world
 
             Mesh();
 
-            World.Save(this);
+            //ChunkIO.Save(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -208,7 +243,7 @@ namespace _3dTerrainGeneration.world
                 full = false;
                 return;
             }
-            mesh = new ushort[lodCount][];
+            mesh = new ushort[lodCount][][];
 
             for (int i = 0; i < lodCount; i++)
             {
@@ -252,7 +287,7 @@ namespace _3dTerrainGeneration.world
             return !empty && GetValue(blocks, x, z, y) != 0;
         }
 
-        public int Render(int lod)
+        public int Render(int lod, bool ortho)
         {
             if (empty || full) return 0;
             
@@ -261,11 +296,52 @@ namespace _3dTerrainGeneration.world
             int cubeLenght = lengths[lod];
             if (lod != loadedLod)
             {
-                mem = World.gameRenderer.SubmitMesh(mesh[lod], mem);
+                for (int i = 0; i < 6; i++)
+                {
+                    drawCall[i] = World.gameRenderer.SubmitMesh(mesh[lod][i], drawCall[i]);
+                }
                 loadedLod = lod;
             }
 
-            World.gameRenderer.QueueRender(mem, modelMatrix);
+            if(ortho)
+            {
+                Vector3 dir = World.sunPos;
+                if(Vector3.Dot(dir, new Vector3(0, 0, 1)) < 0)
+                {
+                    World.gameRenderer.QueueRender(drawCall[5], modelMatrix);
+                }
+                else
+                {
+                    World.gameRenderer.QueueRender(drawCall[2], modelMatrix);
+                }
+
+                if (Vector3.Dot(dir, new Vector3(0, 1, 0)) < 0)
+                {
+                    World.gameRenderer.QueueRender(drawCall[4], modelMatrix);
+                }
+                else
+                {
+                    World.gameRenderer.QueueRender(drawCall[1], modelMatrix);
+                }
+
+                if (Vector3.Dot(dir, new Vector3(1, 0, 0)) < 0)
+                {
+                    World.gameRenderer.QueueRender(drawCall[3], modelMatrix);
+                }
+                else
+                {
+                    World.gameRenderer.QueueRender(drawCall[0], modelMatrix);
+                }
+            } 
+            else
+            {
+                World.gameRenderer.QueueRender(drawCall[0], modelMatrix);
+                World.gameRenderer.QueueRender(drawCall[1], modelMatrix);
+                World.gameRenderer.QueueRender(drawCall[2], modelMatrix);
+                World.gameRenderer.QueueRender(drawCall[3], modelMatrix);
+                World.gameRenderer.QueueRender(drawCall[4], modelMatrix);
+                World.gameRenderer.QueueRender(drawCall[5], modelMatrix);
+            }
 
             return cubeLenght;
         }

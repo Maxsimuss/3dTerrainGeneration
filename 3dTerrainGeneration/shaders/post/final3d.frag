@@ -48,7 +48,7 @@ float luminance(vec3 rgb) {
 }
 
 void main() {
-	vec3 color = texture(colortex0, TexCoords).rgb + texture(colortex1, TexCoords).rgb / 2.;
+	vec3 color = clamp(texture(colortex0, TexCoords).rgb, 0., 1.) + texture(colortex1, TexCoords).rgb / 2.;
 	// color = sqrt(color);
 	// color /= color + 1;
 	// color *= 1.5;

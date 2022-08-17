@@ -60,7 +60,7 @@ namespace _3dTerrainGeneration.rendering
                         util.Color.ToInt(color.R, color.G, color.B));
                 }
 
-                meshes.Add(meshData.Mesh(emission));
+                meshes.Add(meshData.MeshSingle(emission));
 
                 if(w == -1)
                 {

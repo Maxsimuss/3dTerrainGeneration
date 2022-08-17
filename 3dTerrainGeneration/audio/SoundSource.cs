@@ -1,7 +1,7 @@
 ﻿using _3dTerrainGeneration.world;
 using OpenAL;
-using OpenTK;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.audio
 {
-    public struct Buffer
+    public struct ALBuffer
     {
-        public Buffer(uint buffer, double length, int sampleRate)
+        public ALBuffer(uint buffer, double length, int sampleRate)
         {
             this.buffer = buffer;
             this.length = length;
@@ -29,14 +29,14 @@ namespace _3dTerrainGeneration.audio
     {
         public bool IsPlaying, Loop, Relative = false;
         public double TTL;
-        Buffer buffer;
+        ALBuffer buffer;
 
         public Vector3 position;
         public Vector3 velocity;
         private float pitch, volume;
         uint source;
 
-        public SoundSource(Buffer buffer, bool loop, float pitch, float volume)
+        public SoundSource(ALBuffer buffer, bool loop, float pitch, float volume)
         {
             Relative = true;
             this.buffer = buffer;
@@ -46,7 +46,7 @@ namespace _3dTerrainGeneration.audio
             TTL = buffer.length;
         }
 
-        public SoundSource(Vector3 position, Buffer buffer, bool loop, float pitch, float volume)
+        public SoundSource(Vector3 position, ALBuffer buffer, bool loop, float pitch, float volume)
         {
             this.position = position;
             this.buffer = buffer;
@@ -56,7 +56,7 @@ namespace _3dTerrainGeneration.audio
             TTL = buffer.length;
         }
 
-        public static Buffer GenBuffer(short[] data, int sampleFreq)
+        public static ALBuffer GenBuffer(short[] data, int sampleFreq)
         {
             byte[] byteData = new byte[data.Length * 2];
             for (int i = 0; i < data.Length; i++)
@@ -71,7 +71,7 @@ namespace _3dTerrainGeneration.audio
             AL10.alGenBuffers(1, out buffer);
             AL10.alBufferData(buffer, AL10.AL_FORMAT_MONO16, byteData, byteData.Length * sizeof(byte), sampleFreq);
 
-            return new Buffer(buffer, data.Length / (double)sampleFreq, sampleFreq);
+            return new ALBuffer(buffer, data.Length / (double)sampleFreq, sampleFreq);
         }
 
         public void Play()
@@ -129,9 +129,9 @@ namespace _3dTerrainGeneration.audio
             IsPlaying = false;
         }
 
-        public float DistanceTo(Vector3 pos)
+        public float DistanceToSq(Vector3 pos)
         {
-            return (position - pos).LengthSquared;
+            return (position - pos).LengthSquared();
         }
     }
 }

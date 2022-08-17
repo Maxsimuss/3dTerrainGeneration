@@ -19,7 +19,28 @@ namespace _3dTerrainGeneration.rendering
 
         public int Width, Height;
 
-        public ushort[] Mesh(byte emission, int scale = 1)
+        public ushort[] MeshSingle(byte emission, int scale = 1)
+        {
+            ushort[][] mesh = Mesh(emission, scale);
+
+            int len = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                len += mesh[i].Length;
+            }
+
+            ushort[] meshSingle = new ushort[len];
+            int index = 0;
+            for (int i = 0; i < 6; i++)
+            {
+                Array.Copy(mesh[i], 0, meshSingle, index, mesh[i].Length);
+                index += mesh[i].Length;
+            }
+
+            return meshSingle;
+        }
+
+        public ushort[][] Mesh(byte emission, int scale = 1)
         {
             if(blocks == null)
             {

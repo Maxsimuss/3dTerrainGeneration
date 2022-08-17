@@ -17,7 +17,7 @@ void main() {
     int lum = 0;
     for (int x = 0; x < 4; x++) {
         for (int y = 0; y < 4; y++) {
-            lum += int(luminance(imageLoad(image, pixel_coords + ivec2(x, y)).rgb) * 512.);
+            lum += int(luminance(imageLoad(image, pixel_coords + ivec2(x, y)).rgb) * 1024.);
         }
     }
     atomicMax(maxLuma, lum / 16);

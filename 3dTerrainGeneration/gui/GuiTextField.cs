@@ -1,8 +1,7 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.rendering;
-using OpenTK;
 using OpenTK.Input;
-using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

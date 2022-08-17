@@ -1,22 +1,21 @@
-﻿using OpenTK;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Numerics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.rendering
 {
-    struct Particle
-    {
-        public Vector3 position;
-        public float scale, rotationX, rotationY;
-        public float TTL;
-    }
-
     internal class ParticleEmmiter
     {
-        private static Matrix4 ParticleOffset = Matrix4.CreateTranslation(-.5f, -.5f, -.5f);
+        struct Particle
+        {
+            public Vector3 position;
+            public float scale, rotationX, rotationY;
+            public float TTL;
+        }
+
+        private static Matrix4x4 ParticleOffset = Matrix4x4.CreateTranslation(-.5f, -.5f, -.5f);
 
         private static int ParticleCount = 100;
         private ParticleRenderer renderer;
@@ -78,10 +77,10 @@ namespace _3dTerrainGeneration.rendering
                 particles[i] = particle;
 
                 renderer.Add(ParticleOffset
-                    * Matrix4.CreateScale(particle.scale * Scale)
-                    * Matrix4.CreateRotationX(particle.rotationX)
-                    * Matrix4.CreateRotationY(particle.rotationY)
-                    * Matrix4.CreateTranslation(particle.position));
+                    * Matrix4x4.CreateScale(particle.scale * Scale)
+                    * Matrix4x4.CreateRotationX(particle.rotationX)
+                    * Matrix4x4.CreateRotationY(particle.rotationY)
+                    * Matrix4x4.CreateTranslation(particle.position));
             }
         }
     }

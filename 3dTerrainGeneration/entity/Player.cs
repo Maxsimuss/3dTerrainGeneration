@@ -1,9 +1,9 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
-using OpenTK;
 using OpenTK.Input;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -53,8 +53,7 @@ namespace _3dTerrainGeneration.entity
 
             if (LMB)
             {
-                Vector3 m = new((float)Math.Cos(MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(MathHelper.DegreesToRadians(pitch)));
-                m.Normalize();
+                Vector3 m = Vector3.Normalize(new((float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(pitch))));
                 m *= 120;
                 Vector3 eye = GetEyePosition(frameDelta);
                 world.network.SpawnEntity(EntityType.FireBall, eye.X, eye.Y, eye.Z, m.X, m.Y, m.Z);
@@ -135,12 +134,12 @@ namespace _3dTerrainGeneration.entity
 
             if (isMoving)
             {
-                MoveFacing(offset, speed);
+                MoveFacing(offset, speed * (input.IsKeyDown(Key.ControlLeft) ? 10 : 1));
             }
 
             if (input.IsKeyDown(Key.Space))
             {
-                Jump(input.IsKeyDown(Key.ControlLeft));
+                Jump(false);
             }
 
             if (input.IsKeyDown(Key.LShift))
@@ -149,9 +148,9 @@ namespace _3dTerrainGeneration.entity
             }
         }
 
-        public override Matrix4 GetModelMatrix(double frameDelta)
+        public override Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(-yaw)) * Matrix4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationY((float)OpenTK.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public Vector3 GetEyePosition(double frameDelta)

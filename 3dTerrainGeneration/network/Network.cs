@@ -209,7 +209,7 @@ namespace _3dTerrainGeneration.network
                             case PacketType.SetTime:
                                 {
                                     SetTimePacket packet = (SetTimePacket)p;
-                                    world.time = packet.time;
+                                    world.Time = packet.time;
                                     break;
                                 }
                             case PacketType.ConfirmLogin:

@@ -1,7 +1,7 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using OpenTK;
+using System.Numerics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -70,15 +70,15 @@ namespace _3dTerrainGeneration.entity
                 }
 
                 List<DrawableEntity> players = world.GetEntities(EntityType.Player);
-                players.Sort((p1, p2) => { return (int)(((p1.GetPosition() - GetPosition()).LengthSquared - (p2.GetPosition() - GetPosition()).LengthSquared) * 2); });
+                players.Sort((p1, p2) => { return (int)(((p1.GetPosition() - GetPosition()).LengthSquared() - (p2.GetPosition() - GetPosition()).LengthSquared()) * 2); });
 
                 DrawableEntity p = players.First();
                 Vector3 d = p.GetPosition() - GetPosition();
-                if (d.Length < 10)
+                if (d.Length() < 10)
                 {
                     Target = p;
 
-                    yaw = MathHelper.RadiansToDegrees(-Math.Atan2(d.X, d.Z)) + 90;
+                    yaw = OpenTK.MathHelper.RadiansToDegrees(-Math.Atan2(d.X, d.Z)) + 90;
                 }
                 else
                 {

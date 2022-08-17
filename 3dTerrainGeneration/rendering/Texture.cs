@@ -62,6 +62,12 @@ namespace _3dTerrainGeneration.rendering
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareFunc, (int)DepthFunction.Lequal);
         }
 
+        public void Repeat()
+        {
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.Repeat);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.Repeat);
+        }
+
         public void Dispose()
         {
             GL.DeleteTexture(Handle);

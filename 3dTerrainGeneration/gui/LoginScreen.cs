@@ -1,9 +1,8 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
-using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System;
-using System.Collections.Generic;
+using System.Numerics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -62,7 +61,7 @@ namespace _3dTerrainGeneration.gui
         {
             camera.AspectRatio = renderer.aspectRatio;
             camera.Yaw = (float)(TimeUtil.Unix() / 360 % 360);
-            camera.Pitch = (float)MathHelper.RadiansToDegrees(Math.Sin(TimeUtil.Unix() / 36000 % Math.PI * 2)) / 2;
+            camera.Pitch = (float)OpenTK.MathHelper.RadiansToDegrees(Math.Sin(TimeUtil.Unix() / 36000 % Math.PI * 2)) / 2;
 
             double t = TimeUtil.Unix() / 100 / 1440 % 1;
 
@@ -72,17 +71,21 @@ namespace _3dTerrainGeneration.gui
 
             Vector3 sunPos = new Vector3((float)X, (float)Y, (float)Z);
 
+            Matrix4x4 projInv = camera.GetProjectionMatrix();
+            Matrix4x4 view = camera.GetViewMatrix();
+            Matrix4x4.Invert(projInv, out projInv);
+
             GL.Viewport(0, 0, window.SkyBuffer.Width, window.SkyBuffer.Height);
-            window.Sky.SetMatrix4("projection", camera.GetProjectionMatrix().Inverted());
-            window.Sky.SetMatrix4("viewMatrix", camera.GetViewMatrix());
+            window.Sky.SetMatrix4("projection", projInv);
+            window.Sky.SetMatrix4("viewMatrix", view);
             window.Sky.SetVector3("sun_dir", sunPos);
             window.Sky.SetFloat("time", (float)(TimeUtil.Unix() / 5000D % 3600));
             FragmentPass.BeginPostStage();
             FragmentPass.Apply(window.Sky, window.SkyBuffer);
 
             GL.Viewport(0, 0, window.StarBuffer.Width, window.StarBuffer.Height);
-            window.Stars.SetMatrix4("projection", camera.GetProjectionMatrix().Inverted());
-            window.Stars.SetMatrix4("viewMatrix", camera.GetViewMatrix());
+            window.Stars.SetMatrix4("projection", projInv);
+            window.Stars.SetMatrix4("viewMatrix", view);
             window.Stars.SetVector3("sun_dir", sunPos);
             window.Stars.SetFloat("time", (float)(TimeUtil.Unix() / 5000D % 3600));
             FragmentPass.Apply(window.Stars, window.StarBuffer);

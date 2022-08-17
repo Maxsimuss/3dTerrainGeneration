@@ -1,8 +1,8 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
-using OpenTK;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -54,8 +54,8 @@ namespace _3dTerrainGeneration.entity
             motionY = motion.Y;
             motionZ = motion.Z;
 
-            yaw = MathHelper.RadiansToDegrees(Math.Atan2(-motionX, motionZ));
-            pitch = MathHelper.RadiansToDegrees(Math.Atan2(motionY, Math.Sqrt(motionX * motionX + motionZ * motionZ)));
+            yaw = OpenTK.MathHelper.RadiansToDegrees(Math.Atan2(-motionX, motionZ));
+            pitch = OpenTK.MathHelper.RadiansToDegrees(Math.Atan2(motionY, Math.Sqrt(motionX * motionX + motionZ * motionZ)));
 
             source = Window.Instance.SoundManager.PlaySound(audio.SoundType.Fire, GetPosition(), true, rnd.NextSingle() * .2f + .9f, 5f);
         }
@@ -115,9 +115,9 @@ namespace _3dTerrainGeneration.entity
             }
         }
 
-        public override Matrix4 GetModelMatrix(double frameDelta)
+        public override Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation((float)-Box.width, (float)(-Box.height / 2), (float)-Box.width) * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(-pitch)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(-yaw)) * Matrix4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, (float)(-Box.height / 2), (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public override void Despawn()

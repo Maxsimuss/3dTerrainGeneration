@@ -1,8 +1,8 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
 using OpenAL;
-using OpenTK;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace _3dTerrainGeneration.audio
     public class SoundManager
     {
         private Random rnd = new Random();
-        private Dictionary<SoundType, List<Buffer>> buffers = new Dictionary<SoundType, List<Buffer>>();
+        private Dictionary<SoundType, List<ALBuffer>> buffers = new Dictionary<SoundType, List<ALBuffer>>();
 
         private IntPtr device, context;
         private int MaxSources;
@@ -46,7 +46,7 @@ namespace _3dTerrainGeneration.audio
 
             foreach (var item in Enum.GetValues<SoundType>())
             {
-                buffers.Add(item, new List<Buffer>());
+                buffers.Add(item, new List<ALBuffer>());
             }
 
             LoadFiles();
@@ -54,13 +54,16 @@ namespace _3dTerrainGeneration.audio
 
         private void LoadFiles()
         {
-            LoadFiles(SoundType.Forest, "forest.mp3");
-            LoadFiles(SoundType.Walk, "step-grass-0.mp3", "step-grass-1.mp3", "step-grass-2.mp3", "step-grass-3.mp3", "step-grass-4.mp3");
-            LoadFiles(SoundType.Fire, "fire.mp3");
-            LoadFiles(SoundType.Explosion, "explosion.mp3");
-            LoadFiles(SoundType.ClickHigh, "click/high-0.mp3", "click/high-1.mp3", "click/high-2.mp3", "click/high-3.mp3");
-            LoadFiles(SoundType.ClickLow, "click/low-0.mp3", "click/low-1.mp3", "click/low-2.mp3", "click/low-3.mp3");
-            LoadFiles(SoundType.ClickConfirm, "click/confirm-0.mp3", "click/confirm-1.mp3", "click/confirm-2.mp3", "click/confirm-3.mp3");
+            Task.Run(() =>
+            {
+                LoadFiles(SoundType.Forest, "forest.mp3");
+                LoadFiles(SoundType.Walk, "step-grass-0.mp3", "step-grass-1.mp3", "step-grass-2.mp3", "step-grass-3.mp3", "step-grass-4.mp3");
+                LoadFiles(SoundType.Fire, "fire.mp3");
+                LoadFiles(SoundType.Explosion, "explosion.mp3");
+                LoadFiles(SoundType.ClickHigh, "click/high-0.mp3", "click/high-1.mp3", "click/high-2.mp3", "click/high-3.mp3");
+                LoadFiles(SoundType.ClickLow, "click/low-0.mp3", "click/low-1.mp3", "click/low-2.mp3", "click/low-3.mp3");
+                LoadFiles(SoundType.ClickConfirm, "click/confirm-0.mp3", "click/confirm-1.mp3", "click/confirm-2.mp3", "click/confirm-3.mp3");
+            });
         }
 
         private void LoadFiles(SoundType type, params string[] files)
@@ -71,14 +74,16 @@ namespace _3dTerrainGeneration.audio
             }
         }
 
-        private Buffer GetBuffer(SoundType type)
+        private ALBuffer GetBuffer(SoundType type)
         {
-            List<Buffer> _buffers = buffers[type];
+            List<ALBuffer> _buffers = buffers[type];
+
+            if (_buffers.Count < 1) return new ALBuffer();
 
             return _buffers[rnd.Next(_buffers.Count)];
         }
 
-        private Buffer GenBufferFromFile(string file)
+        private ALBuffer GenBufferFromFile(string file)
         {
             MP3Sharp.MP3Stream stream = new MP3Sharp.MP3Stream(file);
 
@@ -149,7 +154,7 @@ namespace _3dTerrainGeneration.audio
                 });
 
             lock (sourceLock)
-                sources = sources.OrderBy(o => o.Relative ? 0 : o.DistanceTo(listenerPosition)).ToList();
+                sources = sources.OrderBy(o => o.Relative ? 0 : o.DistanceToSq(listenerPosition)).ToList();
 
             lock(sourceLock)
                 for (int i = sources.Count - 1; i >= 0; i--)

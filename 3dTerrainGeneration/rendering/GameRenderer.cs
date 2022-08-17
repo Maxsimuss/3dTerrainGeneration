@@ -1,7 +1,7 @@
 ﻿using _3dTerrainGeneration.world;
-using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,11 +25,11 @@ namespace _3dTerrainGeneration.rendering
 
         private int VAO, MeshVBO, MatrixVBO, inderectBuffer;
         private List<InderectDraw> memory = new List<InderectDraw>();
-        private List<Matrix4> matrices = new List<Matrix4>();
+        private List<Matrix4x4> matrices = new List<Matrix4x4>();
         private Queue<InderectDraw> queue = new Queue<InderectDraw>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1073741824 / 4;
+        public readonly int VramAllocated = 1073741824 / 2;
 
         public GameRenderer()
         {
@@ -102,7 +102,7 @@ namespace _3dTerrainGeneration.rendering
             memory.Remove(draw);
         }
 
-        public void QueueRender(InderectDraw draw, Matrix4 matrix)
+        public void QueueRender(InderectDraw draw, Matrix4x4 matrix)
         {
             if(draw.instanceCount == 0)
             {

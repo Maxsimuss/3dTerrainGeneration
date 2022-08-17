@@ -1,7 +1,7 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.world;
-using OpenTK;
 using System;
+using System.Numerics;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -44,7 +44,7 @@ namespace _3dTerrainGeneration.entity
             prevZ = z; 
             frameTime = fT;
 
-            if(true)
+            if(false)
             {
                 motionX *= .8;
                 motionY *= .8;

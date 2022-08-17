@@ -3,7 +3,7 @@ using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using OpenTK;
+using System.Numerics;
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
@@ -34,13 +34,13 @@ namespace _3dTerrainGeneration.entity
 
         protected virtual void UpdateAnimation(double fT)
         {
-            DistanceTraveled += (LastAnimationPosition - GetPosition()).Length;
+            DistanceTraveled += (LastAnimationPosition - GetPosition()).Length();
             LastAnimationPosition = GetPosition();
 
             if (DistanceTraveled > 2 && isOnGround)
             {
                 DistanceTraveled = DistanceTraveled % 2;
-                AnimationFrame = MathHelper.Clamp(1 - AnimationFrame, 0, 1);
+                AnimationFrame = OpenTK.MathHelper.Clamp(1 - AnimationFrame, 0, 1);
                 Window.Instance.SoundManager.PlaySound(SoundType.Walk, false, rnd.NextSingle() / 2 + .75f, .1f);
             }
             else
@@ -71,9 +71,9 @@ namespace _3dTerrainGeneration.entity
             return new((float)(x * frameDelta + prevX * (1 - frameDelta)), (float)(y * frameDelta + prevY * (1 - frameDelta)), (float)(z * frameDelta + prevZ * (1 - frameDelta)));
         }
 
-        public virtual Matrix4 GetModelMatrix(double frameDelta)
+        public virtual Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4.CreateScale(Scale) * Matrix4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4.CreateRotationX((float)MathHelper.DegreesToRadians(-pitch)) * Matrix4.CreateRotationY((float)MathHelper.DegreesToRadians(-yaw)) * Matrix4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public virtual void Render(double frameDelta)

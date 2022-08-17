@@ -13,7 +13,7 @@ uniform mat4 _projection;
 
 const float radius = 2.5;
 const float zNear = .2;
-const float zFar = 4096;
+const float zFar = 3072;
 
 float rand(vec2 co) {
     return fract(sin(dot(co + time, vec2(12.9898, 78.233))) * 43758.5453);
@@ -37,13 +37,13 @@ void main() {
     vec3 position = depthToView(TexCoords, depth, projection);
     vec3 normal = texture(normalTex, TexCoords).xyz * 2 - 1;
 
-    for(int i = 0; i < 8; ++i) {
-        vec3 randomVec = normalize(vec3(rand(TexCoords + i) * 2 - 1, rand(TexCoords + i + 1.) * 2 - 1, rand(TexCoords + i + 2) * 2 - 1));
+    for(int i = 0; i < 4; ++i) {
+        vec3 randomVec = normalize(vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1));
         vec3 tangent   = normalize(randomVec - normal.xyz * dot(randomVec, normal.xyz));
         vec3 bitangent = cross(normal.xyz, tangent);
         mat3 TBN       = mat3(tangent, bitangent, normal.xyz);  
         // get sample position
-        vec3 samplePos = TBN * normalize(vec3(rand(TexCoords + i - 1.), rand(TexCoords + 1 + i), rand(TexCoords + 2 + i))); // from tangent to view-space
+        vec3 samplePos = TBN * normalize(vec3(rand(TexCoords + i * 3 - 30), rand(TexCoords + i * 3 - 20), rand(TexCoords + i * 3 - 10))); // from tangent to view-space
         samplePos = position + radius * samplePos * rand(TexCoords + i / 32. + 3.); 
         
         // project sample position (to sample texture) (to get position on screen/texture)
@@ -53,17 +53,8 @@ void main() {
         
         float sampleDepth = linearize_depth(texture(depthTex, offset.xy).r);
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(linDepth - sampleDepth));
-        occlusion += (sampleDepth >= linearize_depth(offset.z) ? 0.0 : 1.0) * rangeCheck;  
+        occlusion += (sampleDepth >= linearize_depth(offset.z) ? 0.0 : 1.0) * rangeCheck;
     }
-    vec4 prev = vec4(position, 1.) * projectionPrev;
-    prev /= prev.w;
-    prev = prev * 0.5 + 0.5;
 
-    // if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1) {
-    //     occlusion = (1 - occlusion / 4.);
-    // } else {
-    //     occlusion = ((1 - occlusion / 4.) + texture(occlusionTex, prev.xy).r * 3.) / 4.;
-    // }
-    occlusion = (1 - occlusion / 8.);
-    occlusion = 1;
+    occlusion = (1 - occlusion / 4.);
 }

@@ -6,15 +6,11 @@ in vec2 TexCoords;
 
 uniform sampler2D depthTex; //pos
 uniform sampler2D normalTex; //normal   
-uniform sampler2D colortex4; //shadowmap
-uniform sampler2D colortex5; //shadowmap2
+uniform sampler2D shadowTex[3]; //shadowmap
+uniform mat4 matrices[3];
+uniform int cuts[3];
 
 uniform float time;
-uniform float shadowRes;
-uniform float shadowRadiusNear;
-uniform float shadowRadiusFar;
-uniform mat4 matrix0;
-uniform mat4 matrix1;
 uniform mat4 projection;
 
 vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
@@ -27,38 +23,15 @@ float rand(vec2 co){
     return fract(sin(dot(co + time, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-vec4 get(vec3 position, mat4 matrix, float normalOffset) {
-    vec4 ShadowCoord = vec4(position.xyz, 1.) * matrix;
-    ShadowCoord /= ShadowCoord.w;
-    ShadowCoord.xyz = ShadowCoord.xyz * .5 + .5;
-    return ShadowCoord;
-}
-
 const float zNear = .2;
-const float zFar = 4096;
+const float zFar = 3072;
 float linearize_depth(float d) {
     float z_n = 2.0 * d - 1.0;
     return 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
 }
 
-#define BIAS .000005
-
-float findAvgBlockerDistance(vec3 ShadowCoord) {
-    int blockers = 0;
-    float d = 0;
-    for (int i = 0; i < 8; i++) {
-        vec2 offset = vec2(rand(TexCoords + vec2(i, 0)) * 2 - 1, rand(TexCoords + vec2(0, i)) * 2 - 1) * .00125;
-        float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z;
-        if(dist + BIAS * (1 + length(offset) * 1000) < 0) {
-            d -= dist;
-            blockers++;
-        }
-    }
-    if(blockers < 1) {
-        return blockers;
-    } else {
-        return min(d / blockers, .00125);
-    }
+vec2 rand2(float i) {
+    return (vec2(rand(TexCoords + i * 2), rand(TexCoords + 1 + i * 2)) - .5) * 2.;
 }
 
 void main() {
@@ -66,22 +39,25 @@ void main() {
     vec3 position = depthToView(TexCoords, depth, projection);
 
     float shadow = 0;
-    vec3 ShadowCoord = get(position, matrix0, 500).xyz;
-    if(ShadowCoord.x < 0.1 || ShadowCoord.y < 0.1 || ShadowCoord.z < 0.1 || ShadowCoord.x > .9 || ShadowCoord.y > .9 || ShadowCoord.z >= .9) {
-        ShadowCoord = get(position, matrix1, 2000).xyz;
-        shadow = (texture(colortex4, ShadowCoord.xy).r - ShadowCoord.z + BIAS * 10) > 0 ? 1 : 0;
+    float BIAS;
+    int idx = 0;
+    if(linearize_depth(depth) / 1.7 > cuts[1]) {
+        idx = 2;
+        BIAS = .000075;
+    } else if(linearize_depth(depth) / 2 > cuts[0]) {
+        idx = 1;
+        BIAS = .00002;
     } else {
-        float blockerDistance = findAvgBlockerDistance(ShadowCoord);
-
-        for (int i = 0; i < 16; i++) {
-            vec2 offset = vec2(rand(TexCoords + vec2(i, 0)) * 2 - 1, rand(TexCoords + vec2(0, i)) * 2 - 1) * blockerDistance;
-            float dist = texture(colortex5, ShadowCoord.xy + offset).r - ShadowCoord.z + BIAS * (1 + length(offset) * 10000);
-            shadow += dist > 0 ? 1 : 0;
-        }
-
-        shadow /= 16;
-        // shadow = blockerDistance * 100;
+        idx = 0;
+        BIAS = .000002;
     }
+    
 
-    FragColor = vec4(shadow.rrr, 1.);
+    vec4 ShadowCoord = vec4(position.xyz, 1.) * matrices[idx];
+    ShadowCoord /= ShadowCoord.w;
+    ShadowCoord.xyz = ShadowCoord.xyz * .5 + .5;
+
+    shadow += (texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0;
+
+    FragColor = vec4(shadow, 0., 0., 1.);
 }

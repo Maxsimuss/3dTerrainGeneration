@@ -1,8 +1,7 @@
 ﻿using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using OpenTK;
 using OpenTK.Graphics.OpenGL;
-using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +13,7 @@ namespace _3dTerrainGeneration.rendering
     {
         private static int MaxParticles = 100000;
         int index;
-        Vector4[] transforms;
+        Matrix4x4[] transforms;
         int instanceVBO, cubeVBO, VAO;
 
         public ParticleRenderer()
@@ -27,7 +26,7 @@ namespace _3dTerrainGeneration.rendering
 
             MeshData meshData = new MeshData();
             meshData.SetBlock(0, 0, 0, Color.ToInt(86, 217, 50));
-            ushort[] mesh = meshData.Mesh(0);
+            ushort[] mesh = meshData.MeshSingle(0);
 
             GL.EnableVertexAttribArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, cubeVBO);
@@ -50,16 +49,13 @@ namespace _3dTerrainGeneration.rendering
             GL.VertexAttribDivisor(3, 1);
             GL.VertexAttribDivisor(4, 1);
 
-            transforms = new Vector4[MaxParticles * 4];
+            transforms = new Matrix4x4[MaxParticles];
         }
-        public void Add(Matrix4 matrix)
+        public void Add(Matrix4x4 matrix)
         {
             if (index >= MaxParticles) return;
 
-            transforms[index * 4] = matrix.Column0;
-            transforms[index * 4 + 1] = matrix.Column1;
-            transforms[index * 4 + 2] = matrix.Column2;
-            transforms[index * 4 + 3] = matrix.Column3;
+            transforms[index] = matrix;
             index++;
         }
 

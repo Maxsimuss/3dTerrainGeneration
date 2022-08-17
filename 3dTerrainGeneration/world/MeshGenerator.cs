@@ -5,163 +5,238 @@ using OpenTK.Graphics.ES20;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
+    struct Vector3I
+    {
+        public int X, Y, Z;
+
+        public Vector3I(int X, int Y, int Z)
+        {
+            this.X = X; this.Y = Y; this.Z = Z;
+        }
+
+        public static Vector3I operator+ (Vector3I left, Vector3I right)
+        {
+            return new Vector3I(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
+        }
+
+        public int this[int index] {
+            get
+            {
+                return index switch
+                {
+                    0 => X,
+                    1 => Y,
+                    2 => Z,
+                    _ => throw new IndexOutOfRangeException("You tried to access this vector at index: " + index),
+                };
+            }
+            set
+            {
+                switch (index)
+                {
+                    case 0:
+                        X = value;
+                        break;
+                    case 1:
+                        Y = value;
+                        break;
+                    case 2:
+                        Z = value;
+                        break;
+                    default:
+                        throw new IndexOutOfRangeException("You tried to set this vector at index: " + index);
+                }
+            }
+        }
+    }
+
     class MeshGenerator
     {
         public static Materials materials = new Materials();
 
-        public static void GreedyMesh(List<ushort> quads, byte[][][] blocks, int Size, short scale, List<uint> colors, byte emission, int yOffset = 0)
+        public static void GreedyMesh(List<ushort>[] quads, byte[][][] blocks, int Width, int Height, short scale, List<uint> colors, byte emission)
         {
-            // Sweep over each axis (X, Y and Z)
-            for (var d = 0; d < 3; ++d)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            byte GetBlock(Vector3I blockPosition)
             {
-                int i, j, k, l, w, h;
-                int u = (d + 1) % 3;
-                int v = (d + 2) % 3;
-                var x = new int[3];
-                var q = new int[3];
-
-                byte[] mask = new byte[Size * Size];
-                q[d] = 1;
-
-                // Check each slice of the chunk one at a time
-                for (x[d] = -1; x[d] < Size;)
+                if(blockPosition.X >= Width || blockPosition.Z >= Width || blockPosition.Y >= Height ||
+                    blockPosition.X < 0 || blockPosition.Z < 0 || blockPosition.Y < 0)
                 {
-                    // Compute the mask
-                    var n = 0;
-                    for (x[v] = 0; x[v] < Size; ++x[v])
+                    return 0;
+                }
+
+                return blocks[(int)blockPosition.X][(int)blockPosition.Z][(int)blockPosition.Y];
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            bool IsBlockFaceVisible(Vector3I blockPosition, int axis, bool backFace)
+            {
+                blockPosition[axis] += backFace ? -1 : 1;
+                return GetBlock(blockPosition) == 0;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            bool CompareStep(Vector3I a, Vector3I b, int direction, bool backFace)
+            {
+                byte blockA = GetBlock(a);
+                byte blockB = GetBlock(b);
+
+                return blockA == blockB && blockB != 0 && IsBlockFaceVisible(b, direction, backFace);
+            }
+
+            Vector3I Dimensions = new Vector3I(Width, Height, Width);
+            bool[,] merged;
+
+            Vector3I startPos, currPos, quadSize, m, n, offsetPos;
+            Vector3I[] vertices;
+
+            byte startBlock;
+            int direction, workAxis1, workAxis2;
+
+            // Iterate over each face of the blocks.
+            for (int face = 0; face < 6; face++)
+            {
+                bool isBackFace = face > 2;
+                direction = face % 3;
+                byte nx = (byte)(direction == 0 ? (isBackFace ? 0 : 14) : 7);
+                byte ny = (byte)(direction == 1 ? (isBackFace ? 0 : 14) : 7);
+                byte nz = (byte)(direction == 2 ? (isBackFace ? 0 : 14) : 7);
+
+                workAxis1 = (direction + 1) % 3;
+                workAxis2 = (direction + 2) % 3;
+
+                startPos = new Vector3I();
+                currPos = new Vector3I();
+
+                // Iterate over the chunk layer by layer.
+                for (startPos[direction] = 0; startPos[direction] < Dimensions[direction]; startPos[direction]++)
+                {
+                    merged = new bool[(int)Dimensions[workAxis1], (int)Dimensions[workAxis2]];
+
+                    // Build the slices of the mesh.
+                    for (startPos[workAxis1] = 0; startPos[workAxis1] < Dimensions[workAxis1]; startPos[workAxis1]++)
                     {
-                        for (x[u] = 0; x[u] < Size; ++x[u])
+                        for (startPos[workAxis2] = 0; startPos[workAxis2] < Dimensions[workAxis2]; startPos[workAxis2]++)
                         {
-                            // q determines the direction (X, Y or Z) that we are searching
-                            // m.IsBlockAt(x,y,z) takes global map positions and returns true if a block exists there
+                            startBlock = blocks[(int)startPos.X][(int)startPos.Z][(int)startPos.Y];
 
-                            byte blockCurrent = 0 <= x[d] ? blocks[x[0]][x[2]][x[1] + yOffset * Size] : (byte)0;
-                            byte blockCompare = x[d] < Size - 1 ? blocks[x[0] + q[0]][x[2] + q[2]][x[1] + q[1] + yOffset * Size] : (byte)0;
-
-                            // The mask is set to true if there is a visible face between two blocks,
-                            //   i.e. both aren't empty and both aren't blocks
-                            mask[n++] = blockCurrent != 0 && blockCompare != 0 && blockCurrent == blockCompare ? (byte)0 :
-                                blockCurrent == 0 ? blockCompare : blockCurrent;
-                        }
-                    }
-
-                    ++x[d];
-
-                    n = 0;
-
-                    // Generate a mesh from the mask using lexicographic ordering,      
-                    //   by looping over each block in this slice of the chunk
-                    for (j = 0; j < Size; ++j)
-                    {
-                        for (i = 0; i < Size;)
-                        {
-                            if (mask[n] != 0)
+                            // If this block has already been merged, is air, or not visible skip it.
+                            if (merged[(int)startPos[workAxis1], (int)startPos[workAxis2]] || startBlock == 0 || !IsBlockFaceVisible(startPos, direction, isBackFace))
                             {
-                                // Compute the width of this quad and store it in w                        
-                                //   This is done by searching along the current axis until mask[n + w] is false
-                                for (w = 1; i + w < Size && mask[n + w] != 0 && mask[n + w] == mask[n]; w++) { }
-
-                                // Compute the height of this quad and store it in h                        
-                                //   This is done by checking if every block next to this row (range 0 to w) is also part of the mask.
-                                //   For example, if w is 5 we currently have a quad of dimensions 1 x 5. To reduce triangle count,
-                                //   greedy meshing will attempt to expand this quad out to Chunk.Size x 5, but will stop if it reaches a hole in the mask
-
-                                var done = false;
-                                for (h = 1; j + h < Size; h++)
-                                {
-                                    // Check each block next to this quad
-                                    for (k = 0; k < w; ++k)
-                                    {
-                                        // If there's a hole in the mask, exit
-                                        if (mask[n + k + h * Size] == 0 || mask[n + k + h * Size] != mask[n])
-                                        {
-                                            done = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (done)
-                                        break;
-                                }
-
-                                x[u] = i;
-                                x[v] = j;
-
-                                // du and dv determine the size and orientation of this face
-                                var du = new int[3];
-                                du[u] = w;
-
-                                var dv = new int[3];
-                                dv[v] = h;
-
-                                Vector3 p0 = new Vector3(x[0], x[1] + yOffset * Size, x[2]);
-                                Vector3 p1 = new Vector3(x[0] + du[0], x[1] + du[1] + yOffset * Size, x[2] + du[2]);
-                                Vector3 p2 = new Vector3(x[0] + du[0] + dv[0], x[1] + du[1] + dv[1] + yOffset * Size, x[2] + du[2] + dv[2]);
-                                Vector3 p3 = new Vector3(x[0] + dv[0], x[1] + dv[1] + yOffset * Size, x[2] + dv[2]);
-
-                                Vector3 normal = Vector3.Cross(p1 - p0, p2 - p0).Normalized();
-
-                                byte nx = (byte)Math.Round(normal.X);
-                                byte ny = (byte)Math.Round(normal.Y);
-                                byte nz = (byte)Math.Round(normal.Z);
-
-                                uint color = colors[mask[n] - 1];
-                                byte r = (byte)(color >> 16 & 0xFF);
-                                byte g = (byte)(color >> 8 & 0xFF);
-                                byte b = (byte)(color & 0xFF);
-
-                                AddPoint(p0, r, g, b, nx, ny, nz);
-                                AddPoint(p1, r, g, b, nx, ny, nz);
-                                AddPoint(p2, r, g, b, nx, ny, nz);
-                                
-                                
-                                AddPoint(p0, r, g, b, nx, ny, nz);
-                                AddPoint(p2, r, g, b, nx, ny, nz);
-                                AddPoint(p3, r, g, b, nx, ny, nz);
-
-                                // Clear this part of the mask, so we don't add duplicate faces
-                                for (l = 0; l < h; ++l)
-                                    for (k = 0; k < w; ++k)
-                                        mask[n + k + l * Size] = 0;
-
-                                // Increment counters and continue
-                                i += w;
-                                n += w;
+                                continue;
                             }
+
+                            // Reset the work var
+                            quadSize = new Vector3I();
+
+                            // Figure out the width, then save it
+                            for (currPos = startPos, currPos[workAxis2]++; currPos[workAxis2] < Dimensions[workAxis2] && CompareStep(startPos, currPos, direction, isBackFace) && !merged[(int)currPos[workAxis1], (int)currPos[workAxis2]]; currPos[workAxis2]++) { }
+                            quadSize[workAxis2] = currPos[workAxis2] - startPos[workAxis2];
+
+                            // Figure out the height, then save it
+                            for (currPos = startPos, currPos[workAxis1]++; currPos[workAxis1] < Dimensions[workAxis1] && CompareStep(startPos, currPos, direction, isBackFace) && !merged[(int)currPos[workAxis1], (int)currPos[workAxis2]]; currPos[workAxis1]++)
+                            {
+                                for (currPos[workAxis2] = startPos[workAxis2]; currPos[workAxis2] < Dimensions[workAxis2] && CompareStep(startPos, currPos, direction, isBackFace) && !merged[(int)currPos[workAxis1], (int)currPos[workAxis2]]; currPos[workAxis2]++) { }
+
+                                // If we didn't reach the end then its not a good add.
+                                if (currPos[workAxis2] - startPos[workAxis2] < quadSize[workAxis2])
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    currPos[workAxis2] = startPos[workAxis2];
+                                }
+                            }
+                            quadSize[workAxis1] = currPos[workAxis1] - startPos[workAxis1];
+
+                            // Now we add the quad to the mesh
+                            m = new Vector3I();
+                            m[workAxis1] = quadSize[workAxis1];
+
+                            n = new Vector3I();
+                            n[workAxis2] = quadSize[workAxis2];
+
+                            // We need to add a slight offset when working with front faces.
+                            offsetPos = startPos;
+                            offsetPos[direction] += isBackFace ? 0 : 1;
+
+                            //Draw the face to the mesh
+                            vertices = new Vector3I[] {
+                                offsetPos,
+                                offsetPos + m,
+                                offsetPos + m + n,
+                                offsetPos + n
+                            };
+
+                            uint color = colors[startBlock - 1];
+                            byte cr = (byte)(color >> 16 & 0xFF);
+                            byte cg = (byte)(color >> 8 & 0xFF);
+                            byte cb = (byte)(color & 0xFF);
+
+                            List<ushort> quad = quads[face];
+                            if(!isBackFace)
+                            {
+                                AddPoint(quad, vertices[0], cr, cg, cb);
+                                AddPoint(quad, vertices[1], cr, cg, cb);
+                                AddPoint(quad, vertices[2], cr, cg, cb);
+
+
+                                AddPoint(quad, vertices[0], cr, cg, cb);
+                                AddPoint(quad, vertices[2], cr, cg, cb);
+                                AddPoint(quad, vertices[3], cr, cg, cb);
+                            } 
                             else
                             {
-                                i++;
-                                n++;
+                                AddPoint(quad, vertices[2], cr, cg, cb);
+                                AddPoint(quad, vertices[1], cr, cg, cb);
+                                AddPoint(quad, vertices[0], cr, cg, cb);
+
+
+                                AddPoint(quad, vertices[3], cr, cg, cb);
+                                AddPoint(quad, vertices[2], cr, cg, cb);
+                                AddPoint(quad, vertices[0], cr, cg, cb);
+                            }
+
+                            // Mark it merged
+                            for (int f = 0; f < quadSize[workAxis1]; f++)
+                            {
+                                for (int g = 0; g < quadSize[workAxis2]; g++)
+                                {
+                                    merged[(int)(startPos[workAxis1] + f), (int)(startPos[workAxis2] + g)] = true;
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            void AddPoint(Vector3 p, byte r, byte g, byte b, byte nx, byte ny, byte nz)
-            {
-                quads.Add((ushort)((ushort)p.X * scale | (ushort)p.Y << 8));
-                quads.Add((ushort)((ushort)p.Z * scale | r << 8));
-                quads.Add((ushort)(g | b << 8));
-                quads.Add((ushort)(emission | nx << 8 | ny << 9 | nz << 10));
+                void AddPoint(List<ushort> quad, Vector3I p, byte r, byte g, byte b)
+                {
+                    quad.Add((ushort)((ushort)p.X * scale | (ushort)p.Y << 8));
+                    quad.Add((ushort)((ushort)p.Z * scale | r << 8));
+                    quad.Add((ushort)(g | b << 8));
+                    quad.Add((ushort)(0 | nx << 4 | ny << 8 | nz << 12));
+                }
             }
         }
 
-        public static ushort[] GenerateMeshFromBlocks(MeshData meshData, int Width, int Height, byte emission, int scale = 1)
+        public static ushort[][] GenerateMeshFromBlocks(MeshData meshData, int Width, int Height, byte emission, int scale = 1)
         {
-            List<ushort> quads = new List<ushort>();
+            List<ushort>[] quads = new List<ushort>[6] { new(), new(), new(), new(), new(), new() };
 
-            for (int i = 0; i < Height / Width; i++)
+            GreedyMesh(quads, meshData.blocks, Width, Height, (short)scale, meshData.pallette, emission);
+
+            ushort[][] result = new ushort[6][];
+            for (int i = 0; i < 6; i++)
             {
-                GreedyMesh(quads, meshData.blocks, Width, (short)scale, meshData.pallette, emission, i);
+                result[i] = quads[i].ToArray();
             }
-     
-            return quads.ToArray();
+            return result;
         }
     }
 }

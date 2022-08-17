@@ -1,8 +1,7 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using OpenTK;
-using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

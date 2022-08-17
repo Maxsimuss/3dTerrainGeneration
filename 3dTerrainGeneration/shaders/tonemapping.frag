@@ -9,6 +9,6 @@ uniform float maxLuma;
 
 void main() {
     vec3 color = texture(colorTex, TexCoords).rgb / (maxLuma);
-    
+
     FragColor = color;
 }

@@ -1,7 +1,6 @@
-﻿using OpenTK;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -42,14 +41,14 @@ namespace _3dTerrainGeneration.rendering
                 foreach (var item in emmiters)
                 {
                     Vector3 diff = item.Position - camera.Position;
-                    if (diff.Length < 100)
+                    if (diff.Length() < 100)
                     {
-                        double fr = Math.Cos(1.65806);
+                        //double fr = Math.Cos(1.65806);
 
-                        if (Vector3.Dot(camera.Front, diff.Normalized()) >= fr)
-                        {
+                        //if (Vector3.Dot(camera.Front, diff.Normalized()) >= fr)
+                        //{
                             item.Update(dT);
-                        }
+                        //}
                     }
                 }
         }

@@ -1,10 +1,9 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using OpenTK;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Numerics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,7 +58,7 @@ namespace _3dTerrainGeneration.entity
 
         private float Angle(DrawableEntity e)
         {
-            float d = (float)(MathHelper.RadiansToDegrees(Math.Atan2(e.x - x, e.z - z)) - 90);
+            float d = (float)(OpenTK.MathHelper.RadiansToDegrees(Math.Atan2(e.x - x, e.z - z)) - 90);
             if (d < -180)
             {
                 d += 360;

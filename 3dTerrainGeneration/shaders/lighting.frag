@@ -37,7 +37,7 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
 }
 
 const float zNear = .2;
-const float zFar = 4096;
+const float zFar = 3072;
 float linearize_depth(float d)
 {
     float z_n = 2.0 * d - 1.0;
@@ -59,7 +59,7 @@ void main() {
     vec3 sunLight = max(dot(normal.rgb, sun.position), 0.0) * shadow * sun.color;
 
     // vec3 diffuse = ambient * skyLight * clamp(occlusion, 0., .5) / 2. * albedo.rgb + sunLight * albedo.rgb * sh * .8;
-    vec3 diffuse = (sunLight + sky * 5 * occlusion * 0) * albedo.rgb;
+    vec3 diffuse = (sunLight + sky * 5 * occlusion) * albedo.rgb;
 
     for (int i = 0; i < lightCount; i++) {
         vec3 lightDir = normalize(data[i].xyz - position);

@@ -10,7 +10,6 @@ namespace _3dTerrainGeneration.rendering
 {
     class FragmentPass
     {
-
         public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, params Texture[] sourceTextures)
         {
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, targetFramebuffer == null ? 0 : targetFramebuffer.FBO);
