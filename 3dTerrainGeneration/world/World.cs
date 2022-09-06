@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TerrainServer.network;
 using System.Threading;
+using System.Runtime.Intrinsics.X86;
 
 namespace _3dTerrainGeneration.world
 {
@@ -74,6 +75,8 @@ namespace _3dTerrainGeneration.world
             }
 
             order.Sort((a, b)=> { return (int)((a.Length() - b.Length()) * 1000); });
+
+            //order.Reverse();
             iterationOrder = order.ToArray();
         }
 
@@ -225,9 +228,9 @@ namespace _3dTerrainGeneration.world
 
         public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
-            Time += fT * 1000;
-            //Time += fT * 100000;
-            Time = 500000;
+            //Time += fT * 1000;
+            //Time += fT * 10000;
+            Time = 520000;
             double t = Time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);

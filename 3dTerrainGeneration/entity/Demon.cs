@@ -22,7 +22,7 @@ namespace _3dTerrainGeneration.entity
         private static float scale;
         public override float Scale => scale;
 
-        private static ushort[][] mesh;
+        private static uint[][] mesh;
         private static InderectDraw[] draws;
         public override InderectDraw[] InderectDraws => draws;
 

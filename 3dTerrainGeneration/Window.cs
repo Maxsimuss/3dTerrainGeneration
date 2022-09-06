@@ -1,4 +1,5 @@
-﻿#define RASTER
+﻿//#define RASTER
+#define RAYTRACE
 
 
 using System;
@@ -36,7 +37,7 @@ namespace _3dTerrainGeneration
             TonemappingShader, OcclusionShader, DOFWeightShader, DOFBlurShader, SSRShader, SharpenShader;
         private ComputeShader LuminanceCompute;
 
-        private DepthAttachedFramebuffer GBuffer;
+        private DepthAttachedFramebuffer GBuffer, GIBuffer;
         private DepthAttachedFramebuffer[] ShadowBuffers;
 
         private Framebuffer SourceBuffer0, SourceBuffer1, VolumetricBuffer, TempBuffer0, BloomBuffer0, BloomBuffer1, HUDBuffer, 
@@ -75,9 +76,14 @@ namespace _3dTerrainGeneration
 
             if(GBuffer != null) GBuffer.Dispose();
             GBuffer = new DepthAttachedFramebuffer(w, h, new[] {DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1},
-                new Texture(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
+                new Texture(w, h, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba));
+
+            if (GIBuffer != null) GIBuffer.Dispose();
+            GIBuffer = new DepthAttachedFramebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 },
+                new Texture(w / 4, h / 4, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent),
+                new Texture(w / 4, h / 4, PixelInternalFormat.Rgba16f, PixelFormat.Rgba));
 
 
             int sr = (int)(shadowRes * shadowResolutionScale);
@@ -144,7 +150,7 @@ namespace _3dTerrainGeneration
         private void InitShaders()
         {
 #if !RASTER
-            SIZE = 512;
+            SIZE = 256;
 
 
             GL.DeleteTexture(worldTexHandle);
@@ -152,60 +158,90 @@ namespace _3dTerrainGeneration
             worldData = new uint[SIZE * SIZE * SIZE];
             for (int x = 0; x < SIZE; x++)
             {
+                int _x = x;
                 for (int z = 0; z < SIZE; z++)
                 {
-                    int X = x * 2 + -200;
-                    int Z = z * 2 + 3100;
-
-                    float h = (float)Math.Pow(Chunk.OcataveNoise(X, Z, .0005f / 4, 8) * 1.2, 7) * Chunk.GetPerlin(X, Z, .0005f / 4) * 255 * 2;
-
-                    float humidity = Chunk.smoothstep(0, 1, Chunk.GetPerlin(X + 12312, Z - 124124, .00025f));
-
+                    int _z = z;
                     for (int y = 0; y < SIZE; y++)
                     {
-                        if (y < h)
+                        int _y = y;
+                        if (Chunk.GetNoise(_x, _y, _z, .025f) < .25f)
                         {
-                            worldData[(x * SIZE + y) * SIZE + z] = 0x77877F6C;
-                        }
-                        else if (y - 1 < h)
-                        {
-                            float temp = Chunk.smoothstep(0, 1, Chunk.GetPerlin(x, z, .00025f) - (y * 2 / 2512f));
-
-                            if (temp < .16)
+                            if (Chunk.GetNoise(_x, _y + 2, _z, .025f) >= .25f)
                             {
-                                worldData[(x * SIZE + y) * SIZE + z] = Color.ToInt(255, 255, 255) | 0x77000000;
+                                float temp = Chunk.GetNoise(_x + 1000, _y, _z, .0125f);
+                                float humidity = Chunk.GetNoise(_x + 4000, _y, _z, .0125f);
+
+                                worldData[(z * SIZE + y) * SIZE + x] = Color.HsvToRgb(
+                                         150 - temp * 8 * 13,
+                                         166 + humidity * 4 * 16,
+                                         220 - humidity * 4 * 15
+                                ) | 0x77000000;
                             }
                             else
                             {
-                                temp -= .16f;
-                                temp /= 1f - .16f;
-
-
-                                //if(temp > .85 && humidity < .3 && rnd.NextSingle() < .001)
-                                //{
-                                //    ImportedStructure str = new ImportedStructure("trees/cactus0/cactus0.vox", x, y + 1, z);
-                                //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
-                                //}
-
-                                worldData[(x * SIZE + y) * SIZE + z] = Color.HsvToRgb(
-                                        150 - temp * 8 * 13,
-                                        166 + humidity * 4 * 16,
-                                        220 - humidity * 4 * 15
-                                ) | 0x77000000;
+                                worldData[(z * SIZE + y) * SIZE + x] = 0x00877F6C | 0x77000000;
                             }
                         }
                     }
                 }
             }
+            //for (int x = 0; x < SIZE; x++)
+            //{
+            //    for (int z = 0; z < SIZE; z++)
+            //    {
+            //        int X = x * 2 + -200;
+            //        int Z = z * 2 + 3100;
+
+            //        float h = (float)Math.Pow(Chunk.OcataveNoise(X, Z, .0005f / 4, 8) * 1.2, 7) * Chunk.GetPerlin(X, Z, .0005f / 4) * 255 * 2;
+
+            //        float humidity = Chunk.smoothstep(0, 1, Chunk.GetPerlin(X + 12312, Z - 124124, .00025f));
+
+            //        for (int y = 0; y < SIZE; y++)
+            //        {
+            //            if (y < h)
+            //            {
+            //                worldData[(x * SIZE + y) * SIZE + z] = 0x77877F6C;
+            //            }
+            //            else if (y - 1 < h)
+            //            {
+            //                float temp = Chunk.smoothstep(0, 1, Chunk.GetPerlin(x, z, .00025f) - (y * 2 / 2512f));
+
+            //                if (temp < .16)
+            //                {
+            //                    worldData[(x * SIZE + y) * SIZE + z] = Color.ToInt(255, 255, 255) | 0x77000000;
+            //                }
+            //                else
+            //                {
+            //                    temp -= .16f;
+            //                    temp /= 1f - .16f;
+
+
+            //                    //if(temp > .85 && humidity < .3 && rnd.NextSingle() < .001)
+            //                    //{
+            //                    //    ImportedStructure str = new ImportedStructure("trees/cactus0/cactus0.vox", x, y + 1, z);
+            //                    //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
+            //                    //}
+
+            //                    worldData[(x * SIZE + y) * SIZE + z] = Color.HsvToRgb(
+            //                            150 - temp * 8 * 13,
+            //                            166 + humidity * 4 * 16,
+            //                            220 - humidity * 4 * 15
+            //                    ) | 0x77000000;
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             worldTexHandle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
             GL.TexImage3D(TextureTarget.Texture3D, 0, PixelInternalFormat.Rgba, SIZE, SIZE, SIZE, 0, PixelFormat.Rgba, PixelType.UnsignedByte, worldData);
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.MirroredRepeat);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapR, (int)TextureWrapMode.MirroredRepeat);
+            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToBorder);
 
 #endif
 
@@ -236,6 +272,7 @@ namespace _3dTerrainGeneration
             LightingShader.SetInt("starTex", 5);
             LightingShader.SetInt("fogTex", 6);
             LightingShader.SetInt("occlusionTex", 7);
+            LightingShader.SetInt("giTex", 8);
 
             OcclusionShader = new FragmentShader(path + "post.vert", path + "occlusion.frag");
             OcclusionShader.SetInt("depthTex", 0);
@@ -289,6 +326,8 @@ namespace _3dTerrainGeneration
             SSRShader = new FragmentShader(path + "post.vert", path + "ssr.frag");
             SSRShader.SetInt("data", 0);
             SSRShader.SetInt("noise", 1);
+            SSRShader.SetInt("depthTex", 2);
+            SSRShader.SetInt("normalTex", 3);
             SSRShader.SetInt("SIZE", SIZE);
 
             SharpenShader = new FragmentShader(path + "post.vert", path + "sharpen.frag");
@@ -333,6 +372,7 @@ namespace _3dTerrainGeneration
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Texture2D);
             GL.Enable(EnableCap.Blend);
+            GL.Disable(EnableCap.Multisample);
 
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
@@ -569,7 +609,20 @@ namespace _3dTerrainGeneration
 
             HandleInput(frameDelta);
 
-            //goto rayTrace;
+            Matrix4x4 viewMatrix = camera.GetViewMatrix();
+            //Matrix4x4.Invert(viewMatrix, out viewMatrix);
+            Matrix4x4 projMatrix = camera.GetProjectionMatrix();
+            //Matrix4x4.Invert(projMatrix, out projMatrix);
+            Matrix4x4 projInvMatrix;
+            Matrix4x4.Invert(projMatrix, out projInvMatrix);
+
+            Matrix4x4 viewProj = viewMatrix * projMatrix;
+            Matrix4x4 viewProjInv;
+            Matrix4x4.Invert(viewProj, out viewProjInv);
+
+
+            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .5f;
+
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
             FireBall[] fireBalls = world.entities[TerrainServer.network.EntityType.FireBall].Values.Cast<FireBall>().ToArray();
@@ -593,21 +646,9 @@ namespace _3dTerrainGeneration
 
             int chunksShadow = 0;
             // render shadowmap
-            Matrix4x4 viewMatrix = camera.GetViewMatrix();
-            //Matrix4x4.Invert(viewMatrix, out viewMatrix);
-            Matrix4x4 projMatrix = camera.GetProjectionMatrix();
-            //Matrix4x4.Invert(projMatrix, out projMatrix);
-            Matrix4x4 projInvMatrix;
-            Matrix4x4.Invert(projMatrix, out projInvMatrix);
-
-            Matrix4x4 viewProj = viewMatrix * projMatrix;
-            Matrix4x4 viewProjInv;
-            Matrix4x4.Invert(viewProj, out viewProjInv);
-
-
-            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .5f * 0;
             world.player.Visible = true;
             ShadowMapShader.SetVector2("taaOffset", taaJitter);
+            ShadowShader.SetVector2("taaOffset", taaJitter);
             ShadowMapShader.SetMatrix4("view", camera.GetViewMatrix());
             ShadowMapShader.SetMatrix4("projection", camera.GetProjectionMatrix());
             Matrix4x4[] matrices = new Matrix4x4[shadowCascades];
@@ -643,6 +684,8 @@ namespace _3dTerrainGeneration
             Vector3 sunColor = new Vector3(8.6f, 8f, 7f);
             sky = Color.Saturate(sky, 2.5f);
             LightingShader.SetVector3("skyLight", sky);
+            SSRShader.SetVector3("skyLight", sky);
+            SSRShader.SetVector3("sunLight", sunColor);
 
 
             //setting uniforms 700us
@@ -712,13 +755,10 @@ namespace _3dTerrainGeneration
             GL.Viewport(0, 0, VolumetricBuffer.Width, VolumetricBuffer.Height);
 
             VolumetricsShader.SetVector3("viewPos", camera.Position);
-            //TODO
-            //VolumetricsShader.SetMatrix4("matrixFar", matrixFar);
             VolumetricsShader.SetVector3("sun.color", sunColor);
             VolumetricsShader.SetVector3("sun.position", World.sunPos);
             VolumetricsShader.SetMatrix4("projection", viewProjInv);
             VolumetricsShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 86400d));
-            VolumetricsShader.SetFloat("shadowRes", (int)(shadowRes * shadowResolutionScale));
 
             profiler.Start("Volumetrics");
             FragmentPass.Apply(VolumetricsShader, VolumetricBuffer, GBuffer.depthTex0, GBuffer.colorTex[1]/*, ShadowBuffer0.depthTex0*/);
@@ -735,6 +775,26 @@ namespace _3dTerrainGeneration
             FragmentPass.Apply(OcclusionShader, OcclusionBuffer, GBuffer.depthTex0, GBuffer.colorTex[1], noiseTexture);
             profiler.End();
 
+            GL.Viewport(0, 0, GIBuffer.Width, GIBuffer.Height);
+
+            SSRShader.SetMatrix4("projection", viewProjInv);
+            SSRShader.SetMatrix4("_projection", viewProj);
+            SSRShader.SetVector3("position", camera.Position);
+            SSRShader.SetVector3("sunDir", World.sunPos);
+            SSRShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 1d));
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
+
+            GL.Enable(EnableCap.DepthTest);
+
+            GIBuffer.Use();
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            profiler.Start("RayTrace");
+            FragmentPass.Apply(SSRShader, GIBuffer, 1, GBuffer.depthTex0, GBuffer.depthTex0, GBuffer.colorTex[1]);
+            profiler.End();
+            GL.Disable(EnableCap.DepthTest);
+
             GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
 
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, FireBallSSBO);
@@ -747,7 +807,8 @@ namespace _3dTerrainGeneration
                 SkyBuffer.colorTex[0], 
                 StarBuffer.colorTex[0], 
                 VolumetricBuffer.colorTex[0], 
-                OcclusionBuffer.colorTex[0]
+                OcclusionBuffer.colorTex[0],
+                GIBuffer.colorTex[0]
             );
             profiler.End();
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
@@ -780,11 +841,15 @@ namespace _3dTerrainGeneration
 
             DOFBlurShader.SetFloat("aspectRatio", Width / (float)Height);
             GL.Viewport(0, 0, DOFWeightBuffer.Width, DOFWeightBuffer.Height);
+            profiler.Start("Dof Weight");
             FragmentPass.Apply(DOFWeightShader, DOFWeightBuffer, GBuffer.depthTex0);
+            profiler.End();
             GL.Viewport(0, 0, SourceBuffer1.Width, SourceBuffer1.Height);
+            profiler.Start("Dof Blur");
             FragmentPass.Apply(DOFBlurShader, SourceBuffer1, DOFWeightBuffer.colorTex[0], TempBuffer0.colorTex[0]);
             //FragmentPass.Apply(DOFBlurShader, SourceBuffer0, DOFWeightBuffer.colorTex[0], SourceBuffer1.colorTex[0]);
             //FragmentPass.Apply(DOFBlurShader, SourceBuffer1, DOFWeightBuffer.colorTex[0], SourceBuffer0.colorTex[0]);
+            profiler.End();
 
             GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, sizeof(int) * 1, luminanceData);
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
@@ -830,7 +895,9 @@ namespace _3dTerrainGeneration
             profiler.End();
 
             GL.Viewport(0, 0, TempBuffer0.Width, TempBuffer0.Height);
+            profiler.Start("Final3D");
             FragmentPass.Apply(Final3D, TempBuffer0, SourceBuffer0.colorTex[0], BloomBuffer0.colorTex[0]);
+            profiler.End();
             GL.Viewport(0, 0, Width, Height);
 
             HUDBuffer.Use();
@@ -877,44 +944,13 @@ namespace _3dTerrainGeneration
             //Motionblur.SetMatrix4("gbufferModelViewInverse", camera.GetViewMatrix().Inverted());
             //FragmentPass.Apply(Motionblur, TempBuffer0, SourceBuffer, GBuffer);
 
+            profiler.Start("Final2D");
             FragmentPass.Apply(Final2D, null, TempBuffer0.colorTex[0], HUDBuffer.colorTex[0]);
+            profiler.End();
             //FragmentPass.Apply(Final2D, null, ShadowBuffer0, ShadowBuffer0);
 
-            goto raster;
-
-        rayTrace:
-            GL.Disable(EnableCap.Blend);
-
-            GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
-
-            SSRShader.SetMatrix4("projection", viewProjInv);
-            SSRShader.SetMatrix4("_projection", viewProj);
-            SSRShader.SetVector3("position", camera.Position);
-            SSRShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 1d));
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
-
-            noiseTexture.Use(TextureUnit.Texture1);
-            noiseTexture.Repeat();
-            FragmentPass.BeginPostStage();
-            GL.Enable(EnableCap.DepthTest);
-
-            GBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            FragmentPass.Apply(SSRShader, GBuffer);
-            GL.Disable(EnableCap.DepthTest);
-            TAA.SetMatrix4("projection", viewProjInv);
-            TAA.SetMatrix4("projectionPrev", prevProj);
-
-            FragmentPass.Apply(TAA, pingPong ? TAABuffer0 : TAABuffer1, GBuffer.depthTex0, GBuffer.colorTex[0], (pingPong ? TAABuffer1 : TAABuffer0).colorTex[0]);
-
-            GL.Viewport(0, 0, Width, Height);
-            FragmentPass.Apply(Final2D, null, (pingPong ? TAABuffer0 : TAABuffer1).colorTex[0], HUDBuffer.colorTex[0]);
-
-        raster:
-
             prevProj = viewProj;
+            profiler.EndFrame();
             SwapBuffers();
 
             base.OnRenderFrame(e);

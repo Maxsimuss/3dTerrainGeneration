@@ -50,7 +50,7 @@ namespace _3dTerrainGeneration.rendering
                     }
                 }
             }
-            List<ushort> quad = new List<ushort>();
+            List<uint> quad = new List<uint>();
             for (byte x = 0; x < 128 - 1; x++)
             {
                 for (byte z = 0; z < 128 - 1; z++)

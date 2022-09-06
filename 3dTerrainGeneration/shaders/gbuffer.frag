@@ -9,5 +9,5 @@ in float Emission;
 void main()
 {
     FragColor[0] = vec4(Color, 1.);
-    FragColor[1] = vec4(Normal / 2 + .5, Emission);
+    FragColor[1] = vec4(Normal, Emission);
 }

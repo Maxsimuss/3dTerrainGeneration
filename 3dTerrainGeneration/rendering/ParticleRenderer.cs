@@ -26,7 +26,7 @@ namespace _3dTerrainGeneration.rendering
 
             MeshData meshData = new MeshData();
             meshData.SetBlock(0, 0, 0, Color.ToInt(86, 217, 50));
-            ushort[] mesh = meshData.MeshSingle(0);
+            uint[] mesh = meshData.MeshSingle(0);
 
             GL.EnableVertexAttribArray(0);
             GL.BindBuffer(BufferTarget.ArrayBuffer, cubeVBO);

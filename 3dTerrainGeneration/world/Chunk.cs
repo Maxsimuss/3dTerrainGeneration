@@ -19,7 +19,7 @@ namespace _3dTerrainGeneration.world
 
         public static int Size = GameSettings.CHUNK_SIZE;
 
-        public ushort[][][] mesh;
+        public uint[][][] mesh;
         public int[] lengths = new int[lodCount];
         public byte[] blocks = null;
         public object dataLock = new object();
@@ -110,7 +110,7 @@ namespace _3dTerrainGeneration.world
 
             modelMatrix = Matrix4x4.CreateTranslation(X * Size, Y * Size, Z * Size);
 
-            //if (ChunkIO.Load(this)) return;
+            if (ChunkIO.Load(this)) return;
 
             sounds = new List<byte>();
             particles = new List<byte>();
@@ -216,7 +216,7 @@ namespace _3dTerrainGeneration.world
 
             Mesh();
 
-            //ChunkIO.Save(this);
+            ChunkIO.Save(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -243,7 +243,7 @@ namespace _3dTerrainGeneration.world
                 full = false;
                 return;
             }
-            mesh = new ushort[lodCount][][];
+            mesh = new uint[lodCount][][];
 
             for (int i = 0; i < lodCount; i++)
             {

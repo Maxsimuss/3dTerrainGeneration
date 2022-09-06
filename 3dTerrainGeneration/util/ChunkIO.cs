@@ -13,7 +13,7 @@ namespace _3dTerrainGeneration.util
 {
     public class ChunkIO
     {
-        private static int version = 3;
+        private static int version = Random.Shared.Next();
 
 
         private static string GetChunkDir()
@@ -75,13 +75,13 @@ namespace _3dTerrainGeneration.util
                 }
 
 
-                ushort[][][] mesh = new ushort[Chunk.lodCount][][];
+                uint[][][] mesh = new uint[Chunk.lodCount][][];
                 for (int lod = 0; lod < Chunk.lodCount; lod++)
                 {
-                    mesh[lod] = new ushort[6][];
+                    mesh[lod] = new uint[6][];
                     for (int j = 0; j < 6; j++)
                     {
-                        mesh[lod][j] = stream.ReadUShortArray();
+                        mesh[lod][j] = stream.ReadUIntArray();
                     }
                 }
                 chunk.mesh = mesh;
@@ -142,7 +142,7 @@ namespace _3dTerrainGeneration.util
             data.AddRange(BitConverter.GetBytes(val));
         }
 
-        public void WriteArray(ushort[] val)
+        public void WriteArray(uint[] val)
         {
             WriteInt(val.Length);
 
@@ -181,9 +181,9 @@ namespace _3dTerrainGeneration.util
             return BitConverter.ToInt32(data, (offset += 4) - 4);
         }
 
-        public ushort ReadUShort()
+        public uint ReadUIntShort()
         {
-            return BitConverter.ToUInt16(data, (offset += 2) - 2);
+            return BitConverter.ToUInt32(data, (offset += 4) - 4);
         }
 
         public ushort ReadByte()
@@ -196,14 +196,14 @@ namespace _3dTerrainGeneration.util
             return data[offset++] == 1 ? true : false;
         }
 
-        public ushort[] ReadUShortArray()
+        public uint[] ReadUIntArray()
         {
             int length = ReadInt();
-            ushort[] dat = new ushort[length];
+            uint[] dat = new uint[length];
 
             for (int i = 0; i < length; i++)
             {
-                dat[i] = ReadUShort();
+                dat[i] = ReadUIntShort();
             }
 
             return dat;

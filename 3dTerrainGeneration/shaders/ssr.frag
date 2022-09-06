@@ -2,17 +2,26 @@
 
 layout (depth_any) out float gl_FragDepth;
 out vec4 FragColor;
-out vec4 Normal;
 
 in vec2 TexCoords;
 
 uniform vec3 position;
+uniform vec3 sunDir;
+uniform vec3 skyLight;
+uniform vec3 sunLight;
 uniform mat4 projection;
 uniform mat4 _projection;
 uniform sampler3D data;
 uniform sampler2D noise;
+uniform sampler2D depthTex;
+uniform sampler2D normalTex;
 uniform float time;
 uniform int SIZE;
+
+float rand(vec2 co) {
+    return fract(sin(dot((co + time) * 10, vec2(12.9898, 78.233))) * 43758.5453);
+    // return texture(noise, (co + time * 10) * 5.54298).r;
+}
 
 vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
     vec4 ndc = vec4(texCoord, depth, 1) * 2 - 1;
@@ -21,28 +30,22 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
 }
 
 
-float rand(vec2 co) {
-    // return fract(sin(dot((co + time) * 10, vec2(12.9898, 78.233))) * 43758.5453);
-    return texture(noise, (co + time * 10) * 5.54298).r;
-}
-
 struct hitResult {
     float hit;
     vec3 color;
     vec3 position;
     bvec3 mask;
 };
-vec3 sunColor = vec3(12, 6.4, 2) * 25;
-vec3 skyColor = vec3(.25, .7, 1.4) * 10;
 
 hitResult raycast(vec3 rayPos, vec3 rayDir, int steps) {
-    ivec3 mapPos = ivec3(floor(rayPos + 0.));
+    ivec3 mapPos = ivec3(rayPos);
 	vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
 	ivec3 rayStep = ivec3(sign(rayDir));
 	vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist; 
 	bvec3 mask;
 	for (int i = 0; i < steps; i++) {
-        vec4 voxel = texture(data, vec3(mapPos) / SIZE);
+        vec3 xd = vec3(mapPos.z, mapPos.y, mapPos.x);
+        vec4 voxel = texelFetch(data, mapPos, 0);
         int dist = int(voxel.w * 255);
 		if (dist == 0x77) {
             float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
@@ -53,52 +56,59 @@ hitResult raycast(vec3 rayPos, vec3 rayDir, int steps) {
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
         sideDist += vec3(mask) * deltaDist;
-        mapPos += ivec3(vec3(mask)) * rayStep;
+        mapPos += ivec3(mask) * rayStep;
+        mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
+        sideDist += vec3(mask) * deltaDist;
+        mapPos += ivec3(mask) * rayStep;
 	}
-    return hitResult(0, skyColor, rayPos, bvec3(0));
+    return hitResult(0, skyLight, rayPos, bvec3(0));
+}
+
+vec3 CosWeightedRandomHemisphereDirection( vec3 n, float rand1, float rand2 )
+{
+    float Xi1 = rand1;
+    float Xi2 = rand2;
+
+    float  theta = acos(sqrt(1.0-Xi1));
+    float  phi = 2.0 * 3.1415926535897932384626433832795 * Xi2;
+
+    float xs = sin(theta) * cos(phi);
+    float ys = cos(theta);
+    float zs = sin(theta) * sin(phi);
+
+    vec3 y = n;
+    vec3 h = y;
+    if (abs(h.x)<=abs(h.y) && abs(h.x)<=abs(h.z))
+        h.x= 1.0;
+    else if (abs(h.y)<=abs(h.x) &&abs(h.y)<=abs(h.z))
+        h.y= 1.0;
+    else
+        h.z= 1.0;
+
+    vec3 x = normalize(cross(h,y));
+    vec3 z = normalize(cross(x,y));
+
+    vec3 direction = xs * x + ys * y + zs * z;
+    return normalize(direction);
 }
 
 void main() {
-    vec3 rayDir = normalize(depthToView(TexCoords, 1., projection));
-    vec3 randDir = normalize(vec3(rand(TexCoords) * 2 - 1, rand(TexCoords + 1) * 2 - 1, rand(TexCoords + 2) * 2 - 1));
-    vec3 sunDir = normalize(normalize(vec3(.1, .5, 1)) * 151.92 * 1000000 + randDir * randDir * 69634);
+    vec3 _pos = depthToView(TexCoords, texture(depthTex, TexCoords).r, projection);
+    vec3 normal = texture(normalTex, TexCoords).xyz * 2 - 1;
 
-    hitResult primary = raycast(position, rayDir, 256); //primary hit
-    
-    float fuzz = 1;
+    vec3 gi = vec3(0);
+    for (int i = 0; i < 40; i++) {
+        float r = 1;
+        vec3 dir = CosWeightedRandomHemisphereDirection(normal, (rand(TexCoords + i * 3) * 2 - 1) * r, (rand(TexCoords + i * 3 + 1.) * 2 - 1) * r);
 
-    vec3 dir = normalize(rayDir + randDir * fuzz);
-    hitResult reflectionHit = primary;
-    float amt = 1;
-    vec3 reflectionColor = vec3(0);
-
-    int i = 0;
-    do {
-        amt /= 4;
-        dir = normalize(reflect(dir, vec3(reflectionHit.mask)) + randDir * fuzz);
-        
-        float sunAmt = 1 - raycast(reflectionHit.position + sunDir * .0001, sunDir, 64 / (i * i + 1)).hit * dot(vec3(reflectionHit.mask), sunDir);
-        reflectionHit = raycast(reflectionHit.position + dir * .0001, dir, 32 / (i * i + 1));
-
-        reflectionColor += reflectionHit.color * amt * (sunAmt * sunColor + skyColor);
-        if(reflectionHit.hit < .5) {
-            break;
+        hitResult hit = raycast(_pos + dir * 4, dir, 128);
+        if(hit.hit > .5) {
+            if(raycast(hit.position + sunDir * .1, sunDir, 128).hit < .5) {
+                gi += hit.color * sunLight * max(0, dot(dir, normal));
+            }
+        } else {
+            gi += skyLight / 2;
         }
-        i++;
-    } while(i < 3);
-    float sunAmt = 1 - raycast(primary.position + sunDir * .001, sunDir, 128).hit;
-
-    vec3 color = (primary.color * (sunAmt * dot(vec3(primary.mask), sunDir) * sunColor + skyColor) * .9
-     + reflectionColor * primary.hit * .1) / 10;
-
-    vec4 pos = vec4(primary.position, 1.) * _projection;
-    pos.xyz /= pos.w;
-
-    gl_FragDepth = pos.z / 2. + .5;
-    if(primary.hit < .5) {
-        gl_FragDepth = 1;
     }
-
-    FragColor = vec4(color / (color + 1), 1);
-    Normal = vec4(primary.mask, 1.);
+    FragColor = vec4(gi / 10, 1);
 }

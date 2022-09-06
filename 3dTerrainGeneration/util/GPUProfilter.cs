@@ -96,15 +96,20 @@ namespace _3dTerrainGeneration.util
             return 0;
         }
 
+        public void EndFrame()
+        {
+            frames.Enqueue(frame);
+        }
+
         public List<string> GetTimes()
         {
             List<string> times = new List<string>();
-            if (frame != null)
+            if(frames.Count < 1)
             {
-                frames.Enqueue(frame);
-                frame = null;
+                return times;
             }
             Frame _frame = frames.Peek();
+            double total = 0;
             bool invalid = false;
             for (int i = 0; i < _frame.startQueries.Count; i++)
             {
@@ -126,6 +131,7 @@ namespace _3dTerrainGeneration.util
                 double time = (end - start) / 1000000.0;
 
                 times.Add(_frame.queryNames[i] + ": " + time + "ms");
+                total += time;
             }
 
             if(!invalid)
@@ -138,6 +144,8 @@ namespace _3dTerrainGeneration.util
 
                 frames.Dequeue();
             }
+
+            times.Add("total: " + total + "ms");
 
             return times;
         }

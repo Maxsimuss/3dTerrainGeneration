@@ -27,7 +27,7 @@ namespace _3dTerrainGeneration.rendering
 
         public static Mesh Load(string name, byte emission = 0)
         {
-            List<ushort[]> meshes = new List<ushort[]>();
+            List<uint[]> meshes = new List<uint[]>();
 
             int w = -1;
             int h = -1;

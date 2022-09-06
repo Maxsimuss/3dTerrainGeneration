@@ -60,7 +60,7 @@ namespace _3dTerrainGeneration.world
     {
         public static Materials materials = new Materials();
 
-        public static void GreedyMesh(List<ushort>[] quads, byte[][][] blocks, int Width, int Height, short scale, List<uint> colors, byte emission)
+        public static void GreedyMesh(List<uint>[] quads, byte[][][] blocks, int Width, int Height, short scale, List<uint> colors, byte emission)
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             byte GetBlock(Vector3I blockPosition)
@@ -180,7 +180,7 @@ namespace _3dTerrainGeneration.world
                             byte cg = (byte)(color >> 8 & 0xFF);
                             byte cb = (byte)(color & 0xFF);
 
-                            List<ushort> quad = quads[face];
+                            List<uint> quad = quads[face];
                             if(!isBackFace)
                             {
                                 AddPoint(quad, vertices[0], cr, cg, cb);
@@ -215,23 +215,27 @@ namespace _3dTerrainGeneration.world
                         }
                     }
                 }
-                void AddPoint(List<ushort> quad, Vector3I p, byte r, byte g, byte b)
+                void AddPoint(List<uint> quad, Vector3I p, byte r, byte g, byte b)
                 {
-                    quad.Add((ushort)((ushort)p.X * scale | (ushort)p.Y << 8));
-                    quad.Add((ushort)((ushort)p.Z * scale | r << 8));
-                    quad.Add((ushort)(g | b << 8));
-                    quad.Add((ushort)(0 | nx << 4 | ny << 8 | nz << 12));
+                    uint val = (uint)((byte)(p.X * scale) << 25 | (byte)(p.Y) << 18 | (byte)(p.Z * scale) << 11 | ((byte)face) << 8 | 
+                        ((byte)(r / 32)) << 5 | ((byte)(g / 32)) << 2 | ((byte)(b / 64)));
+                    string str = Convert.ToString(val, 2).PadLeft(32, '0');
+
+                    quad.Add(val);
+                    //quad.Add((ushort)((ushort)p.Z * scale | r << 9));
+                    //quad.Add((ushort)(g | b << 8));
+                    //quad.Add((ushort)(0 | nx << 4 | ny << 8 | nz << 12));
                 }
             }
         }
 
-        public static ushort[][] GenerateMeshFromBlocks(MeshData meshData, int Width, int Height, byte emission, int scale = 1)
+        public static uint[][] GenerateMeshFromBlocks(MeshData meshData, int Width, int Height, byte emission, int scale = 1)
         {
-            List<ushort>[] quads = new List<ushort>[6] { new(), new(), new(), new(), new(), new() };
+            List<uint>[] quads = new List<uint>[6] { new(), new(), new(), new(), new(), new() };
 
             GreedyMesh(quads, meshData.blocks, Width, Height, (short)scale, meshData.pallette, emission);
 
-            ushort[][] result = new ushort[6][];
+            uint[][] result = new uint[6][];
             for (int i = 0; i < 6; i++)
             {
                 result[i] = quads[i].ToArray();

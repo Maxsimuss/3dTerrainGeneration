@@ -16,6 +16,7 @@ uniform sampler2D skyTex; //sky
 uniform sampler2D starTex; //stars
 uniform sampler2D fogTex; //fog
 uniform sampler2D occlusionTex; //fog
+uniform sampler2D giTex; //gi
 
 uniform vec3 skyLight;
 uniform vec3 viewPos;
@@ -59,7 +60,7 @@ void main() {
     vec3 sunLight = max(dot(normal.rgb, sun.position), 0.0) * shadow * sun.color;
 
     // vec3 diffuse = ambient * skyLight * clamp(occlusion, 0., .5) / 2. * albedo.rgb + sunLight * albedo.rgb * sh * .8;
-    vec3 diffuse = (sunLight + sky * 5 * occlusion) * albedo.rgb;
+    vec3 diffuse = (sunLight + (texture(giTex, TexCoords).rgb ) * occlusion) * albedo.rgb;
 
     for (int i = 0; i < lightCount; i++) {
         vec3 lightDir = normalize(data[i].xyz - position);

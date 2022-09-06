@@ -9,6 +9,7 @@ uniform sampler2D normalTex; //normal
 uniform sampler2D shadowTex[3]; //shadowmap
 uniform mat4 matrices[3];
 uniform int cuts[3];
+uniform vec2 taaOffset;
 
 uniform float time;
 uniform mat4 projection;
@@ -36,7 +37,7 @@ vec2 rand2(float i) {
 
 void main() {
     float depth = texture(depthTex, TexCoords).r;
-    vec3 position = depthToView(TexCoords, depth, projection);
+    vec3 position = depthToView(TexCoords - taaOffset * .5, depth, projection);
 
     float shadow = 0;
     float BIAS;

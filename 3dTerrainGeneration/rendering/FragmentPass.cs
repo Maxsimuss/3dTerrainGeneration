@@ -19,7 +19,19 @@ namespace _3dTerrainGeneration.rendering
             for (int i = 0; i < sourceTextures.Length; i++)
             {
                 sourceTextures[i].Use(TextureUnit.Texture0 + i);
+            }
 
+            GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+        }
+        public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, int offset, params Texture[] sourceTextures)
+        {
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, targetFramebuffer == null ? 0 : targetFramebuffer.FBO);
+
+            shader.Use();
+
+            for (int i = 0; i < sourceTextures.Length; i++)
+            {
+                sourceTextures[i].Use(TextureUnit.Texture0 + i + offset);
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);

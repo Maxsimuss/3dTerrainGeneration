@@ -22,6 +22,7 @@ namespace _3dTerrainGeneration.rendering
     public class GameRenderer
     {
         private readonly int matrixCount = 4096;
+        private readonly int vertexSize = 1;
 
         private int VAO, MeshVBO, MatrixVBO, inderectBuffer;
         private List<InderectDraw> memory = new List<InderectDraw>();
@@ -43,7 +44,7 @@ namespace _3dTerrainGeneration.rendering
             GL.BufferData(BufferTarget.ArrayBuffer, VramAllocated, IntPtr.Zero, BufferUsageHint.StaticDraw);
 
             GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 4, VertexAttribPointerType.UnsignedShort, false, 4 * sizeof(ushort), 0);
+            GL.VertexAttribIPointer(0, vertexSize, VertexAttribIntegerType.UnsignedInt, 0, IntPtr.Zero);
             GL.VertexAttribDivisor(0, 0);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, MatrixVBO);
@@ -63,13 +64,13 @@ namespace _3dTerrainGeneration.rendering
             GL.VertexAttribDivisor(4, 1);
         }
 
-        public InderectDraw SubmitMesh(ushort[] mesh, InderectDraw old)
+        public InderectDraw SubmitMesh(uint[] mesh, InderectDraw old)
         {
             memory.Remove(old);
 
             int end = 0;
             int index = memory.Count;
-            int size = mesh.Length * sizeof(ushort);
+            int size = mesh.Length * sizeof(uint);
             for (int i = 0; i < memory.Count; i++)
             {
                 if (memory[i].memStart - end >= size)
@@ -87,8 +88,8 @@ namespace _3dTerrainGeneration.rendering
 
             draw.memStart = end;
             draw.memEnd = end + size;
-            draw.first = end / 4 / sizeof(ushort);
-            draw.count = size / 4 / sizeof(ushort);
+            draw.first = end / vertexSize / sizeof(uint);
+            draw.count = size / vertexSize / sizeof(uint);
 
             memory.Insert(index, draw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MeshVBO);
@@ -146,7 +147,7 @@ namespace _3dTerrainGeneration.rendering
             if(memory.Count > 0)
             {
                 InderectDraw d = memory[memory.Count - 1];
-                VramUsage = d.first * sizeof(ushort) * 4 + d.count * 4 * sizeof(ushort);
+                VramUsage = d.first * sizeof(uint) * vertexSize + d.count * vertexSize * sizeof(uint);
             }
 
             GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);

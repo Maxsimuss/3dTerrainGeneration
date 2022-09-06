@@ -37,8 +37,8 @@ void main() {
     vec3 _min = curr;
     vec3 _max = curr;
     float mixAmt = .1;
-    for(int i = 0; i < 9; i++) {
-        vec3 _sample = texture(colorTex0, tc + offsets[i] * vec2(x, y)).rgb;
+    for(int i = 0; i < 27; i++) {
+        vec3 _sample = texture(colorTex0, tc + offsets[i % 9] * vec2(x, y) * (1 + i / 9)).rgb;
 
         _min = min(_min, _sample);
         _max = max(_max, _sample);

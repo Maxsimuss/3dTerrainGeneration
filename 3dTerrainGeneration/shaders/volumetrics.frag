@@ -1,8 +1,9 @@
 ﻿#version 430 core
+#pragma optionNV (unroll all)
+
 out float FragColor;
   
 in vec2 TexCoords;
-
 
 struct Light {
     vec3 position;
@@ -15,16 +16,13 @@ uniform sampler2D normalTex; //normal
 uniform sampler2D shadowTex[3];
 uniform mat4 matrices[3];
 uniform int cuts[3];
-uniform float shadowRes;
 
 #define fogQuality 20.
 
 uniform vec3 viewPos;
-uniform vec2 pixel;
 uniform float time;
 
 uniform mat4 projection;
-uniform mat4 matrixFar;
 uniform Light sun;
 
 float rand(vec2 co){
