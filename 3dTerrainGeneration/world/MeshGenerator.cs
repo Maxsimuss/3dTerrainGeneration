@@ -218,8 +218,7 @@ namespace _3dTerrainGeneration.world
                 void AddPoint(List<uint> quad, Vector3I p, byte r, byte g, byte b)
                 {
                     uint val = (uint)((byte)(p.X * scale) << 25 | (byte)(p.Y) << 18 | (byte)(p.Z * scale) << 11 | ((byte)face) << 8 | 
-                        ((byte)(r / 32)) << 5 | ((byte)(g / 32)) << 2 | ((byte)(b / 64)));
-                    string str = Convert.ToString(val, 2).PadLeft(32, '0');
+                        (((byte)(r / 36)) & (byte)7) << 5 | (((byte)(g / 36)) & (byte)7) << 2 | (((byte)(b / 85)) & 0x03));
 
                     quad.Add(val);
                     //quad.Add((ushort)((ushort)p.Z * scale | r << 9));
@@ -233,7 +232,7 @@ namespace _3dTerrainGeneration.world
         {
             List<uint>[] quads = new List<uint>[6] { new(), new(), new(), new(), new(), new() };
 
-            GreedyMesh(quads, meshData.blocks, Width, Height, (short)scale, meshData.pallette, emission);
+            GreedyMesh(quads, meshData.blocks, Width, Height, (short)scale, meshData.palette, emission);
 
             uint[][] result = new uint[6][];
             for (int i = 0; i < 6; i++)

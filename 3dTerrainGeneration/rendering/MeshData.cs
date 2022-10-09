@@ -11,7 +11,7 @@ namespace _3dTerrainGeneration.rendering
     class MeshData
     {
         Dictionary<Vector3, byte> data = new Dictionary<Vector3, byte>();
-        public List<uint> pallette = new List<uint>();
+        public List<uint> palette = new List<uint>();
         public byte[][][] blocks;
 
         protected int xMax, yMax, zMax;
@@ -111,11 +111,11 @@ namespace _3dTerrainGeneration.rendering
 
         public void SetBlockUnsafe(int x, int y, int z, uint type)
         {
-            if (!pallette.Contains(type))
+            if (!palette.Contains(type))
             {
-                pallette.Add(type);
+                palette.Add(type);
             }
-            int ind = pallette.IndexOf(type);
+            int ind = palette.IndexOf(type);
             blocks[x][z][y] = (byte)(ind + 1);
         }
 
@@ -129,11 +129,11 @@ namespace _3dTerrainGeneration.rendering
             yMin = Math.Min(yMin, y);
             zMin = Math.Min(zMin, z);
 
-            if (!pallette.Contains(type))
+            if (!palette.Contains(type))
             {
-                pallette.Add(type);
+                palette.Add(type);
             }
-            int ind = pallette.IndexOf(type);
+            int ind = palette.IndexOf(type);
             data[new Vector3(x, z, y)] = (byte)(ind + 1);
         }
     }

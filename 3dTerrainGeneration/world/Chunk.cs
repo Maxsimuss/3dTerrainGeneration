@@ -177,24 +177,15 @@ namespace _3dTerrainGeneration.world
                     for (int y = 0; y < Size; y++)
                     {
                         int _y = y + Y * Size;
-                        if(GetNoise(_x, _y, _z, .025f) < .25f)
+                        if (Chunk.GetNoise(_x, _y, _z, .05f) > .75f)
                         {
-                            if (GetNoise(_x, _y + 2, _z, .025f) >= .25f)
+                            if (Chunk.GetNoise(_x, _y + 2, _z, .05f) > .75f)
                             {
-                                float temp = GetNoise(_x + 1000, _y, _z, .0125f);
-                                float humidity = GetNoise(_x + 4000, _y, _z, .0125f);
-
-                                SetBlock(_x, _y, _z, Materials.IdOf(
-                                        Color.HsvToRgb(
-                                            150 - (byte)((byte)(temp * 8) * 13),
-                                            166 + (byte)((byte)(humidity * 4) * 16),
-                                            220 - (byte)((byte)(humidity * 4) * 15)
-                                        )
-                                ));
+                                SetBlock(_x, _y, _z, Materials.IdOf(128, 128, 128));
                             }
                             else
                             {
-                                SetBlock(_x, _y, _z, Materials.IdOf(0x877F6C));   
+                                SetBlock(_x, _y, _z, Materials.IdOf((byte)_x, (byte)_y, (byte)_z));
                             }
                         }
                     }
@@ -262,7 +253,7 @@ namespace _3dTerrainGeneration.world
                             byte bl = GetValue(blocks, x * lod, z * lod, y);
                             if (bl != 0)
                             {
-                                data.SetBlockUnsafe(x, y, z, Materials.pallette[bl - 1]);
+                                data.SetBlockUnsafe(x, y, z, Materials.Palette[bl - 1]);
                             }
                             else
                             {

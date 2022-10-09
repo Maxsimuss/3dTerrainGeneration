@@ -36,11 +36,11 @@ namespace _3dTerrainGeneration.world
             yMin = Math.Min(yMin, y);
             zMin = Math.Min(zMin, z);
 
-            if (!Materials.pallette.Contains(color))
+            if (!Materials.Palette.Contains(color))
             {
-                Materials.pallette.Add(color);
+                Materials.Palette.Add(color);
             }
-            data[new Vector3(x, y, z)] = (byte)(Materials.pallette.IndexOf(color) + 1);
+            data[new Vector3(x, y, z)] = (byte)(Materials.Palette.IndexOf(color) + 1);
             blocks++;
         }
 

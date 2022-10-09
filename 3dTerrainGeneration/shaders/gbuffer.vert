@@ -27,7 +27,7 @@ void main()
     vec3 pos = vec3(aData >> 25 & (0x0000007F), aData >> 18 & (0x0000007F), aData >> 11 & (0x0000007F));
 
     uint face = aData >> 8 & 0x00000007;
-    Color = vec3(((aData >> 5) & uint(7)) * 32, ((aData >> 2) & uint(7)) * 32, (aData & uint(3)) * 64) / 255.;
+    Color = (vec3(((aData >> 5) & uint(7)) * 36, ((aData >> 2) & uint(7)) * 36, (aData & uint(3)) * 85) + 10) / 265.;
     Normal = normalize(NORMALS[face] * normalMatrix) / 2 + .5;
     Emission = 0;
 

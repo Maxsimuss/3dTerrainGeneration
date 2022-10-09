@@ -50,9 +50,9 @@ namespace _3dTerrainGeneration.entity
                 motionY *= .8;
                 motionZ *= .8;
 
-                x += motionX / 10;
-                y += motionY * 2;
-                z += motionZ / 10;
+                x += motionX / 30;
+                y += motionY / 1.5;
+                z += motionZ / 30;
             }
             else
             {

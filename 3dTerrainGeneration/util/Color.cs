@@ -11,7 +11,7 @@ namespace _3dTerrainGeneration.util
     {
         public static uint ToInt(byte r, byte g, byte b)
         {
-            return (uint)((r << 16) | (g << 8) | (b));
+            return (uint)(((r / 36 * 36) << 16) | ((g / 36 * 36) << 8) | (b / 85 * 85));
         }
 
         public static Vector3 Saturate(Vector3 rgb, float saturation)

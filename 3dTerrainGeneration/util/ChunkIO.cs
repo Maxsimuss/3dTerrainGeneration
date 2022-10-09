@@ -28,6 +28,8 @@ namespace _3dTerrainGeneration.util
 
         public static void Save(Chunk chunk)
         {
+            return;
+
             Directory.CreateDirectory(GetChunkDir());
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
             WriteStream stream = new WriteStream();
@@ -55,6 +57,7 @@ namespace _3dTerrainGeneration.util
 
         public static bool Load(Chunk chunk)
         {
+            return false;
             ReadStream stream = new ReadStream();
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
 

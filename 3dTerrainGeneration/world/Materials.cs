@@ -10,7 +10,7 @@ namespace _3dTerrainGeneration.world
 {
     public class Materials
     {
-        public static List<uint> pallette = new List<uint>();
+        public static List<uint> Palette = new List<uint>();
 
         public static void Init()
         {
@@ -21,22 +21,30 @@ namespace _3dTerrainGeneration.world
         {
             uint i = Color.ToInt(r, g, b);
 
-            if(!pallette.Contains(i))
+            if (!Palette.Contains(i))
             {
-                pallette.Add(i);
+                if (Palette.Count > 256)
+                {
+                    throw new ArgumentOutOfRangeException("Palette Size");
+                }
+                Palette.Add(i);
             }
 
-            return (byte)(pallette.IndexOf(i) + 1);
+            return (byte)(Palette.IndexOf(i) + 1);
         }
 
         public static byte IdOf(uint i)
         {
-            if (!pallette.Contains(i))
+            if (!Palette.Contains(i))
             {
-                pallette.Add(i);
+                if(Palette.Count > 256)
+                {
+                    throw new ArgumentOutOfRangeException("Palette Size");
+                }
+                Palette.Add(i);
             }
 
-            return (byte)(pallette.IndexOf(i) + 1);
+            return (byte)(Palette.IndexOf(i) + 1);
         }
     }
 }

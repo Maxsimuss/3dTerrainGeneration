@@ -17,11 +17,14 @@ uniform sampler2D starTex; //stars
 uniform sampler2D fogTex; //fog
 uniform sampler2D occlusionTex; //fog
 uniform sampler2D giTex; //gi
+uniform sampler2D giNTex; //gi
 
 uniform vec3 skyLight;
 uniform vec3 viewPos;
 uniform float renderDistance;
 uniform int lightCount;
+uniform int giW;
+uniform int giH;
 
 uniform mat4 projection;
 
@@ -60,7 +63,23 @@ void main() {
     vec3 sunLight = max(dot(normal.rgb, sun.position), 0.0) * shadow * sun.color;
 
     // vec3 diffuse = ambient * skyLight * clamp(occlusion, 0., .5) / 2. * albedo.rgb + sunLight * albedo.rgb * sh * .8;
-    vec3 diffuse = (sunLight + (texture(giTex, TexCoords).rgb ) * occlusion) * albedo.rgb;
+    vec3 gi = vec3(0);
+    float s = 1000;
+    vec3 nr = texture(normalTex, TexCoords).rgb;
+    vec2 giR = vec2(giW - 1, giH - 1);
+    for(int x = -3; x <= 3; x++) {
+        for(int y = -3; y <= 3; y++) {
+            vec2 offset = vec2(float(x) / giW, float(y) / giH);
+            vec4 xd = texture(giNTex, TexCoords + offset);
+            float l = length(xd.rgb - position);
+            if(l < s && abs(xd.a - ((normal.x + 1) + (normal.y + 1) * 3 + (normal.z + 1) * 9)) < .001) {
+                gi = texture(giTex, TexCoords + offset).rgb;
+                s = l;
+            }
+        }
+    }
+
+    vec3 diffuse = (sunLight + gi * occlusion) * albedo.rgb;
 
     for (int i = 0; i < lightCount; i++) {
         vec3 lightDir = normalize(data[i].xyz - position);

@@ -22,6 +22,8 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using LibNoise.Model;
 using System.Data.SqlTypes;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics;
 
 namespace _3dTerrainGeneration
 {
@@ -37,11 +39,11 @@ namespace _3dTerrainGeneration
             TonemappingShader, OcclusionShader, DOFWeightShader, DOFBlurShader, SSRShader, SharpenShader;
         private ComputeShader LuminanceCompute;
 
-        private DepthAttachedFramebuffer GBuffer, GIBuffer;
+        private DepthAttachedFramebuffer GBuffer;
         private DepthAttachedFramebuffer[] ShadowBuffers;
 
         private Framebuffer SourceBuffer0, SourceBuffer1, VolumetricBuffer, TempBuffer0, BloomBuffer0, BloomBuffer1, HUDBuffer, 
-            OcclusionBuffer, TAABuffer0, TAABuffer1, DOFWeightBuffer;
+            OcclusionBuffer, TAABuffer0, TAABuffer1, DOFWeightBuffer, GIBuffer0, GIBuffer1;
         public Framebuffer SkyBuffer, StarBuffer;
 
         int FireBallSSBO, LuminanceSSBO, worldTexHandle;
@@ -80,10 +82,19 @@ namespace _3dTerrainGeneration
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba));
 
-            if (GIBuffer != null) GIBuffer.Dispose();
-            GIBuffer = new DepthAttachedFramebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 },
-                new Texture(w / 4, h / 4, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent),
-                new Texture(w / 4, h / 4, PixelInternalFormat.Rgba16f, PixelFormat.Rgba));
+            int giR = 16;
+
+            if (GIBuffer0 != null) GIBuffer0.Dispose();
+            GIBuffer0 = new Framebuffer(w / giR, h / giR, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba16f, PixelFormat.Rgba, filtered: true),
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba16f, PixelFormat.Rgba, filtered: false),
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba32f, PixelFormat.Rgba, filtered: false));
+
+            if (GIBuffer1 != null) GIBuffer1.Dispose();
+            GIBuffer1 = new Framebuffer(w / giR, h / giR, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba16f, PixelFormat.Rgba, filtered: true),
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba16f, PixelFormat.Rgba, filtered: false),
+                new Texture(w / giR, h / giR, PixelInternalFormat.Rgba32f, PixelFormat.Rgba, filtered: false));
 
 
             int sr = (int)(shadowRes * shadowResolutionScale);
@@ -150,7 +161,7 @@ namespace _3dTerrainGeneration
         private void InitShaders()
         {
 #if !RASTER
-            SIZE = 256;
+            SIZE = 512;
 
 
             GL.DeleteTexture(worldTexHandle);
@@ -158,29 +169,22 @@ namespace _3dTerrainGeneration
             worldData = new uint[SIZE * SIZE * SIZE];
             for (int x = 0; x < SIZE; x++)
             {
-                int _x = x;
+                int _x = x - 256;
                 for (int z = 0; z < SIZE; z++)
                 {
-                    int _z = z;
+                    int _z = z - 256;
                     for (int y = 0; y < SIZE; y++)
                     {
-                        int _y = y;
-                        if (Chunk.GetNoise(_x, _y, _z, .025f) < .25f)
+                        int _y = y - 256;
+                        if (Chunk.GetNoise(_x, _y, _z, .05f) > .75f)
                         {
-                            if (Chunk.GetNoise(_x, _y + 2, _z, .025f) >= .25f)
+                            if(Chunk.GetNoise(_x, _y + 2, _z, .05f) > .75f)
                             {
-                                float temp = Chunk.GetNoise(_x + 1000, _y, _z, .0125f);
-                                float humidity = Chunk.GetNoise(_x + 4000, _y, _z, .0125f);
-
-                                worldData[(z * SIZE + y) * SIZE + x] = Color.HsvToRgb(
-                                         150 - temp * 8 * 13,
-                                         166 + humidity * 4 * 16,
-                                         220 - humidity * 4 * 15
-                                ) | 0x77000000;
+                                worldData[(z * SIZE + y) * SIZE + x] = 0x77000000 | Color.ToInt(128, 128, 128);
                             }
                             else
                             {
-                                worldData[(z * SIZE + y) * SIZE + x] = 0x00877F6C | 0x77000000;
+                                worldData[(z * SIZE + y) * SIZE + x] = 0x77000000 | Color.ToInt((byte)_x, (byte)_y, (byte)_z);
                             }
                         }
                     }
@@ -242,7 +246,7 @@ namespace _3dTerrainGeneration
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
             GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToBorder);
-
+            
 #endif
 
 #if DEBUG
@@ -273,6 +277,7 @@ namespace _3dTerrainGeneration
             LightingShader.SetInt("fogTex", 6);
             LightingShader.SetInt("occlusionTex", 7);
             LightingShader.SetInt("giTex", 8);
+            LightingShader.SetInt("giNTex", 9);
 
             OcclusionShader = new FragmentShader(path + "post.vert", path + "occlusion.frag");
             OcclusionShader.SetInt("depthTex", 0);
@@ -325,10 +330,10 @@ namespace _3dTerrainGeneration
 
             SSRShader = new FragmentShader(path + "post.vert", path + "ssr.frag");
             SSRShader.SetInt("data", 0);
-            SSRShader.SetInt("noise", 1);
-            SSRShader.SetInt("depthTex", 2);
-            SSRShader.SetInt("normalTex", 3);
+            SSRShader.SetInt("depthTex", 1);
+            SSRShader.SetInt("normalTex", 2);
             SSRShader.SetInt("SIZE", SIZE);
+            SSRShader.SetInt("memoryTex", 3);
 
             SharpenShader = new FragmentShader(path + "post.vert", path + "sharpen.frag");
             SharpenShader.SetInt("colorTex", 0);
@@ -521,7 +526,7 @@ namespace _3dTerrainGeneration
                 DOFBlurShader.Dispose();
                 SSRShader.Dispose();
                 InitShaders();
-                InitBuffers(Width, Height);
+                //InitBuffers(Width, Height);
             }
 #endif
 
@@ -610,6 +615,8 @@ namespace _3dTerrainGeneration
             HandleInput(frameDelta);
 
             Matrix4x4 viewMatrix = camera.GetViewMatrix();
+            Matrix4x4 viewInvMatrix;
+            Matrix4x4.Invert(viewMatrix, out viewInvMatrix);
             //Matrix4x4.Invert(viewMatrix, out viewMatrix);
             Matrix4x4 projMatrix = camera.GetProjectionMatrix();
             //Matrix4x4.Invert(projMatrix, out projMatrix);
@@ -621,7 +628,7 @@ namespace _3dTerrainGeneration
             Matrix4x4.Invert(viewProj, out viewProjInv);
 
 
-            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .5f;
+            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * 0;
 
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
@@ -647,6 +654,7 @@ namespace _3dTerrainGeneration
             int chunksShadow = 0;
             // render shadowmap
             world.player.Visible = true;
+            SSRShader.SetVector2("taaOffset", taaJitter);
             ShadowMapShader.SetVector2("taaOffset", taaJitter);
             ShadowShader.SetVector2("taaOffset", taaJitter);
             ShadowMapShader.SetMatrix4("view", camera.GetViewMatrix());
@@ -699,7 +707,8 @@ namespace _3dTerrainGeneration
             LightingShader.SetVector3("sun.position", World.sunPos);
             LightingShader.SetVector3("sun.color", sunColor);
             LightingShader.SetMatrix4("projection", viewProjInv);
-            LightingShader.SetInt("lightCount", data.Length / 4);
+            LightingShader.SetInt("giW", GIBuffer0.Width);
+            LightingShader.SetInt("giH", GIBuffer0.Height);
 
 
             TAA.SetInt("width", (int)(GBuffer.Width));
@@ -775,25 +784,26 @@ namespace _3dTerrainGeneration
             FragmentPass.Apply(OcclusionShader, OcclusionBuffer, GBuffer.depthTex0, GBuffer.colorTex[1], noiseTexture);
             profiler.End();
 
-            GL.Viewport(0, 0, GIBuffer.Width, GIBuffer.Height);
+            GL.Viewport(0, 0, GIBuffer0.Width, GIBuffer0.Height);
 
             SSRShader.SetMatrix4("projection", viewProjInv);
             SSRShader.SetMatrix4("_projection", viewProj);
+            SSRShader.SetMatrix4("projectionPrev", prevProj);
             SSRShader.SetVector3("position", camera.Position);
+            SSRShader.SetVector3("viewDir", camera.Front);
             SSRShader.SetVector3("sunDir", World.sunPos);
             SSRShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 1d));
 
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
 
-            GL.Enable(EnableCap.DepthTest);
-
-            GIBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             profiler.Start("RayTrace");
-            FragmentPass.Apply(SSRShader, GIBuffer, 1, GBuffer.depthTex0, GBuffer.depthTex0, GBuffer.colorTex[1]);
+            FragmentPass.Apply(SSRShader, pingPong ? GIBuffer0 : GIBuffer1, 1, 
+                GBuffer.depthTex0, 
+                GBuffer.colorTex[1], 
+                pingPong ? GIBuffer1.colorTex[0] : GIBuffer0.colorTex[0]
+            );
             profiler.End();
-            GL.Disable(EnableCap.DepthTest);
 
             GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
 
@@ -808,7 +818,8 @@ namespace _3dTerrainGeneration
                 StarBuffer.colorTex[0], 
                 VolumetricBuffer.colorTex[0], 
                 OcclusionBuffer.colorTex[0],
-                GIBuffer.colorTex[0]
+                (pingPong ? GIBuffer0 : GIBuffer1).colorTex[1],
+                (pingPong ? GIBuffer0 : GIBuffer1).colorTex[2]
             );
             profiler.End();
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
@@ -853,7 +864,7 @@ namespace _3dTerrainGeneration
 
             GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, sizeof(int) * 1, luminanceData);
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
-            float maxLuma = Math.Clamp(luminanceData[0] / 1024f, .4f, 4f);
+            float maxLuma = Math.Clamp(luminanceData[0] / 1024f, .4f, 8f);
             luma = (luma * 49 + maxLuma) / 50f;
             //luma = 4;
 
@@ -935,21 +946,19 @@ namespace _3dTerrainGeneration
             GL.Disable(EnableCap.Blend);
             FragmentPass.BeginPostStage();
 
-            //GL.Viewport(0, 0, TempBuffer0.Width, TempBuffer0.Height);
-            //Motionblur.SetMatrix4("gbufferPreviousProjection", prevProj);
-            //Motionblur.SetMatrix4("gbufferPreviousModelView", prevView);
-            //prevProj = camera.GetProjectionMatrix();
-            //prevView = camera.GetViewMatrix();
-            //Motionblur.SetMatrix4("gbufferProjectionInverse", camera.GetProjectionMatrix().Inverted());
-            //Motionblur.SetMatrix4("gbufferModelViewInverse", camera.GetViewMatrix().Inverted());
-            //FragmentPass.Apply(Motionblur, TempBuffer0, SourceBuffer, GBuffer);
+            GL.Viewport(0, 0, TempBuffer0.Width, TempBuffer0.Height);
+            Motionblur.SetMatrix4("projection", viewProjInv);
+            Motionblur.SetMatrix4("projectionPrev", prevProj);
+            FragmentPass.Apply(Motionblur, SourceBuffer0, TempBuffer0.colorTex[0], GBuffer.depthTex0);
 
+            GL.Viewport(0, 0, Width, Height);
             profiler.Start("Final2D");
-            FragmentPass.Apply(Final2D, null, TempBuffer0.colorTex[0], HUDBuffer.colorTex[0]);
+            FragmentPass.Apply(Final2D, null, SourceBuffer0.colorTex[0], HUDBuffer.colorTex[0]);
             profiler.End();
             //FragmentPass.Apply(Final2D, null, ShadowBuffer0, ShadowBuffer0);
 
             prevProj = viewProj;
+            prevView = viewMatrix;
             profiler.EndFrame();
             SwapBuffers();
 
@@ -1094,6 +1103,7 @@ namespace _3dTerrainGeneration
         protected override void OnUnload(EventArgs e)
         {
             base.OnUnload(e);
-        }
+        }       
     }
+
 }
