@@ -1,9 +1,9 @@
 ﻿using OpenTK.Graphics.OpenGL4;
-using System.Numerics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
+using System.Numerics;
 
 namespace _3dTerrainGeneration.rendering
 {

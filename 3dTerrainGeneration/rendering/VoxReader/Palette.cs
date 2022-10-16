@@ -15,7 +15,7 @@ namespace VoxReader
         public override string ToString()
         {
             var output = new StringBuilder();
-            
+
             for (int i = 0; i < Colors.Length - 1; i++)
             {
                 output.AppendLine(GetText(i));

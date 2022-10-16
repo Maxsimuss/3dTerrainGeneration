@@ -1,13 +1,9 @@
-﻿using _3dTerrainGeneration.audio;
-using _3dTerrainGeneration.rendering;
+﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.util;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
@@ -24,7 +20,7 @@ namespace _3dTerrainGeneration.world
         public byte[] blocks = null;
         public object dataLock = new object();
         public object meshLock = new object();
-        public static int lodCount = 3;
+        public static int lodCount = 5;
 
         public int X, Y, Z;
         private int loadedLod = -1;
@@ -115,7 +111,7 @@ namespace _3dTerrainGeneration.world
             sounds = new List<byte>();
             particles = new List<byte>();
 
-            goto newgen;
+            //goto newgen;
             for (int _x = 0; _x < Size; _x++)
             {
                 int x = _x + X * Size;
@@ -167,7 +163,7 @@ namespace _3dTerrainGeneration.world
                 }
             }
             goto mesh;
-            newgen:
+        newgen:
             for (int x = 0; x < Size; x++)
             {
                 int _x = x + X * Size;
@@ -192,7 +188,7 @@ namespace _3dTerrainGeneration.world
                 }
             }
 
-            mesh:
+        mesh:
 
             //lock (world.structureLock)
             //{
@@ -253,7 +249,7 @@ namespace _3dTerrainGeneration.world
                             byte bl = GetValue(blocks, x * lod, z * lod, y);
                             if (bl != 0)
                             {
-                                data.SetBlockUnsafe(x, y, z, Materials.Palette[bl - 1]);
+                                data.SetBlockUnsafe(x, y, z, Materials.Get((byte)(bl - 1)));
                             }
                             else
                             {
@@ -266,7 +262,7 @@ namespace _3dTerrainGeneration.world
 
                 mesh[i] = data.Mesh(0, lod);
                 lengths[i] = mesh[i].Length;
-                if(i == loadedLod)
+                if (i == loadedLod)
                 {
                     loadedLod = -1;
                 }
@@ -281,7 +277,7 @@ namespace _3dTerrainGeneration.world
         public int Render(int lod, bool ortho)
         {
             if (empty || full) return 0;
-            
+
             lod = Math.Min(lodCount - 1, lod);
 
             int cubeLenght = lengths[lod];
@@ -294,10 +290,10 @@ namespace _3dTerrainGeneration.world
                 loadedLod = lod;
             }
 
-            if(ortho)
+            if (ortho)
             {
                 Vector3 dir = World.sunPos;
-                if(Vector3.Dot(dir, new Vector3(0, 0, 1)) < 0)
+                if (Vector3.Dot(dir, new Vector3(0, 0, 1)) < 0)
                 {
                     World.gameRenderer.QueueRender(drawCall[5], modelMatrix);
                 }
@@ -323,7 +319,7 @@ namespace _3dTerrainGeneration.world
                 {
                     World.gameRenderer.QueueRender(drawCall[0], modelMatrix);
                 }
-            } 
+            }
             else
             {
                 World.gameRenderer.QueueRender(drawCall[0], modelMatrix);

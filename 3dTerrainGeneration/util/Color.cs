@@ -1,9 +1,5 @@
-﻿using ColorHelper;
-using System;
+﻿using System;
 using System.Numerics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.util
 {
@@ -11,7 +7,7 @@ namespace _3dTerrainGeneration.util
     {
         public static uint ToInt(byte r, byte g, byte b)
         {
-            return (uint)(((r / 36 * 36) << 16) | ((g / 36 * 36) << 8) | (b / 85 * 85));
+            return (uint)(((r / 85 * 85) << 16) | ((g / 36 * 36) << 8) | (b / 85 * 85));
         }
 
         public static Vector3 Saturate(Vector3 rgb, float saturation)
@@ -48,7 +44,7 @@ namespace _3dTerrainGeneration.util
             }
 
             S = Math.Clamp(S * saturation, 0, 1);
-            
+
 
             double H = h;
             while (H < 0) { H += 360; };

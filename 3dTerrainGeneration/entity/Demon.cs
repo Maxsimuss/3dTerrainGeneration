@@ -1,12 +1,6 @@
 ﻿using _3dTerrainGeneration.rendering;
-using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
 using System.Numerics;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -46,7 +40,7 @@ namespace _3dTerrainGeneration.entity
                 }
             }
 
-            x = position.X; y = position.Y; z = position.Z; 
+            x = position.X; y = position.Y; z = position.Z;
         }
 
         public override void PhisycsUpdate(double fT)

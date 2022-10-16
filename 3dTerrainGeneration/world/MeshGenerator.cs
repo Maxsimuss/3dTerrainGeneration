@@ -1,13 +1,7 @@
 ﻿using _3dTerrainGeneration.rendering;
-using _3dTerrainGeneration.util;
-using OpenTK;
-using OpenTK.Graphics.ES20;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
@@ -20,12 +14,13 @@ namespace _3dTerrainGeneration.world
             this.X = X; this.Y = Y; this.Z = Z;
         }
 
-        public static Vector3I operator+ (Vector3I left, Vector3I right)
+        public static Vector3I operator +(Vector3I left, Vector3I right)
         {
             return new Vector3I(left.X + right.X, left.Y + right.Y, left.Z + right.Z);
         }
 
-        public int this[int index] {
+        public int this[int index]
+        {
             get
             {
                 return index switch
@@ -65,7 +60,7 @@ namespace _3dTerrainGeneration.world
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             byte GetBlock(Vector3I blockPosition)
             {
-                if(blockPosition.X >= Width || blockPosition.Z >= Width || blockPosition.Y >= Height ||
+                if (blockPosition.X >= Width || blockPosition.Z >= Width || blockPosition.Y >= Height ||
                     blockPosition.X < 0 || blockPosition.Z < 0 || blockPosition.Y < 0)
                 {
                     return 0;
@@ -181,7 +176,7 @@ namespace _3dTerrainGeneration.world
                             byte cb = (byte)(color & 0xFF);
 
                             List<uint> quad = quads[face];
-                            if(!isBackFace)
+                            if (!isBackFace)
                             {
                                 AddPoint(quad, vertices[0], cr, cg, cb);
                                 AddPoint(quad, vertices[1], cr, cg, cb);
@@ -191,7 +186,7 @@ namespace _3dTerrainGeneration.world
                                 AddPoint(quad, vertices[0], cr, cg, cb);
                                 AddPoint(quad, vertices[2], cr, cg, cb);
                                 AddPoint(quad, vertices[3], cr, cg, cb);
-                            } 
+                            }
                             else
                             {
                                 AddPoint(quad, vertices[2], cr, cg, cb);
@@ -217,7 +212,7 @@ namespace _3dTerrainGeneration.world
                 }
                 void AddPoint(List<uint> quad, Vector3I p, byte r, byte g, byte b)
                 {
-                    uint val = (uint)((byte)(p.X * scale) << 25 | (byte)(p.Y) << 18 | (byte)(p.Z * scale) << 11 | ((byte)face) << 8 | 
+                    uint val = (uint)((byte)(p.X * scale) << 25 | (byte)(p.Y) << 18 | (byte)(p.Z * scale) << 11 | ((byte)face) << 8 |
                         (((byte)(r / 36)) & (byte)7) << 5 | (((byte)(g / 36)) & (byte)7) << 2 | (((byte)(b / 85)) & 0x03));
 
                     quad.Add(val);

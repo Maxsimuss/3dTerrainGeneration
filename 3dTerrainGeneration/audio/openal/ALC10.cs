@@ -33,95 +33,95 @@ using System.Runtime.InteropServices;
 
 namespace OpenAL
 {
-	public static class ALC10
-	{
-		/* typedef int ALenum; */
-		public const int ALC_FALSE =			0x0000;
-		public const int ALC_TRUE =			0x0001;
-		public const int ALC_FREQUENCY =		0x1007;
-		public const int ALC_REFRESH =			0x1008;
-		public const int ALC_SYNC =			0x1009;
+    public static class ALC10
+    {
+        /* typedef int ALenum; */
+        public const int ALC_FALSE = 0x0000;
+        public const int ALC_TRUE = 0x0001;
+        public const int ALC_FREQUENCY = 0x1007;
+        public const int ALC_REFRESH = 0x1008;
+        public const int ALC_SYNC = 0x1009;
 
-		public const int ALC_NO_ERROR =			0x0000;
-		public const int ALC_INVALID_DEVICE =		0xA001;
-		public const int ALC_INVALID_CONTEXT =		0xA002;
-		public const int ALC_INVALID_ENUM =		0xA003;
-		public const int ALC_INVALID_VALUE =		0xA004;
-		public const int ALC_OUT_OF_MEMORY =		0xA005;
+        public const int ALC_NO_ERROR = 0x0000;
+        public const int ALC_INVALID_DEVICE = 0xA001;
+        public const int ALC_INVALID_CONTEXT = 0xA002;
+        public const int ALC_INVALID_ENUM = 0xA003;
+        public const int ALC_INVALID_VALUE = 0xA004;
+        public const int ALC_OUT_OF_MEMORY = 0xA005;
 
-		public const int ALC_MAJOR_VERSION =		0x1000;
-		public const int ALC_MINOR_VERSION =		0x1001;
-		public const int ALC_ATTRIBUTES_SIZE =		0x1002;
-		public const int ALC_ALL_ATTRIBUTES =		0x1003;
-		public const int ALC_DEFAULT_DEVICE_SPECIFIER =	0x1004;
-		public const int ALC_DEVICE_SPECIFIER =		0x1005;
-		public const int ALC_EXTENSIONS =		0x1006;
+        public const int ALC_MAJOR_VERSION = 0x1000;
+        public const int ALC_MINOR_VERSION = 0x1001;
+        public const int ALC_ATTRIBUTES_SIZE = 0x1002;
+        public const int ALC_ALL_ATTRIBUTES = 0x1003;
+        public const int ALC_DEFAULT_DEVICE_SPECIFIER = 0x1004;
+        public const int ALC_DEVICE_SPECIFIER = 0x1005;
+        public const int ALC_EXTENSIONS = 0x1006;
 
-		/* IntPtr refers to an ALCcontext*, device to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcCreateContext(
-			IntPtr device,
-			int[] attrList
-		);
+        /* IntPtr refers to an ALCcontext*, device to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcCreateContext(
+            IntPtr device,
+            int[] attrList
+        );
 
-		/* context refers to an ALCcontext* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool alcMakeContextCurrent(IntPtr context);
+        /* context refers to an ALCcontext* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool alcMakeContextCurrent(IntPtr context);
 
-		/* context refers to an ALCcontext* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void alcDestroyContext(IntPtr context);
+        /* context refers to an ALCcontext* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void alcDestroyContext(IntPtr context);
 
-		/* IntPtr refers to an ALCcontext* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcGetCurrentContext();
+        /* IntPtr refers to an ALCcontext* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcGetCurrentContext();
 
-		/* IntPtr refers to an ALCdevice*, context to an ALCcontext* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcGetContextsDevice(IntPtr context);
+        /* IntPtr refers to an ALCdevice*, context to an ALCcontext* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcGetContextsDevice(IntPtr context);
 
-		/* IntPtr refers to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcOpenDevice(
-			[In()] [MarshalAs(UnmanagedType.LPStr)]
-				string devicename
-		);
+        /* IntPtr refers to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcOpenDevice(
+            [In()] [MarshalAs(UnmanagedType.LPStr)]
+                string devicename
+        );
 
-		/* device refers to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern bool alcCloseDevice(IntPtr device);
+        /* device refers to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern bool alcCloseDevice(IntPtr device);
 
-		/* device refers to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int alcGetError(IntPtr device);
+        /* device refers to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int alcGetError(IntPtr device);
 
-		/* IntPtr refers to a function pointer, device to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcGetProcAddress(
-			IntPtr device,
-			[In()] [MarshalAs(UnmanagedType.LPStr)]
-				string funcname
-		);
+        /* IntPtr refers to a function pointer, device to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcGetProcAddress(
+            IntPtr device,
+            [In()] [MarshalAs(UnmanagedType.LPStr)]
+                string funcname
+        );
 
-		/* device refers to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern int alcGetEnumValue(
-			IntPtr device,
-			[In()] [MarshalAs(UnmanagedType.LPStr)]
-				string enumname
-		);
+        /* device refers to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int alcGetEnumValue(
+            IntPtr device,
+            [In()] [MarshalAs(UnmanagedType.LPStr)]
+                string enumname
+        );
 
-		/* device refers to an ALCdevice* */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern IntPtr alcGetString(IntPtr device, int param);
+        /* device refers to an ALCdevice* */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr alcGetString(IntPtr device, int param);
 
-		/* device refers to an ALCdevice*, size to an ALCsizei */
-		[DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
-		public static extern void alcGetIntegerv(
-			IntPtr device,
-			int param,
-			int size,
-			int[] values
-		);
-	}
+        /* device refers to an ALCdevice*, size to an ALCsizei */
+        [DllImport(AL10.nativeLibName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void alcGetIntegerv(
+            IntPtr device,
+            int param,
+            int size,
+            int[] values
+        );
+    }
 }

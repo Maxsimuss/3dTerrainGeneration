@@ -1,10 +1,5 @@
-﻿using _3dTerrainGeneration.world;
-using OpenTK;
+﻿using OpenTK;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
@@ -18,7 +13,8 @@ namespace _3dTerrainGeneration.world
             this.height = height;
         }
 
-        public bool isInBounds(double x, double y, double z) {
+        public bool isInBounds(double x, double y, double z)
+        {
             return Math.Abs(x) < width && Math.Abs(z) < width && y < height && y >= 0;
         }
 
@@ -45,7 +41,7 @@ namespace _3dTerrainGeneration.world
             {
                 for (int z = -1; z < 2; z++)
                 {
-                    if(world.GetBlockAt(position.X + width * x, position.Y, position.Z + width * z) ||
+                    if (world.GetBlockAt(position.X + width * x, position.Y, position.Z + width * z) ||
                     world.GetBlockAt(position.X + width * x, position.Y + height, position.Z + width * z))
                     {
                         return true;

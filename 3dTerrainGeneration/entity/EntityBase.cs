@@ -1,5 +1,4 @@
-﻿using _3dTerrainGeneration.audio;
-using _3dTerrainGeneration.world;
+﻿using _3dTerrainGeneration.world;
 using System;
 using System.Numerics;
 using TerrainServer.network;
@@ -41,10 +40,10 @@ namespace _3dTerrainGeneration.entity
         {
             prevX = x;
             prevY = y;
-            prevZ = z; 
+            prevZ = z;
             frameTime = fT;
 
-            if(true)
+            if (true)
             {
                 motionX *= .8;
                 motionY *= .8;
@@ -90,7 +89,7 @@ namespace _3dTerrainGeneration.entity
                         double step = _motionX > 0 ? .01 : -.01;
                         while ((!Box.isColliding(x + _m, y, z, world) || !Box.isColliding(x + _m, y + 1, z, world)) && Math.Abs(_m) < Math.Abs(_motionX))
                         {
-                            if(Box.isColliding(x + _m, y, z, world) && !Box.isColliding(x + _m, y + 1, z, world))
+                            if (Box.isColliding(x + _m, y, z, world) && !Box.isColliding(x + _m, y + 1, z, world))
                             {
                                 y++;
                             }

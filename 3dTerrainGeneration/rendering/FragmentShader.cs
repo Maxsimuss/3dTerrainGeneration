@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Collections.Generic;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -16,7 +11,7 @@ namespace _3dTerrainGeneration.rendering
 
             int vertexShader = GL.CreateShader(ShaderType.VertexShader);
             int fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            
+
             GL.ShaderSource(vertexShader, vertexSource);
             GL.ShaderSource(fragmentShader, fragmentSource);
 

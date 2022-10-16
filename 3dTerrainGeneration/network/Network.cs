@@ -1,17 +1,10 @@
-﻿using _3dTerrainGeneration.world;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerrainServer.network.packet;
-using TerrainServer.network;
-using _3dTerrainGeneration.entity;
-using System.Net.Sockets;
-using System.IO;
-using OpenTK;
+﻿using _3dTerrainGeneration.entity;
+using _3dTerrainGeneration.world;
 using SuperSimpleTcp;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TerrainServer.network;
+using TerrainServer.network.packet;
 
 namespace _3dTerrainGeneration.network
 {
@@ -28,7 +21,7 @@ namespace _3dTerrainGeneration.network
         {
             this.world = world;
 
-            if(IsOnline)
+            if (IsOnline)
             {
                 //client = new SimpleTcpClient("127.0.0.1", 12345);
                 client = new SimpleTcpClient("141.144.239.198", 12345);
@@ -36,7 +29,7 @@ namespace _3dTerrainGeneration.network
                 client.Events.DataReceived += Events_DataReceived;
                 client.Events.Disconnected += Events_Disconnected;
 
-                while(!client.IsConnected)
+                while (!client.IsConnected)
                 {
                     try
                     {
@@ -72,7 +65,7 @@ namespace _3dTerrainGeneration.network
 
         private void Events_DataReceived(object sender, DataReceivedEventArgs e)
         {
-            lock(streamLock)
+            lock (streamLock)
                 for (int i = 0; i < e.Data.Length; i++)
                 {
                     stream.Enqueue(e.Data[i]);
@@ -115,7 +108,7 @@ namespace _3dTerrainGeneration.network
 
         public void Update(double fT)
         {
-            if(IsOnline)
+            if (IsOnline)
             {
                 if (!client.IsConnected)
                 {
@@ -128,7 +121,8 @@ namespace _3dTerrainGeneration.network
                             try
                             {
                                 client.Connect();
-                            } catch { }
+                            }
+                            catch { }
                             Connecting = false;
                         });
                     }
@@ -145,11 +139,11 @@ namespace _3dTerrainGeneration.network
                     Flush();
                 }
 
-                lock(streamLock)
+                lock (streamLock)
                 {
                     while (true)
                     {
-                        if(stream.Count < 1) break;
+                        if (stream.Count < 1) break;
 
                         PacketType type = (PacketType)stream.Peek();
                         int len = type.GetLength();
@@ -251,7 +245,7 @@ namespace _3dTerrainGeneration.network
 
         public void UpdateEntity(int entityId, double x, double y, double z, double motionX, double motionY, double motionZ, double yaw)
         {
-            if(IsOnline)
+            if (IsOnline)
                 Send(new MovementPacket(entityId, x, y, z, motionX, motionY, motionZ, yaw).GetData());
         }
     }

@@ -1,19 +1,19 @@
-﻿using _3dTerrainGeneration.audio;
+﻿//#define NO_SAVE
+
+using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.world;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace _3dTerrainGeneration.util
 {
     public class ChunkIO
     {
-        private static int version = Random.Shared.Next();
+        private static int version = 3;
 
 
         private static string GetChunkDir()
@@ -28,7 +28,7 @@ namespace _3dTerrainGeneration.util
 
         public static void Save(Chunk chunk)
         {
-            return;
+#if !NO_SAVE
 
             Directory.CreateDirectory(GetChunkDir());
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
@@ -53,18 +53,22 @@ namespace _3dTerrainGeneration.util
             }
 
             stream.Save(file);
+
+#endif
         }
 
         public static bool Load(Chunk chunk)
         {
+#if NO_SAVE
             return false;
+#else
             ReadStream stream = new ReadStream();
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
 
             if (File.Exists(file))
             {
                 stream.Load(file);
-                
+
                 if (stream.ReadInt() != version)
                 {
                     return false;
@@ -94,12 +98,12 @@ namespace _3dTerrainGeneration.util
                 for (int i = 0; i < soundCount; i += 4)
                 {
                     Window.Instance.SoundManager.PlaySound(
-                        (SoundType)stream.ReadByte(), 
+                        (SoundType)stream.ReadByte(),
                         new Vector3(
                             stream.ReadByte() + chunk.X * Chunk.Size,
                             stream.ReadByte() + chunk.Y * Chunk.Size,
                             stream.ReadByte() + chunk.Z * Chunk.Size
-                        ), 
+                        ),
                         true
                     );
                 }
@@ -118,6 +122,7 @@ namespace _3dTerrainGeneration.util
             }
 
             return false;
+#endif
         }
     }
 

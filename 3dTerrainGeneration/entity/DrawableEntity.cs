@@ -1,15 +1,7 @@
 ﻿using _3dTerrainGeneration.audio;
-using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
-using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
 using System.Numerics;
-using OpenTK.Graphics.OpenGL4;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -59,7 +51,7 @@ namespace _3dTerrainGeneration.entity
 
             UpdateAnimation(fT);
 
-            if(IsResponsible && (NetworkPositionUpdateTimer += fT) >= .05)
+            if (IsResponsible && (NetworkPositionUpdateTimer += fT) >= .05)
             {
                 world.network.UpdateEntity(EntityId, x, y, z, motionX, motionY, motionZ, yaw);
                 NetworkPositionUpdateTimer = 0;

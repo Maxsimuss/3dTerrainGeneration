@@ -45,8 +45,8 @@ namespace _3dTerrainGeneration.rendering
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)magFilter);
             }
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureCompareMode, (int)mode);
-            
-            if(border)
+
+            if (border)
             {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, new float[] { 1.0f, 1.0f, 1.0f, 1.0f });
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);

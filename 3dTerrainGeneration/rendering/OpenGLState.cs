@@ -1,9 +1,5 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -13,7 +9,7 @@ namespace _3dTerrainGeneration.rendering
 
         public static void UseProgram(int id)
         {
-            if(Program != id)
+            if (Program != id)
             {
                 Program = id;
                 GL.UseProgram(id);
@@ -25,7 +21,7 @@ namespace _3dTerrainGeneration.rendering
             switch (target)
             {
                 case FramebufferTarget.ReadFramebuffer:
-                    if(id != ReadFramebuffer)
+                    if (id != ReadFramebuffer)
                     {
                         GL.BindFramebuffer(target, id);
                         ReadFramebuffer = id;

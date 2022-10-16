@@ -1,11 +1,6 @@
 ﻿using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.rendering;
-using OpenTK.Input;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.gui
 {
@@ -38,7 +33,7 @@ namespace _3dTerrainGeneration.gui
         {
 
 
-            if(text.Length == 0)
+            if (text.Length == 0)
                 renderer.DrawTextCentered(x, y, scale, placeholder, gray);
             else
                 renderer.DrawTextWithShadowCentered(x, y, scale, text);

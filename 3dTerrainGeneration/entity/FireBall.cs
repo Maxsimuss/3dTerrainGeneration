@@ -3,10 +3,6 @@ using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
 using System;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -99,8 +95,8 @@ namespace _3dTerrainGeneration.entity
                 {
                     if (item is FireBall) continue;
                     if (item is Player) continue;
-                    
-                    if(damageBox.isColliding(item.x - x, item.y - y, item.z - z, item.Box))
+
+                    if (damageBox.isColliding(item.x - x, item.y - y, item.z - z, item.Box))
                     {
                         world.DespawnEntity(item.EntityId);
                         health--;
@@ -131,7 +127,7 @@ namespace _3dTerrainGeneration.entity
 
         public override void Render(double frameDelta)
         {
-            if(!Dead)
+            if (!Dead)
                 base.Render(frameDelta);
         }
     }

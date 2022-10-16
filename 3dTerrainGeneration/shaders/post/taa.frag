@@ -1,4 +1,4 @@
-﻿#version 450
+﻿#version 420
 out vec4 FragColor;
   
 in vec2 TexCoords;
@@ -31,13 +31,15 @@ void main() {
     prev = prev * 0.5 + 0.5;
 
     vec3 color;
-    vec3 n = texture(colorTex1, prev.xy).rgb;
+    vec4 n = texture(colorTex1, prev.xy);
 
     vec3 curr = texture(colorTex0, tc).rgb;
     vec3 _min = curr;
     vec3 _max = curr;
     float mixAmt = .1;
-    for(int i = 0; i < 27; i++) {
+#define TAA_SEARCH_RADIUS 27
+
+    for(int i = 0; i < TAA_SEARCH_RADIUS; i++) {
         vec3 _sample = texture(colorTex0, tc + offsets[i % 9] * vec2(x, y) * (1 + i / 9)).rgb;
 
         _min = min(_min, _sample);
@@ -47,7 +49,7 @@ void main() {
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1) {
         mixAmt = 1;
     }
-    color = mix(clamp(n, _min, _max), curr, mixAmt);
+    color = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
     // color = mix(n.rgb, curr, mixAmt);
 
     FragColor = vec4(color, depth);

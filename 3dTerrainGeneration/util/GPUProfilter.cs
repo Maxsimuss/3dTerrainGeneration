@@ -1,9 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.util
 {
@@ -21,6 +18,7 @@ namespace _3dTerrainGeneration.util
         private int[] temp = new int[2];
         private Queue<int> queryBuffer = new Queue<int>();
         private Queue<Frame> frames = new Queue<Frame>();
+        private Dictionary<string, float> sectionValues = new Dictionary<string, float>();
         Frame frame = null;
 
         public void BeginFrame()
@@ -33,7 +31,7 @@ namespace _3dTerrainGeneration.util
             if (sectionName != null) throw new Exception("Tried to start a GPUProfiler section before ending the previous one!");
             sectionName = name;
             int query;
-            if(queryBuffer.Count > 0)
+            if (queryBuffer.Count > 0)
             {
                 query = queryBuffer.Dequeue();
             }
@@ -63,7 +61,7 @@ namespace _3dTerrainGeneration.util
 
         public double GetTime(string name)
         {
-            if(frame != null)
+            if (frame != null)
             {
                 frames.Enqueue(frame);
                 frame = null;
@@ -87,7 +85,7 @@ namespace _3dTerrainGeneration.util
 
                 double time = (end - start) / 1000000.0;
 
-                if(_frame.queryNames[i] == name)
+                if (_frame.queryNames[i] == name)
                 {
                     return time;
                 }
@@ -104,7 +102,7 @@ namespace _3dTerrainGeneration.util
         public List<string> GetTimes()
         {
             List<string> times = new List<string>();
-            if(frames.Count < 1)
+            if (frames.Count < 1)
             {
                 return times;
             }
@@ -129,12 +127,16 @@ namespace _3dTerrainGeneration.util
                 GL.GetQueryObject(q1, GetQueryObjectParam.QueryResult, out start);
 
                 double time = (end - start) / 1000000.0;
+                if (!sectionValues.ContainsKey(_frame.queryNames[i]))
+                    sectionValues.Add(_frame.queryNames[i], (float)time);
 
-                times.Add(_frame.queryNames[i] + ": " + time + "ms");
+                sectionValues[_frame.queryNames[i]] += (float)time * .1f;
+                sectionValues[_frame.queryNames[i]] /= 1.1f;
+                times.Add(_frame.queryNames[i] + ": " + sectionValues[_frame.queryNames[i]] + "ms");
                 total += time;
             }
 
-            if(!invalid)
+            if (!invalid)
             {
                 for (int i = 0; i < _frame.startQueries.Count; i++)
                 {
@@ -144,8 +146,14 @@ namespace _3dTerrainGeneration.util
 
                 frames.Dequeue();
             }
+            if (!sectionValues.ContainsKey("Total"))
+                sectionValues.Add("Total", (float)total);
+            sectionValues["Total"] += (float)total * .1f;
+            sectionValues["Total"] /= 1.1f;
 
-            times.Add("total: " + total + "ms");
+
+
+            times.Add("Total: " + sectionValues["Total"] + "ms");
 
             return times;
         }

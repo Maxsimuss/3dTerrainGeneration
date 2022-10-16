@@ -3,10 +3,8 @@ using _3dTerrainGeneration.util;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Numerics;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using TerrainServer.network.packet;
 
 namespace _3dTerrainGeneration.gui
@@ -44,7 +42,7 @@ namespace _3dTerrainGeneration.gui
         private void RegisterButton_Clicked()
         {
             if (usernameField.text.Length < 4 || passwordField.text.Length < 4) return;
-            
+
             byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(usernameField.text + ":" + passwordField.text));
             window.network.SendPacket(new AuthenticationPacket(AuthAction.Register, hash));
         }
@@ -112,9 +110,9 @@ namespace _3dTerrainGeneration.gui
 
         public void BackSpacePress()
         {
-            if(usernameField.Focused)
+            if (usernameField.Focused)
                 usernameField.Remove();
-            if(passwordField.Focused)
+            if (passwordField.Focused)
                 passwordField.Remove();
         }
 

@@ -1,15 +1,13 @@
 ﻿using _3dTerrainGeneration.entity;
 using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
-using System.Numerics;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using TerrainServer.network;
-using System.Threading;
-using System.Runtime.Intrinsics.X86;
 
 namespace _3dTerrainGeneration.world
 {
@@ -33,7 +31,7 @@ namespace _3dTerrainGeneration.world
 
         public static float renderDist = GameSettings.VIEW_DISTANCE;
         public static int size = (int)(renderDist / Chunk.Size * 2);
-        
+
         public List<Structure> structures = new List<Structure>();
         public Dictionary<EntityType, Dictionary<int, DrawableEntity>> entities = new Dictionary<EntityType, Dictionary<int, DrawableEntity>>();
         public ConcurrentDictionary<Vector3, Chunk> chunks = new ConcurrentDictionary<Vector3, Chunk>();
@@ -74,7 +72,7 @@ namespace _3dTerrainGeneration.world
                 }
             }
 
-            order.Sort((a, b)=> { return (int)((a.Length() - b.Length()) * 1000); });
+            order.Sort((a, b) => { return (int)((a.Length() - b.Length()) * 1000); });
 
             //order.Reverse();
             iterationOrder = order.ToArray();
@@ -89,7 +87,7 @@ namespace _3dTerrainGeneration.world
         {
             foreach (Dictionary<int, DrawableEntity> item in entities.Values)
             {
-                if(item.ContainsKey(entityId))
+                if (item.ContainsKey(entityId))
                 {
                     item[entityId].Despawn();
 
@@ -139,7 +137,8 @@ namespace _3dTerrainGeneration.world
 
                 return i;
 
-                o: {
+            o:
+                {
 
                 }
             }
@@ -229,8 +228,8 @@ namespace _3dTerrainGeneration.world
         public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
             //Time += fT * 1000;
-            //Time += fT * 10000;
-            Time = 520000;
+            Time += fT * 10000;
+            //Time = 520000;
             double t = Time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);
@@ -242,7 +241,7 @@ namespace _3dTerrainGeneration.world
             List<Vector3> removeChunks = new List<Vector3>();
             foreach (var chunk in chunks)
             {
-                if (Math.Abs(chunk.Key.X - (int)(camera.Position.X / Chunk.Size)) > size / 2 + 1 || 
+                if (Math.Abs(chunk.Key.X - (int)(camera.Position.X / Chunk.Size)) > size / 2 + 1 ||
                     Math.Abs(chunk.Key.Y - (int)(camera.Position.Y / Chunk.Size)) > size / 2 + 1 ||
                     Math.Abs(chunk.Key.Z - (int)(camera.Position.Z / Chunk.Size)) > size / 2 + 1)
                 {
@@ -255,7 +254,7 @@ namespace _3dTerrainGeneration.world
             {
                 Chunk ch;
                 chunks.TryRemove(removeChunks[i], out ch);
-                if(ch != null)
+                if (ch != null)
                 {
                     for (int j = 0; j < 6; j++)
                     {
@@ -282,13 +281,13 @@ namespace _3dTerrainGeneration.world
         {
             for (int i = 0; i < chunksLen; i++)
             {
-                Vector3 iPos = iterationOrder[i];
+                Vector3 iPos = iterationOrder[ortho ? chunksLen - i - 1 : i];
                 int x = (int)(iPos.X + (int)Position.X / Chunk.Size);
                 int y = (int)(iPos.Y + (int)Position.Y / Chunk.Size);
                 int z = (int)(iPos.Z + (int)Position.Z / Chunk.Size);
 
                 Vector3 v = new Vector3(x, y, z);
-                if(ShouldRender(v * Chunk.Size, mat))
+                if (ShouldRender(v * Chunk.Size, mat))
                 {
                     if (chunks.ContainsKey(v))
                     {
@@ -342,7 +341,7 @@ namespace _3dTerrainGeneration.world
             CheckPoint(pos + v5);
             CheckPoint(pos + v6);
 
-            if(minY > 1 || minX > 1 || maxX < -1 || maxY < -1)
+            if (minY > 1 || minX > 1 || maxX < -1 || maxY < -1)
             {
                 return false;
             }

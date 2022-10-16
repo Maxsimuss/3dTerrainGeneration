@@ -38,7 +38,7 @@ void main() {
     vec3 position = depthToView(TexCoords, depth, projection);
     vec3 normal = texture(normalTex, TexCoords).xyz * 2 - 1;
 
-    for(int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 2; ++i) {
         vec3 randomVec = (vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1));
         vec3 tangent   = (randomVec - normal.xyz * dot(randomVec, normal.xyz));
         vec3 bitangent = cross(normal.xyz, tangent);
@@ -57,5 +57,5 @@ void main() {
         occlusion += (sampleDepth >= linearize_depth(offset.z) ? 0.0 : 1.0) * rangeCheck;
     }
 
-    occlusion = (1 - occlusion / 4.);
+    occlusion = (1 - occlusion / 2.);
 }

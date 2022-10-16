@@ -1,10 +1,4 @@
-﻿using _3dTerrainGeneration.world;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
-using System;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using OpenTK.Graphics.OpenGL4;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -22,6 +16,12 @@ namespace _3dTerrainGeneration.rendering
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
+
+            for (int i = 0; i < sourceTextures.Length; i++)
+            {
+                GL.ActiveTexture(TextureUnit.Texture0 + i);
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+            }
         }
         public static void Apply(FragmentShader shader, Framebuffer targetFramebuffer, int offset, params Texture[] sourceTextures)
         {
@@ -38,7 +38,7 @@ namespace _3dTerrainGeneration.rendering
         }
 
         private static int quadVBO, quadVAO;
-        private static float[] quadVertices = new float[] {  
+        private static float[] quadVertices = new float[] {
             -1.0f,  1.0f,  0.0f, 1.0f,
             -1.0f, -1.0f,  0.0f, 0.0f,
              1.0f, -1.0f,  1.0f, 0.0f,

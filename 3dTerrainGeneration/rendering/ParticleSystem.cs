@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -47,7 +44,7 @@ namespace _3dTerrainGeneration.rendering
 
                         //if (Vector3.Dot(camera.Front, diff.Normalized()) >= fr)
                         //{
-                            item.Update(dT);
+                        item.Update(dT);
                         //}
                     }
                 }

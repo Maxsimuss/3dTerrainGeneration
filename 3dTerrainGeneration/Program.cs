@@ -24,7 +24,7 @@ namespace _3dTerrainGeneration
             GameWindowFlags flag = fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default;
             Window window = new Window(w, h, flag, "gaem");
 
-            if(!fullscreen)
+            if (!fullscreen)
             {
                 AllocConsole();
             }

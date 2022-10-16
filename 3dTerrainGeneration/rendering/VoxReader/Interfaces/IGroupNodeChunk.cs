@@ -6,7 +6,7 @@
         /// The number of children nodes.
         /// </summary>
         int ChildrenCount { get; }
-        
+
         /// <summary>
         /// The ids of the children.
         /// </summary>

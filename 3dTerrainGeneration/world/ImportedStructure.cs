@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VoxReader;
+﻿using VoxReader;
 
 namespace _3dTerrainGeneration.world
 {
@@ -32,7 +26,7 @@ namespace _3dTerrainGeneration.world
             {
                 RawVoxel vox = voxelChunk.Voxels[i];
                 //if (vox.ColorIndex == 0) continue;
-                
+
                 Color color = palleteChunk.Colors[vox.ColorIndex - 1];
 
                 SetBlock(vox.Position.X, vox.Position.Z, vox.Position.Y,

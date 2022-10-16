@@ -1,9 +1,5 @@
 ﻿using _3dTerrainGeneration.rendering;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.gui
 {
@@ -38,7 +34,7 @@ namespace _3dTerrainGeneration.gui
 
         public void MouseClicked(float x, float y)
         {
-            if(x > this.x - width && x < this.x + width && y > this.y - height * renderer.aspectRatio && y < this.y + height * renderer.aspectRatio)
+            if (x > this.x - width && x < this.x + width && y > this.y - height * renderer.aspectRatio && y < this.y + height * renderer.aspectRatio)
             {
                 Window.Instance.SoundManager.PlaySound(audio.SoundType.ClickConfirm, false, 1, .05f);
                 Clicked();

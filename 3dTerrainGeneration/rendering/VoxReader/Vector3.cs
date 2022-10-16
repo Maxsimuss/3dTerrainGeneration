@@ -8,12 +8,12 @@ namespace VoxReader
         /// The x-component of the vector (right).
         /// </summary>
         public readonly int X;
-        
+
         /// <summary>
         /// The y-component of the vector (forward).
         /// </summary>
         public readonly int Y;
-        
+
         /// <summary>
         /// The z-component of the vector (up).
         /// </summary>
@@ -51,7 +51,7 @@ namespace VoxReader
                 return hashCode;
             }
         }
-        
+
         public static bool operator ==(Vector3 a, Vector3 b)
         {
             return a.Equals(b);

@@ -2,11 +2,9 @@
 using _3dTerrainGeneration.world;
 using OpenAL;
 using System;
-using System.Numerics;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Text;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.audio
@@ -128,11 +126,11 @@ namespace _3dTerrainGeneration.audio
 
             Vector3 listenerPosition = camera.Position;
 
-            lock(sourceLock)
+            lock (sourceLock)
                 sources.RemoveAll((s) =>
                 {
                     if (s == null) return true;
-                    if(!s.Loop && s.TTL < 0)
+                    if (!s.Loop && s.TTL < 0)
                     {
                         s.Stop();
                         return true;
@@ -156,7 +154,7 @@ namespace _3dTerrainGeneration.audio
             lock (sourceLock)
                 sources = sources.OrderBy(o => o.Relative ? 0 : o.DistanceToSq(listenerPosition)).ToList();
 
-            lock(sourceLock)
+            lock (sourceLock)
                 for (int i = sources.Count - 1; i >= 0; i--)
                 {
                     if (i > MaxSources)
@@ -170,7 +168,7 @@ namespace _3dTerrainGeneration.audio
                 }
 
 
-            lock(sourceLock)
+            lock (sourceLock)
                 foreach (var s in sources)
                 {
                     if (!s.Loop)
@@ -183,7 +181,7 @@ namespace _3dTerrainGeneration.audio
         {
             SoundSource source = new SoundSource(position, GetBuffer(type), loop, pitch, volume);
 
-            lock(sourceLock)
+            lock (sourceLock)
                 sources.Add(source);
 
             return source;

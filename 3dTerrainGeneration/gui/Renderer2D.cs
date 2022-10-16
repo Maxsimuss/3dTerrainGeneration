@@ -2,11 +2,6 @@
 using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.gui
 {
@@ -38,7 +33,7 @@ namespace _3dTerrainGeneration.gui
 
         public static void LoadShader(string path)
         {
-            if(shader != null) shader.Dispose();
+            if (shader != null) shader.Dispose();
             shader = new FragmentShader(path + "rect.vert", path + "rect.frag");
         }
 
@@ -96,7 +91,7 @@ namespace _3dTerrainGeneration.gui
                 shader.Use();
             else
                 Renderer2D.shader.Use();
-            
+
             GL.DrawArrays(PrimitiveType.Quads, prev / 6, (index - prev) / 6);
             if (index >= bufferSize / 4)
             {

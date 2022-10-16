@@ -31,7 +31,7 @@ namespace VoxReader.Interfaces
         /// Returns all children that match the specified type.
         /// </summary>
         T[] GetChildren<T>() where T : class, IChunk;
-        
+
         /// <summary>
         /// Returns all children that match the specified chunk type.
         /// </summary>

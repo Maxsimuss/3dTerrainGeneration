@@ -1,6 +1,6 @@
 ﻿#version 430 core
 
-out vec4 FragColor;
+out float shadow;
   
 in vec2 TexCoords;
 
@@ -39,7 +39,6 @@ void main() {
     float depth = texture(depthTex, TexCoords).r;
     vec3 position = depthToView(TexCoords - taaOffset * .5, depth, projection);
 
-    float shadow = 0;
     float BIAS;
     int idx = 0;
     if(linearize_depth(depth) / 1.7 > cuts[1]) {
@@ -58,7 +57,5 @@ void main() {
     ShadowCoord /= ShadowCoord.w;
     ShadowCoord.xyz = ShadowCoord.xyz * .5 + .5;
 
-    shadow += (texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0;
-
-    FragColor = vec4(shadow, 0., 0., 1.);
+    shadow = (texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0;
 }

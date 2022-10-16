@@ -12,7 +12,7 @@ namespace VoxReader.Chunks
             int modelCount = FormatParser.ParseInt32();
 
             Models = new int[modelCount];
-            
+
             for (int i = 0; i < modelCount; i++)
             {
                 Models[i] = FormatParser.ParseInt32();

@@ -34,16 +34,14 @@ void main() {
 
     vec3 color = texture(colortex0, TexCoords).rgb;
     int samples = 1;
-    for(int i = 1; i <= 19; i++) {
+    for(int i = 1; i <= 4; i++) {
         vec2 t = TexCoords + delta * rand(TexCoords + i);
         if(t.x < 0 || t.x > 1 || t.y < 0 || t.y > 1) {
             break;
         }
         float d = texture(colortex1, t).r;
-        // if(d > depth) {
-            color += texture(colortex0, t).rgb;
-            samples++;
-        // }
+        color += texture(colortex0, t).rgb;
+        samples++;
     }
     
     FragColor = vec4(color / samples, 1.0);

@@ -1,13 +1,8 @@
-﻿using _3dTerrainGeneration.audio;
-using _3dTerrainGeneration.rendering;
+﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
 using OpenTK.Input;
 using System;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -33,7 +28,7 @@ namespace _3dTerrainGeneration.entity
             mesh = data.Data;
         }
 
-        public Player(World world) : base(world, EntityType.Player) 
+        public Player(World world) : base(world, EntityType.Player)
         {
             if (draws == null)
             {
@@ -74,12 +69,12 @@ namespace _3dTerrainGeneration.entity
             bool S = input.IsKeyDown(Key.S);
             bool D = input.IsKeyDown(Key.D);
 
-            if(W ^ S)
+            if (W ^ S)
             {
-                if(W)
+                if (W)
                 {
                     offset = 0;
-                } 
+                }
                 else
                 {
                     offset = 180;
@@ -92,7 +87,7 @@ namespace _3dTerrainGeneration.entity
             {
                 if (A)
                 {
-                    if(isMoving)
+                    if (isMoving)
                     {
 
                         if (W)

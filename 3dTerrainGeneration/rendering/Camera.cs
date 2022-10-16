@@ -1,5 +1,4 @@
 using System;
-using _3dTerrainGeneration.world;
 using System.Numerics;
 
 namespace _3dTerrainGeneration.rendering

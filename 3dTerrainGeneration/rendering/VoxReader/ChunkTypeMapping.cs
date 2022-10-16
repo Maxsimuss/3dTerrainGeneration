@@ -7,7 +7,7 @@ namespace VoxReader
         private static readonly Dictionary<string, ChunkType> _mappings = new();
 
         public static ChunkType GetChunkId(string chunkType) => _mappings[chunkType];
-        
+
         static ChunkTypeMapping()
         {
             _mappings.Add("MAIN", ChunkType.Main);

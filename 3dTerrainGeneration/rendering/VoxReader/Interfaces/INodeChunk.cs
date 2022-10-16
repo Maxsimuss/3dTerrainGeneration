@@ -8,7 +8,7 @@ namespace VoxReader.Interfaces
         /// The id of the node.
         /// </summary>
         int NodeId { get; }
-        
+
         /// <summary>
         /// The attributes assigned to the node.
         /// </summary>

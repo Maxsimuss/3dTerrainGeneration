@@ -1,10 +1,6 @@
 ﻿using OpenTK;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
@@ -36,11 +32,7 @@ namespace _3dTerrainGeneration.world
             yMin = Math.Min(yMin, y);
             zMin = Math.Min(zMin, z);
 
-            if (!Materials.Palette.Contains(color))
-            {
-                Materials.Palette.Add(color);
-            }
-            data[new Vector3(x, y, z)] = (byte)(Materials.Palette.IndexOf(color) + 1);
+            data[new Vector3(x, y, z)] = (byte)(Materials.IdOf(color));
             blocks++;
         }
 
@@ -75,7 +67,7 @@ namespace _3dTerrainGeneration.world
                 int Y = (int)item.Key.Y - y + yPos;
                 int Z = (int)item.Key.Z - z + zPos;
 
-                if(X < 0 || Y < 0 || Z < 0 || X >= Chunk.Size || Y >= Chunk.Size || Z >= Chunk.Size) continue;
+                if (X < 0 || Y < 0 || Z < 0 || X >= Chunk.Size || Y >= Chunk.Size || Z >= Chunk.Size) continue;
 
                 if (inData == null)
                 {

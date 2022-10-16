@@ -22,17 +22,17 @@ namespace VoxReader.Chunks
                 throw new ArgumentNullException(nameof(data), $"{nameof(data)} is null!");
             if (data.Length == 0)
                 throw new ArgumentException($"{nameof(data)} is empty!");
-            
+
             var formatParser = new FormatParser(data);
 
             Type = ChunkTypeMapping.GetChunkId(formatParser.ParseString(4));
-            
+
             int contentLength = formatParser.ParseInt32();
             int childrenLength = formatParser.ParseInt32();
-            
+
             Content = formatParser.ParseBytes(contentLength);
             Children = formatParser.ParseChunks(childrenLength);
-            
+
             TotalBytes = formatParser.CurrentOffset;
         }
 
@@ -50,7 +50,7 @@ namespace VoxReader.Chunks
         {
             return Children.Where(chunk => chunk.Type == chunkType).ToArray();
         }
-        
+
         public T[] GetChildren<T>() where T : class, IChunk
         {
             return Children.Where(c => c is T).Cast<T>().ToArray();

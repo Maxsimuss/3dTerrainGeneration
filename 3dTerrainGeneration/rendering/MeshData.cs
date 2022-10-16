@@ -2,9 +2,6 @@
 using OpenTK;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -42,7 +39,7 @@ namespace _3dTerrainGeneration.rendering
 
         public uint[][] Mesh(byte emission, int scale = 1)
         {
-            if(blocks == null)
+            if (blocks == null)
             {
                 int xL = xMax - xMin + 1;
                 int yL = yMax - yMin + 1;

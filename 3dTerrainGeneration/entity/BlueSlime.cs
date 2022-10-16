@@ -1,13 +1,9 @@
 ﻿using _3dTerrainGeneration.rendering;
-using _3dTerrainGeneration.util;
 using _3dTerrainGeneration.world;
-using System.Numerics;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
@@ -19,7 +15,7 @@ namespace _3dTerrainGeneration.entity
 
         private static AxisAlignedBB aabb;
         public override AxisAlignedBB Box => aabb;
-        
+
         private static float scale;
         public override float Scale => scale;
 
@@ -38,7 +34,7 @@ namespace _3dTerrainGeneration.entity
 
         public BlueSlime(World world, Vector3 position, int EntityId) : base(world, EntityType.BlueSlime, EntityId)
         {
-            if(draws == null)
+            if (draws == null)
             {
                 draws = new InderectDraw[mesh.Length];
                 for (int i = 0; i < mesh.Length; i++)
@@ -47,7 +43,7 @@ namespace _3dTerrainGeneration.entity
                 }
             }
 
-            x = position.X; y = position.Y; z = position.Z; 
+            x = position.X; y = position.Y; z = position.Z;
         }
 
         double NextAIUpdateTime = 0;

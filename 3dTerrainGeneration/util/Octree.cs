@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace _3dTerrainGeneration.util
+﻿namespace _3dTerrainGeneration.util
 {
     public class Octree
     {
@@ -19,7 +13,7 @@ namespace _3dTerrainGeneration.util
 
         public bool Merge(byte value)
         {
-            if(nodes == null)
+            if (nodes == null)
             {
                 return value == this.value;
             }
@@ -30,7 +24,7 @@ namespace _3dTerrainGeneration.util
                 {
                     for (int Z = 0; Z < 2; Z++)
                     {
-                        if(!nodes[X, Y, Z].Merge(value))
+                        if (!nodes[X, Y, Z].Merge(value))
                         {
                             return false;
                         }
@@ -48,7 +42,7 @@ namespace _3dTerrainGeneration.util
         {
             if (this.value == value) return;
 
-            if(size > 1)
+            if (size > 1)
             {
                 int _x = x * 2 >= size ? 1 : 0;
                 int _y = y * 2 >= size ? 1 : 0;
@@ -81,7 +75,7 @@ namespace _3dTerrainGeneration.util
 
         public byte GetValue(int x, int y, int z)
         {
-            if(nodes == null)
+            if (nodes == null)
             {
                 return value;
             }

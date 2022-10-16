@@ -21,7 +21,7 @@ namespace VoxReader
         {
             return new(Id, Size, Voxels, true);
         }
-        
+
         public override string ToString()
         {
             return $"Id: {Id}, Size: {Size}, Voxel Count: {Voxels.Length}";

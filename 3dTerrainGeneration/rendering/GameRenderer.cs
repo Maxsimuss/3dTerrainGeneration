@@ -1,11 +1,7 @@
-﻿using _3dTerrainGeneration.world;
-using OpenTK.Graphics.OpenGL;
+﻿using OpenTK.Graphics.OpenGL;
 using System;
-using System.Numerics;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -83,7 +79,7 @@ namespace _3dTerrainGeneration.rendering
             }
 
             InderectDraw draw = old;
-            if(old == null)
+            if (old == null)
                 draw = new InderectDraw();
 
             draw.memStart = end;
@@ -105,7 +101,7 @@ namespace _3dTerrainGeneration.rendering
 
         public void QueueRender(InderectDraw draw, Matrix4x4 matrix)
         {
-            if(draw.instanceCount == 0)
+            if (draw.instanceCount == 0)
             {
                 queue.Enqueue(draw);
             }
@@ -144,7 +140,7 @@ namespace _3dTerrainGeneration.rendering
             GL.BindBuffer(BufferTarget.DrawIndirectBuffer, inderectBuffer);
             GL.BufferData(BufferTarget.DrawIndirectBuffer, inderect.Length * sizeof(uint) * 4, inderect, BufferUsageHint.DynamicDraw);
 
-            if(memory.Count > 0)
+            if (memory.Count > 0)
             {
                 InderectDraw d = memory[memory.Count - 1];
                 VramUsage = d.first * sizeof(uint) * vertexSize + d.count * vertexSize * sizeof(uint);

@@ -1,10 +1,7 @@
-﻿using OpenTK;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using VoxReader;
 
 namespace _3dTerrainGeneration.rendering
@@ -40,7 +37,7 @@ namespace _3dTerrainGeneration.rendering
                 VoxReader.Chunks.PaletteChunk palleteChunk = null;
                 for (int i = 0; i < file.Chunks.Length; i++)
                 {
-                    if(file.Chunks[i].Type == ChunkType.Voxel)
+                    if (file.Chunks[i].Type == ChunkType.Voxel)
                     {
                         voxelChunk = (VoxReader.Chunks.VoxelChunk)file.Chunks[i];
                     }
@@ -56,13 +53,13 @@ namespace _3dTerrainGeneration.rendering
                     RawVoxel vox = voxelChunk.Voxels[i];
                     Color color = palleteChunk.Colors[vox.ColorIndex - 1];
 
-                    meshData.SetBlock(vox.Position.X, vox.Position.Z, vox.Position.Y, 
+                    meshData.SetBlock(vox.Position.X, vox.Position.Z, vox.Position.Y,
                         util.Color.ToInt(color.R, color.G, color.B));
                 }
 
                 meshes.Add(meshData.MeshSingle(emission));
 
-                if(w == -1)
+                if (w == -1)
                 {
                     w = meshData.Width;
                     h = meshData.Height;

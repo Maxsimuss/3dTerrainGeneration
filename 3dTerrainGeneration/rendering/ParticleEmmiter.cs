@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Numerics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -33,7 +30,7 @@ namespace _3dTerrainGeneration.rendering
             Position = position;
             Radius = radius;
             Scale = scale;
-         
+
             this.renderer = renderer;
             random = new Random();
 
@@ -58,13 +55,13 @@ namespace _3dTerrainGeneration.rendering
             {
                 Particle particle = particles[i];
 
-                if(particle.TTL <= 0)
+                if (particle.TTL <= 0)
                 {
                     particle.TTL = random.NextSingle() * 10 + 10;
                     particle.rotationX = (float)(random.NextSingle() * Math.PI * 2);
                     particle.rotationY = (float)(random.NextSingle() * Math.PI * 2);
                     particle.scale = random.NextSingle() * .5f + .5f;
-                    particle.position = Position + 
+                    particle.position = Position +
                         new Vector3(random.NextSingle() - .5f, random.NextSingle() - .5f, random.NextSingle() - .5f)
                         * Radius;
                 }

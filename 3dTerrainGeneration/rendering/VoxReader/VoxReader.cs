@@ -25,7 +25,7 @@ namespace VoxReader
 
             return Read(data);
         }
-        
+
         /// <summary>
         /// Reads the data from the provided byte array.
         /// </summary>

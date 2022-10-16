@@ -33,7 +33,7 @@ namespace VoxReader
             var processedModels = new Dictionary<int, Model>();
 
             int duplicateModelCount = 0;
-            
+
             for (int i = 0; i < shapeNodeChunks.Length; i++)
             {
                 Vector3 size = sizeChunks[i - duplicateModelCount].Size;

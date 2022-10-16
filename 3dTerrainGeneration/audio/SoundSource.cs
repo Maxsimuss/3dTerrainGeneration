@@ -1,13 +1,6 @@
-﻿using _3dTerrainGeneration.world;
-using OpenAL;
+﻿using OpenAL;
 using System;
 using System.Numerics;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.audio
 {
@@ -113,7 +106,7 @@ namespace _3dTerrainGeneration.audio
         public void SetPosition(Vector3 pos)
         {
             position = pos;
-            if(IsPlaying)
+            if (IsPlaying)
             {
                 AL10.alSource3f(source, AL10.AL_POSITION, position.X, position.Y, position.Z);
             }
@@ -122,10 +115,10 @@ namespace _3dTerrainGeneration.audio
         public void Stop()
         {
             if (!IsPlaying) return;
-            
+
             AL10.alSourceStop(source);
             AL10.alDeleteSources(1, ref source);
-            
+
             IsPlaying = false;
         }
 
