@@ -30,7 +30,7 @@ namespace _3dTerrainGeneration
         private FragmentShader GBufferShader, ShadowMapShader, LightingShader, VolumetricsShader,
             ShadowShader, TAA, Final3D, Final2D, BloomShader, DownsampleShader, UpsampleShader, Motionblur,
             TonemappingShader, OcclusionShader, DOFWeightShader, DOFBlurShader, SSRShader, SharpenShader;
-        private ComputeShader LuminanceCompute;
+        private ComputeShader LuminanceCompute, LuminanceSmoothCompute;
 
         private DepthAttachedFramebuffer GBuffer;
         private DepthAttachedFramebuffer[] ShadowBuffers;
@@ -72,7 +72,7 @@ namespace _3dTerrainGeneration
 
             if (GBuffer != null) GBuffer.Dispose();
             GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
-                new Texture(w, h, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent),
+                new Texture(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
                 new Texture(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
                 new Texture(w, h, PixelInternalFormat.Rgb5));
 
@@ -146,9 +146,9 @@ namespace _3dTerrainGeneration
             OcclusionBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w, h, PixelInternalFormat.R8, PixelFormat.Red));
 
             if (TAABuffer0 != null) TAABuffer0.Dispose();
-            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w, h, PixelInternalFormat.Rgba16f, filtered: true));
+            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w, h, PixelInternalFormat.Rgba32f, filtered: true));
             if (TAABuffer1 != null) TAABuffer1.Dispose();
-            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w, h, PixelInternalFormat.Rgba16f, filtered: true));
+            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w, h, PixelInternalFormat.Rgba32f, filtered: true));
 
             if (DOFWeightBuffer != null) DOFWeightBuffer.Dispose();
             DOFWeightBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture(w / 2, h / 2, PixelInternalFormat.R16f, PixelFormat.Red));
@@ -328,6 +328,7 @@ namespace _3dTerrainGeneration
             Stars = new FragmentShader(path + "post.vert", path + "stars.frag");
 
             LuminanceCompute = new ComputeShader(path + "luminance.comp");
+            LuminanceSmoothCompute = new ComputeShader(path + "luminancesmooth.comp");
             DOFBlurShader = new FragmentShader(path + "post.vert", path + "dofblur.frag");
             DOFBlurShader.SetInt("weightTex", 0);
             DOFBlurShader.SetInt("colorTex", 1);
@@ -407,6 +408,10 @@ namespace _3dTerrainGeneration
 
             FireBallSSBO = GL.GenBuffer();
             LuminanceSSBO = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LuminanceSSBO);
+            GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(int) * 2, IntPtr.Zero, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
 
             Task.Run(() =>
             {
@@ -430,8 +435,6 @@ namespace _3dTerrainGeneration
         double frameCounter = 0;
 
         double dT = 1 / 20f;
-
-        float luma = 2;
 
         Vector2[] offsets = new Vector2[] { new(-1, 1), new(0, 1), new(1, 1),
                                             new(-1, 0), new(0, 0), new(1, 0),
@@ -530,6 +533,7 @@ namespace _3dTerrainGeneration
                 Stars.Dispose();
                 TonemappingShader.Dispose();
                 LuminanceCompute.Dispose();
+                LuminanceSmoothCompute.Dispose();
                 DOFWeightShader.Dispose();
                 DOFBlurShader.Dispose();
                 SSRShader.Dispose();
@@ -636,11 +640,13 @@ namespace _3dTerrainGeneration
             Matrix4x4.Invert(viewProj, out viewProjInv);
 
 
-            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .0f;
+            Vector2 taaJitter = offsets[counter % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .5f;
 
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);
             FireBall[] fireBalls = world.entities[TerrainServer.network.EntityType.FireBall].Values.Cast<FireBall>().ToArray();
+
+            LightingShader.SetInt("lightCount", fireBalls.Length + 1);
             float[] data = new float[fireBalls.Length * 4 + 4];
             for (int i = 1; i < fireBalls.Length + 1; i++)
             {
@@ -693,7 +699,7 @@ namespace _3dTerrainGeneration
             GBuffer.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Vector3 sunColor = new Vector3(8.6f, 8f, 7f);
+            Vector3 sunColor = new Vector3(9f, 6.3f, 5.5f);
 
             Vector3 c = new(.055f, .130f, .224f);
 
@@ -853,15 +859,18 @@ namespace _3dTerrainGeneration
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
             LuminanceCompute.Use();
-            int[] luminanceData = new int[1];
+
             profiler.Start("Luminance");
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LuminanceSSBO);
-            GL.BufferData(BufferTarget.ShaderStorageBuffer, sizeof(int) * 1, luminanceData, BufferUsageHint.DynamicDraw);
             GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, 1, LuminanceSSBO);
             GL.BindImageTexture(0, SourceBuffer1.colorTex[0].Handle, 0, false, 0, TextureAccess.ReadOnly, (SizedInternalFormat)35898);
-            GL.DispatchCompute(SourceBuffer1.Width / 16 / 16, SourceBuffer1.Height / 16 / 16, 1);
-
+            GL.DispatchCompute(SourceBuffer1.Width / 16 / 8, SourceBuffer1.Height / 16 / 8, 1);
             profiler.End();
+            LuminanceSmoothCompute.Use();
+            profiler.Start("Luminance Smooth");
+            GL.DispatchCompute(1, 1, 1);
+            profiler.End();
+
 
             GL.Viewport(0, 0, SourceBuffer1.Width, SourceBuffer1.Height);
 
@@ -891,19 +900,14 @@ namespace _3dTerrainGeneration
             profiler.End();
 
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, LuminanceSSBO);
-            GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, sizeof(int) * 1, luminanceData);
-            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
-            float maxLuma = Math.Clamp(luminanceData[0] / 1024f, .4f, 5f);
-            luma = (luma * 49 + maxLuma) / 50f;
-            //luma = 4;
-
+            //GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, sizeof(int) * 1, luminanceData);
             profiler.Start("Apply Tonemap");
-            TonemappingShader.SetFloat("maxLuma", luma);
             TonemappingShader.SetFloat("width", SourceBuffer0.Width);
             TonemappingShader.SetFloat("height", SourceBuffer0.Height);
             TonemappingShader.SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
             FragmentPass.Apply(TonemappingShader, SourceBuffer0, SourceBuffer1.colorTex[0]);
             profiler.End();
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
             GL.Viewport(0, 0, BloomBuffer0.Width, BloomBuffer0.Height);
             profiler.Start("Bloom");

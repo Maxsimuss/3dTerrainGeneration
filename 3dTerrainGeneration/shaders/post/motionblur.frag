@@ -32,17 +32,21 @@ void main() {
 
     vec2 delta = TexCoords - prev.xy;
 
-    vec3 color = texture(colortex0, TexCoords).rgb;
-    int samples = 1;
-    for(int i = 1; i <= 4; i++) {
-        vec2 t = TexCoords + delta * rand(TexCoords + i);
+    vec3 color = vec3(0);
+    int samples = 0;
+    for(int i = 0; i <= 2; i++) {
+        vec2 t = TexCoords + delta * rand(TexCoords + i) * .5;
         if(t.x < 0 || t.x > 1 || t.y < 0 || t.y > 1) {
             break;
         }
-        float d = texture(colortex1, t).r;
         color += texture(colortex0, t).rgb;
         samples++;
     }
     
+    if(samples < 1) {
+        color = texture(colortex0, TexCoords).rgb;
+        samples++;
+    }
+
     FragColor = vec4(color / samples, 1.0);
 }
