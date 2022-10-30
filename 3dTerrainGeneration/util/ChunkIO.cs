@@ -1,4 +1,4 @@
-﻿//#define NO_SAVE
+﻿#define NO_SAVE
 
 using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.world;
@@ -13,7 +13,7 @@ namespace _3dTerrainGeneration.util
 {
     public class ChunkIO
     {
-        private static int version = 3;
+        private static int version = 5;
 
 
         private static string GetChunkDir()

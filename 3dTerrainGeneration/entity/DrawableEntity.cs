@@ -32,7 +32,7 @@ namespace _3dTerrainGeneration.entity
             if (DistanceTraveled > 2 && isOnGround)
             {
                 DistanceTraveled = DistanceTraveled % 2;
-                AnimationFrame = OpenTK.MathHelper.Clamp(1 - AnimationFrame, 0, 1);
+                AnimationFrame = OpenTK.Mathematics.MathHelper.Clamp(1 - AnimationFrame, 0, 1);
                 Window.Instance.SoundManager.PlaySound(SoundType.Walk, false, rnd.NextSingle() / 2 + .75f, .1f);
             }
             else
@@ -65,7 +65,7 @@ namespace _3dTerrainGeneration.entity
 
         public virtual Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public virtual void Render(double frameDelta)

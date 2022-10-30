@@ -7,6 +7,6 @@ layout(std430, binding = 1) buffer outputData
 };
 
 void main() {
-    lumaSmooth = clamp(((maxLuma / 1024.) + lumaSmooth * 19.) / 20., .5, 4.);
+    lumaSmooth = (clamp(maxLuma / 1024., .5, 4.) + lumaSmooth * 19.) / 20.;
     maxLuma = 0;
 }

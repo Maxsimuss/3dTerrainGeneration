@@ -59,7 +59,7 @@ namespace _3dTerrainGeneration.gui
         {
             camera.AspectRatio = renderer.aspectRatio;
             camera.Yaw = (float)(TimeUtil.Unix() / 360 % 360);
-            camera.Pitch = (float)OpenTK.MathHelper.RadiansToDegrees(Math.Sin(TimeUtil.Unix() / 36000 % Math.PI * 2)) / 2;
+            camera.Pitch = (float)OpenTK.Mathematics.MathHelper.RadiansToDegrees(Math.Sin(TimeUtil.Unix() / 36000 % Math.PI * 2)) / 2;
 
             double t = TimeUtil.Unix() / 100 / 1440 % 1;
 

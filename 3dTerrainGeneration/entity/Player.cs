@@ -1,6 +1,7 @@
 ﻿using _3dTerrainGeneration.rendering;
 using _3dTerrainGeneration.world;
 using OpenTK.Input;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Numerics;
 using TerrainServer.network;
@@ -48,7 +49,7 @@ namespace _3dTerrainGeneration.entity
 
             if (LMB)
             {
-                Vector3 m = Vector3.Normalize(new((float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.MathHelper.DegreesToRadians(pitch))));
+                Vector3 m = Vector3.Normalize(new((float)Math.Cos(OpenTK.Mathematics.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.Mathematics.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.Mathematics.MathHelper.DegreesToRadians(pitch)), (float)Math.Sin(OpenTK.Mathematics.MathHelper.DegreesToRadians(yaw)) * (float)Math.Cos(OpenTK.Mathematics.MathHelper.DegreesToRadians(pitch))));
                 m *= 120;
                 Vector3 eye = GetEyePosition(frameDelta);
                 world.network.SpawnEntity(EntityType.FireBall, eye.X, eye.Y, eye.Z, m.X, m.Y, m.Z);
@@ -56,7 +57,7 @@ namespace _3dTerrainGeneration.entity
 
             double speed = 20;
 
-            if (input.IsKeyDown(Key.LShift))
+            if (input.IsKeyDown(Keys.LeftShift))
             {
                 speed *= .25;
             }
@@ -64,10 +65,10 @@ namespace _3dTerrainGeneration.entity
             bool isMoving = false;
             double offset = 0;
 
-            bool W = input.IsKeyDown(Key.W);
-            bool A = input.IsKeyDown(Key.A);
-            bool S = input.IsKeyDown(Key.S);
-            bool D = input.IsKeyDown(Key.D);
+            bool W = input.IsKeyDown(Keys.W);
+            bool A = input.IsKeyDown(Keys.A);
+            bool S = input.IsKeyDown(Keys.S);
+            bool D = input.IsKeyDown(Keys.D);
 
             if (W ^ S)
             {
@@ -129,15 +130,15 @@ namespace _3dTerrainGeneration.entity
 
             if (isMoving)
             {
-                MoveFacing(offset, speed * (input.IsKeyDown(Key.ControlLeft) ? 10 : 1));
+                MoveFacing(offset, speed * (input.IsKeyDown(Keys.LeftControl) ? 10 : 1));
             }
 
-            if (input.IsKeyDown(Key.Space))
+            if (input.IsKeyDown(Keys.Space))
             {
                 Jump(false);
             }
 
-            if (input.IsKeyDown(Key.LShift))
+            if (input.IsKeyDown(Keys.LeftShift))
             {
                 Sneak();
             }
@@ -145,7 +146,7 @@ namespace _3dTerrainGeneration.entity
 
         public override Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationY((float)OpenTK.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public Vector3 GetEyePosition(double frameDelta)

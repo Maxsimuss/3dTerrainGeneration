@@ -1,13 +1,13 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL;
 
 namespace _3dTerrainGeneration.rendering
 {
     public class Framebuffer
     {
         public int FBO, Width, Height;
-        public Texture[] colorTex;
+        public Texture2D[] colorTex;
 
-        public Framebuffer(int Width, int Height, DrawBuffersEnum[] drawBuffers, params Texture[] textures)
+        public Framebuffer(int Width, int Height, DrawBuffersEnum[] drawBuffers, params Texture2D[] textures)
         {
             this.Width = Width;
             this.Height = Height;
@@ -15,7 +15,7 @@ namespace _3dTerrainGeneration.rendering
             FBO = GL.GenFramebuffer();
             Use();
 
-            colorTex = new Texture[textures.Length];
+            colorTex = new Texture2D[textures.Length];
             for (int i = 0; i < textures.Length; i++)
             {
                 colorTex[i] = textures[i];
@@ -35,7 +35,7 @@ namespace _3dTerrainGeneration.rendering
             GL.DeleteFramebuffer(FBO);
             foreach (Texture texture in colorTex)
             {
-                texture.Dispose();
+                texture.Delete();
             }
         }
 
@@ -43,7 +43,7 @@ namespace _3dTerrainGeneration.rendering
         {
             for (int i = 0; i < colorTex.Length; i++)
             {
-                colorTex[i].Use(TextureUnit.Texture0 + i + offset);
+                colorTex[i].ActiveBind(TextureUnit.Texture0 + i + offset);
             }
 
             return colorTex.Length + offset;

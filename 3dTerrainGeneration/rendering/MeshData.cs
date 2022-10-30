@@ -1,6 +1,7 @@
 ﻿using _3dTerrainGeneration.world;
 using OpenTK;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 
 namespace _3dTerrainGeneration.rendering

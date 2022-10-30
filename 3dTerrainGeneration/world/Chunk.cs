@@ -2,6 +2,7 @@
 using _3dTerrainGeneration.util;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -20,7 +21,7 @@ namespace _3dTerrainGeneration.world
         public byte[] blocks = null;
         public object dataLock = new object();
         public object meshLock = new object();
-        public static int lodCount = 5;
+        public static int lodCount = 1;
 
         public int X, Y, Z;
         private int loadedLod = -1;
@@ -110,7 +111,6 @@ namespace _3dTerrainGeneration.world
 
             sounds = new List<byte>();
             particles = new List<byte>();
-
             //goto newgen;
             for (int _x = 0; _x < Size; _x++)
             {
@@ -144,11 +144,11 @@ namespace _3dTerrainGeneration.world
 
                                 float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f) + rnd.NextSingle() * .05f - .025f);
 
-                                //if(temp > .85 && humidity < .3 && rnd.NextSingle() < .001)
-                                //{
-                                //    ImportedStructure str = new ImportedStructure("trees/cactus0/cactus0.vox", x, y + 1, z);
-                                //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
-                                //}
+                                if (rnd.NextSingle() < .001)
+                                {
+                                    ImportedStructure str = new ImportedStructure("trees/tree0/tree0.vox", x, y + 1, z);
+                                    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
+                                }
 
                                 SetBlock(x, y, z, Materials.IdOf(
                                     Color.HsvToRgb(
@@ -189,7 +189,6 @@ namespace _3dTerrainGeneration.world
             }
 
         mesh:
-
             //lock (world.structureLock)
             //{
             //    foreach (var s in world.structures)
@@ -218,7 +217,7 @@ namespace _3dTerrainGeneration.world
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float GetHeight(int x, int z)
+        public static float GetHeight(int x, int z)
         {
             return (float)Math.Pow(OcataveNoise(x, z, .0005f / 4, 8) * 1.2, 7) * GetPerlin(x, z, .0005f / 4) * 255 * 4;
         }

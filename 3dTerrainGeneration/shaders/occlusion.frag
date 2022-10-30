@@ -1,5 +1,5 @@
 #version 420
-#pragma optionNV (unroll all)
+// #pragma optionNV (unroll all)
 #define SSAO_SAMPLES 2
 
 out float occlusion;
@@ -13,7 +13,7 @@ uniform mat4 projection;
 uniform mat4 projectionPrev;
 uniform mat4 _projection;
 
-const float radius = 2.5;
+const float radius = 2.;
 const float zNear = .2;
 const float zFar = 3072;
 

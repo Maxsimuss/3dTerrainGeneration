@@ -115,11 +115,16 @@ void main() {
 
     
     float len = linearize_depth(depth) / 500;
-    float fogAmt = len / (len + 1) * texture(fogTex, TexCoords).r;
+    // float fogAmt = len / (len + 1) * texture(fogTex, TexCoords).r;
 
-    vec3 fog = 20 * sky;
+    // vec3 fog = 20 * sky;
+    vec4 fogSample = texture(fogTex, TexCoords);
 
-    vec3 color = mix(texture(skyTex, TexCoords).rgb * 40 + texture(starTex, TexCoords).rgb * 30, mix(diffuse, fog, fogAmt), albedo.aaa);
+    vec3 skyColor = texture(skyTex, TexCoords).rgb * 30;
+    diffuse = mix(skyColor, diffuse, albedo.aaa);
+
+
+    vec3 color = mix(diffuse, fogSample.rgb * skyColor, fogSample.aaa) + texture(starTex, TexCoords).rgb * (1. - albedo.a);
 
     FragColor = vec4(color / 2, 1);
 }

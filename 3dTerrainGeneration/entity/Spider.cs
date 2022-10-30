@@ -54,7 +54,7 @@ namespace _3dTerrainGeneration.entity
 
         private float Angle(DrawableEntity e)
         {
-            float d = (float)(OpenTK.MathHelper.RadiansToDegrees(Math.Atan2(e.x - x, e.z - z)) - 90);
+            float d = (float)(OpenTK.Mathematics.MathHelper.RadiansToDegrees(Math.Atan2(e.x - x, e.z - z)) - 90);
             if (d < -180)
             {
                 d += 360;

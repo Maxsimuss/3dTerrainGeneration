@@ -74,7 +74,7 @@ namespace _3dTerrainGeneration.entity
                 {
                     Target = p;
 
-                    yaw = OpenTK.MathHelper.RadiansToDegrees(-Math.Atan2(d.X, d.Z)) + 90;
+                    yaw = OpenTK.Mathematics.MathHelper.RadiansToDegrees(-Math.Atan2(d.X, d.Z)) + 90;
                 }
                 else
                 {

@@ -45,9 +45,9 @@ void main() {
 
 	float s = clamp(dot(p, sun_dir), 0, 1);
 
-	vec3 sun = clamp(pow(s, 300).rrr * 50 - 45, 0, 15) / coef;
+	vec3 sun = clamp(pow(s, 500).rrr * 50 - 45, 0, 15) / coef;
 	vec3 v = p * 200 + time;
 	vec3 stars = clamp(pow(clamp(noise(v), 0., 1.), 50.), 0, 1).rrr;
 
-	FragColor = vec4(max(sun, stars / 20) / 2, 1);
+	FragColor = vec4(max(sun * 1000, stars) / 2, 1);
 }

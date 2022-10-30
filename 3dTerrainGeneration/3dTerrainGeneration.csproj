@@ -215,6 +215,9 @@
     <None Update="shaders\index.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="shaders\luminancesmooth.comp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="shaders\xd.comp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -319,8 +322,8 @@
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="6.0.0" />
     <PackageReference Include="MP3Sharp" Version="1.0.5" />
     <PackageReference Include="OpenAL-Soft" Version="1.16.0" />
-    <PackageReference Include="OpenTK" Version="3.3.1" />
-    <PackageReference Include="OpenTK.Input" Version="4.7.1" />
+    <PackageReference Include="OpenTK" Version="4.7.5" />
+    <PackageReference Include="OpenTK.Input" Version="4.7.5" />
     <PackageReference Include="RawInput.Sharp" Version="0.0.4" />
     <PackageReference Include="SuperSimpleTcp" Version="2.6.0.6" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />

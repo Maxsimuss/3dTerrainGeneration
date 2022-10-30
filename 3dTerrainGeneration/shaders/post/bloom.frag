@@ -13,5 +13,5 @@ float luminance(vec3 rgb) {
 void main() {
     vec3 color = texture(colortex0, TexCoords).rgb;
 
-	FragColor = vec4(color * max(luminance(color) - 1, 0), 1.0);
+	FragColor = vec4(color, 1.0);
 }

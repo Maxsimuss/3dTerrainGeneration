@@ -16,10 +16,10 @@ namespace _3dTerrainGeneration.rendering
         private float _pitch;
 
         // Rotation around the Y axis (radians)
-        private float _yaw = -OpenTK.MathHelper.PiOver2; // Without this you would be started rotated 90 degrees right
+        private float _yaw = -OpenTK.Mathematics.MathHelper.PiOver2; // Without this you would be started rotated 90 degrees right
 
         // The field of view of the camera (radians)
-        private float _fov = OpenTK.MathHelper.PiOver2;
+        private float _fov = OpenTK.Mathematics.MathHelper.PiOver2;
 
         public Camera(Vector3 position, float aspectRatio)
         {
@@ -49,14 +49,14 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Pitch
         {
-            get => OpenTK.MathHelper.RadiansToDegrees(_pitch);
+            get => OpenTK.Mathematics.MathHelper.RadiansToDegrees(_pitch);
             set
             {
                 // We clamp the pitch value between -89 and 89 to prevent the camera from going upside down, and a bunch
                 // of weird "bugs" when you are using euler angles for rotation.
                 // If you want to read more about this you can try researching a topic called gimbal lock
-                var angle = OpenTK.MathHelper.Clamp(value, -89.999f, 89.999f);
-                _pitch = OpenTK.MathHelper.DegreesToRadians(angle);
+                var angle = OpenTK.Mathematics.MathHelper.Clamp(value, -89.999f, 89.999f);
+                _pitch = OpenTK.Mathematics.MathHelper.DegreesToRadians(angle);
                 UpdateVectors();
             }
         }
@@ -64,10 +64,10 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Yaw
         {
-            get => OpenTK.MathHelper.RadiansToDegrees(_yaw);
+            get => OpenTK.Mathematics.MathHelper.RadiansToDegrees(_yaw);
             set
             {
-                _yaw = OpenTK.MathHelper.DegreesToRadians(value);
+                _yaw = OpenTK.Mathematics.MathHelper.DegreesToRadians(value);
                 UpdateVectors();
             }
         }
@@ -77,11 +77,11 @@ namespace _3dTerrainGeneration.rendering
         // We convert from degrees to radians as soon as the property is set to improve performance
         public float Fov
         {
-            get => OpenTK.MathHelper.RadiansToDegrees(_fov);
+            get => OpenTK.Mathematics.MathHelper.RadiansToDegrees(_fov);
             set
             {
-                var angle = OpenTK.MathHelper.Clamp(value, 30f, 179f);
-                _fov = OpenTK.MathHelper.DegreesToRadians(angle);
+                var angle = OpenTK.Mathematics.MathHelper.Clamp(value, 30f, 179f);
+                _fov = OpenTK.Mathematics.MathHelper.DegreesToRadians(angle);
             }
         }
 

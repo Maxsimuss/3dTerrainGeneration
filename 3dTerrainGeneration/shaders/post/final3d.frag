@@ -48,12 +48,15 @@ float luminance(vec3 rgb) {
 }
 
 void main() {
-	vec3 color = clamp(texture(colortex0, TexCoords).rgb, 0., 1.) + texture(colortex1, TexCoords).rgb / 2.;
+	vec3 color = mix(texture(colortex0, TexCoords).rgb, texture(colortex1, TexCoords).rgb, .2);
 	// color = sqrt(color);
 	// color /= color + 1;
 	// color *= 1.5;
 
 	color = tonemapFilmic(pow(color, vec3(1/.7))) / .85;
+
+    float f = .5/255.;
+    color += mix(-f, f, rand(TexCoords));
 
     FragColor = vec4(color, 1.0);
 }

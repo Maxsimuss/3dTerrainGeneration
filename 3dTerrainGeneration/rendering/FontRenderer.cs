@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -10,7 +10,7 @@ namespace _3dTerrainGeneration.rendering
     public class FontRenderer
     {
         private FragmentShader TextShader;
-        private Texture texture;
+        private Texture2D texture;
 
         private int GlyphSize;
 
@@ -43,12 +43,12 @@ namespace _3dTerrainGeneration.rendering
                 }
 
                 BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                texture = new Texture(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba, OpenTK.Graphics.OpenGL4.PixelFormat.Bgra, PixelType.UnsignedByte, false, data.Scan0, filtered: false);
+                texture = new Texture2D(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba8, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
                 bitmap.UnlockBits(data);
             }
             TextShader = new FragmentShader("Shaders/post.vert", "Shaders/text.frag");
             TextShader.SetInt("colortex0", 0);
-            texture.Use();
+            texture.ActiveBind();
 
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
@@ -112,7 +112,7 @@ namespace _3dTerrainGeneration.rendering
         {
             float scaleY = scale * aspectRatio;
 
-            float[] buffer = new float[text.Length * 16];
+            float[] buffer = new float[text.Length * 24];
 
             float u_step = 1f / 256f;
 
@@ -124,10 +124,19 @@ namespace _3dTerrainGeneration.rendering
 
                 vertex2(ref offset, x, y);
                 vertex2(ref offset, u, 1);
+
                 vertex2(ref offset, x + scale, y);
                 vertex2(ref offset, u + u_step, 1);
+
                 vertex2(ref offset, x + scale, y + scaleY);
                 vertex2(ref offset, u + u_step, 0);
+
+                vertex2(ref offset, x, y);
+                vertex2(ref offset, u, 1);
+
+                vertex2(ref offset, x + scale, y + scaleY);
+                vertex2(ref offset, u + u_step, 0);
+
                 vertex2(ref offset, x, y + scaleY);
                 vertex2(ref offset, u, 0);
 
@@ -140,8 +149,8 @@ namespace _3dTerrainGeneration.rendering
             GL.BufferData(BufferTarget.ArrayBuffer, sizeof(float) * buffer.Length, buffer, BufferUsageHint.DynamicDraw);
             TextShader.Use();
             TextShader.SetVector4("color", color);
-            texture.Use();
-            GL.DrawArrays(PrimitiveType.Quads, 0, buffer.Length / 4);
+            texture.ActiveBind();
+            GL.DrawArrays(PrimitiveType.Triangles, 0, buffer.Length / 4);
 
             void vertex2(ref int offset, float x, float y)
             {

@@ -26,7 +26,7 @@ namespace _3dTerrainGeneration.rendering
         private Queue<InderectDraw> queue = new Queue<InderectDraw>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1073741824 / 2;
+        public readonly int VramAllocated = 1048576 * 128; //128 MB
 
         public GameRenderer()
         {
@@ -118,6 +118,8 @@ namespace _3dTerrainGeneration.rendering
             DrawArraysIndirectCommand[] inderect = new DrawArraysIndirectCommand[queue.Count];
 
             uint baseInst = 0;
+            long vertDrawn = 0;
+
             for (int i = 0; i < inderect.Length; i++)
             {
                 InderectDraw draw = queue.Dequeue();
@@ -125,16 +127,20 @@ namespace _3dTerrainGeneration.rendering
                 DrawArraysIndirectCommand cmd;
                 cmd.first = (uint)draw.first;
                 cmd.count = (uint)draw.count;
+
                 cmd.baseInstance = baseInst;
                 cmd.instanceCount = (uint)draw.instanceCount;
+
+                vertDrawn += draw.count * draw.instanceCount;
 
                 inderect[i] = cmd;
 
                 baseInst += (uint)draw.instanceCount;
                 draw.instanceCount = 0;
             }
+            Console.WriteLine("vert c {0}k", vertDrawn / 3000);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MatrixVBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrices.Count, matrices.ToArray(), BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrices.Count, matrices.ToArray(), BufferUsageHint.DynamicDraw);
             matrices.Clear();
 
             GL.BindBuffer(BufferTarget.DrawIndirectBuffer, inderectBuffer);

@@ -45,7 +45,7 @@ void main() {
     vec3 _max = curr;
     float minDepth = zFar * 2;
     float mixAmt = .1;
-#define TAA_SEARCH_RADIUS 27
+#define TAA_SEARCH_RADIUS 9
 #define TAA_DEPTH_SEARCH_RADIUS 9
 
     for(int i = 0; i < TAA_SEARCH_RADIUS; i++) {
@@ -62,7 +62,7 @@ void main() {
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1 || minDepth > .05 * linearize_depth(depth)) {
         mixAmt = 1;
     }
-    color = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
     // color = mix(n.rgb, curr, mixAmt);
+    color = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
     FragColor = vec4(color, depth);
 }

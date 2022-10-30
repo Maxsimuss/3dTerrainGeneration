@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace _3dTerrainGeneration.util
 {
@@ -130,9 +131,8 @@ namespace _3dTerrainGeneration.util
                 if (!sectionValues.ContainsKey(_frame.queryNames[i]))
                     sectionValues.Add(_frame.queryNames[i], (float)time);
 
-                sectionValues[_frame.queryNames[i]] += (float)time * .1f;
-                sectionValues[_frame.queryNames[i]] /= 1.1f;
-                times.Add(_frame.queryNames[i] + ": " + sectionValues[_frame.queryNames[i]] + "ms");
+                sectionValues[_frame.queryNames[i]] += (float)time * .01f;
+                sectionValues[_frame.queryNames[i]] /= 1.01f;
                 total += time;
             }
 
@@ -148,12 +148,14 @@ namespace _3dTerrainGeneration.util
             }
             if (!sectionValues.ContainsKey("Total"))
                 sectionValues.Add("Total", (float)total);
-            sectionValues["Total"] += (float)total * .1f;
-            sectionValues["Total"] /= 1.1f;
+            sectionValues["Total"] += (float)total * .01f;
+            sectionValues["Total"] /= 1.01f;
 
 
-
-            times.Add("Total: " + sectionValues["Total"] + "ms");
+            foreach (var item in sectionValues.OrderBy(e => (int)(e.Value * 100) / 100f))
+            {
+                times.Add(item.Key + ": " + ((int)(item.Value * 100) / 100f) + "ms");
+            }
 
             return times;
         }

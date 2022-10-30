@@ -1,7 +1,7 @@
 ﻿#version 430 core
 #pragma optionNV (unroll all)
 
-out float FragColor;
+out vec4 FragColor;
   
 in vec2 TexCoords;
 
@@ -27,6 +27,14 @@ uniform Light sun;
 
 float rand(vec2 co){
     return fract(sin(dot((co + fract(time * 42.1249104)) * 1000, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+const float zNear = .2;
+const float zFar = 3072;
+float linearize_depth(float d)
+{
+    float z_n = 2.0 * d - 1.0;
+    return 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
 }
 
 vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
@@ -63,8 +71,10 @@ void main() {
         vec4 ShadowCoord = _pos * matrices[idx];
         ShadowCoord /= ShadowCoord.w;
         ShadowCoord.xyz = ShadowCoord.xyz * .5 + .5;
-        fog += (((texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0) * .9 + .1);
+        fog += (((texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0) * .5 + .5);
     }
     
-    FragColor = fog / fogQuality;
+    float c = fog / fogQuality;
+    FragColor = vec4(c, c, c, linearize_depth(depth) / zFar);
+    // FragColor = fog / fogQuality;
 }

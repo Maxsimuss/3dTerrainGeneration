@@ -1,4 +1,4 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -12,7 +12,7 @@ namespace _3dTerrainGeneration.rendering
 
             for (int i = 0; i < sourceTextures.Length; i++)
             {
-                sourceTextures[i].Use(TextureUnit.Texture0 + i);
+                sourceTextures[i].ActiveBind(TextureUnit.Texture0 + i);
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
@@ -31,7 +31,7 @@ namespace _3dTerrainGeneration.rendering
 
             for (int i = 0; i < sourceTextures.Length; i++)
             {
-                sourceTextures[i].Use(TextureUnit.Texture0 + i + offset);
+                sourceTextures[i].ActiveBind(TextureUnit.Texture0 + i + offset);
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);

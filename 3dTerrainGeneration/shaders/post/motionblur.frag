@@ -35,9 +35,10 @@ void main() {
     vec3 color = vec3(0);
     int samples = 0;
     for(int i = 0; i <= 2; i++) {
-        vec2 t = TexCoords + delta * rand(TexCoords + i) * .5;
-        if(t.x < 0 || t.x > 1 || t.y < 0 || t.y > 1) {
-            break;
+        vec2 d = delta * rand(TexCoords + i);
+        vec2 t = TexCoords + d;
+        if(t.x < 0 || t.x > 1 || t.y < 0 || t.y > 1 || length(d) > .3) {
+            continue;
         }
         color += texture(colortex0, t).rgb;
         samples++;

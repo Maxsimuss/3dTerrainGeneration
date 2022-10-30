@@ -1,4 +1,8 @@
 ﻿using OpenTK;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
 using System;
 using System.Runtime.InteropServices;
 
@@ -19,17 +23,29 @@ namespace _3dTerrainGeneration
 #else
             bool fullscreen = false;
 #endif
-            int w = fullscreen ? DisplayDevice.Default.Width : DisplayDevice.Default.Width / 4;
-            int h = fullscreen ? DisplayDevice.Default.Height : DisplayDevice.Default.Height / 4;
-            GameWindowFlags flag = fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default;
-            Window window = new Window(w, h, flag, "gaem");
+            //int w = fullscreen ? Default.Width : DisplayDevice.Default.Width / 4;
+            //int h = fullscreen ? DisplayDevice.Default.Height : DisplayDevice.Default.Height / 4;
+            //GameWindowFlags flag = fullscreen ? GameWindowFlags.Fullscreen : GameWindowFlags.Default;
+
+            GameWindowSettings gs = new GameWindowSettings()
+            {
+                IsMultiThreaded = false,
+                RenderFrequency = 0,
+                UpdateFrequency = 60
+            };
+            NativeWindowSettings ns = new NativeWindowSettings()
+            {
+                APIVersion = new Version(4, 6),
+            };
+
+            Window window = new Window(1700, 1000, gs, ns);
 
             if (!fullscreen)
             {
                 AllocConsole();
             }
 
-            window.Run(20, 0);
+            window.Run();
         }
     }
 }

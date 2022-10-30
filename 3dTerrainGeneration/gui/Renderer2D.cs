@@ -1,5 +1,5 @@
 ﻿using _3dTerrainGeneration.rendering;
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using System;
 using System.Numerics;
 
