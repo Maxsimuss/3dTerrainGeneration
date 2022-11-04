@@ -7,6 +7,7 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform vec2 taaOffset;
 
+out vec4 Position;
 out vec3 Normal;
 out vec3 Color;
 
@@ -24,6 +25,7 @@ void main()
     mat3 normalMatrix = inverse(mat3(model));
 
     vec3 pos = vec3(aData >> 25 & (0x0000007F), aData >> 18 & (0x0000007F), aData >> 11 & (0x0000007F));
+    Position = model * vec4(pos, 1.0);
 
     uint face = aData >> 8 & 0x00000007;
     Color = (vec3(((aData >> 5) & uint(7)) * 36, ((aData >> 2) & uint(7)) * 36, (aData & uint(3)) * 85) + 10) / 265.;

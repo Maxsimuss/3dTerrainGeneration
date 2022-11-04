@@ -94,7 +94,7 @@ namespace _3dTerrainGeneration.rendering
         // Get the projection matrix using the same method we have used up until this point
         public Matrix4x4 GetProjectionMatrix()
         {
-            return Matrix4x4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .2f, 3072);
+            return Matrix4x4.CreatePerspectiveFieldOfView(_fov, AspectRatio, .5f, 3072);
         }
 
         // This function is going to update the direction vertices using some of the math learned in the web tutorials

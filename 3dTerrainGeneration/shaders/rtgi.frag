@@ -19,13 +19,18 @@ uniform usampler3D data;
 uniform sampler2D depthTex;
 uniform sampler2D normalTex;
 uniform sampler2D memoryTex;
+uniform sampler2D positionTex;
 uniform float time;
 uniform int SIZE;
+uniform vec2 wh;
 
-#define RAD .5
-#define RAYTRACE_SPP 5
+#define RAD 1
 #define RAYTRACE_TAA_MIX .05
-// #define RAYTRACE_BIAS .01
+#define RAYTRACE_SPP 6
+#define RAYTRACE_BIAS 0.0001
+#define RAY_LEN0 100
+#define RAY_LEN1 256
+
 float rand(vec2 co) {
     return fract(sin(dot((co + time) * 10, vec2(12.9898, 78.233))) * 43758.5453);
     // return texture(noise, (co + time * 10) * 5.54298).r;
@@ -47,7 +52,7 @@ struct hitResult {
 
 hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps) {
     vec3 rayDir = normalize(_rayDir);
-	ivec3 mapPos = ivec3(floor(rayPos + 0.));
+	ivec3 mapPos = ivec3(floor(rayPos));
 	vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
 	ivec3 rayStep = ivec3(sign(rayDir));
 	vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist; 
@@ -69,14 +74,19 @@ hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps) {
     return hitResult(0, skyLight, rayPos, bvec3(0));
 }
 
-vec3 CosWeightedRandomHemisphereDirection(vec3 n, int i)
+vec3 CosWeightedRandomHemisphereDirection(vec3 normal, int i)
 {
-    return normalize(mix(n, vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1), RAD));
+    vec3 randomVec = (vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1)) * RAD;
+    vec3 tangent   = (randomVec - normal.xyz * dot(randomVec, normal.xyz));
+    vec3 bitangent = cross(normal.xyz, tangent);
+    mat3 TBN       = mat3(tangent, bitangent, normal.xyz);  
+    // get sample position
+    return TBN * (vec3(rand(TexCoords + i * 3 - 30), rand(TexCoords + i * 3 - 20), rand(TexCoords + i * 3 - 10))); // from tangent to view-space
 }
 
 const vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
-const float zNear = .2;
+const float zNear = .5;
 const float zFar = 3072;
 float linearize_depth(float d) {
     float z_n = 2.0 * d - 1.0;
@@ -85,39 +95,8 @@ float linearize_depth(float d) {
 
 void main() {
     float d = texture(depthTex, TexCoords).r;
-
-    float ld = linearize_depth(d);
-    float RAYTRACE_BIAS = .01;
-#define RAY_LEN 600
-    vec3 _pos = depthToView(TexCoords - taaOffset * .5, d, projection);
+    vec3 _pos = texture(positionTex, TexCoords).xyz;
     vec3 normal = texture(normalTex, TexCoords).xyz * 2 - 1;
-
-    vec3 gi = vec3(0);
-
-    for (int i = 0; i < RAYTRACE_SPP; i++) {
-        vec3 norm = CosWeightedRandomHemisphereDirection(normal, i * 2);
-        vec3 dir = reflect(normalize(_pos - position), norm);
-        
-        hitResult hit0 = raycast(_pos + dir * RAYTRACE_BIAS, dir, RAY_LEN);
-        if(hit0.hit > .5) {
-            if(raycast(hit0.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN).hit < .5) {
-                gi += hit0.color * sunLight * 2 * max(0, dot(vec3(hit0.mask), abs(sunDir)));
-            }
-            dir = reflect(dir, vec3(hit0.mask));
-            dir = CosWeightedRandomHemisphereDirection(dir, i * 2 + 1);
-            hitResult hit1 = raycast(hit0.position + dir * RAYTRACE_BIAS, dir, RAY_LEN);
-            if(hit1.hit > .5) {
-                if(raycast(hit1.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN).hit < .5) {
-                    gi += hit0.color * hit1.color * sunLight * 2 * max(0, dot(vec3(hit1.mask), abs(sunDir)));
-                }
-            } else {
-                gi += hit0.color * skyLight * 20;
-            }
-        } else {
-            gi += skyLight * 20;
-        }
-    }
-    gi /= RAYTRACE_SPP;
 
     vec4 prev = vec4(_pos, 1.) * projectionPrev;
     prev /= prev.w;
@@ -131,11 +110,40 @@ void main() {
         minDepth = min(abs(linearize_depth(_d) - linearize_depth(prev.z)), minDepth);
     }
 
-
+    int samples = RAYTRACE_SPP;
+    vec3 gi = vec3(0);
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1 || minDepth > .05 * linearize_depth(d)) {
         mixAmt = 1;
-        // gi = (gi + .5) / 1.5 / 1.5;
+        samples *= 2;
+        // gi += skyLight * 30;
     }
+
+
+    for (int i = 0; i < samples; i++) {
+        vec3 norm = CosWeightedRandomHemisphereDirection(normal, i * 2);
+        vec3 dir = reflect(normalize(_pos - position), norm);
+        
+        hitResult hit0 = raycast(_pos + dir * RAYTRACE_BIAS, dir, RAY_LEN0);
+        if(hit0.hit > .5) {
+            if(raycast(hit0.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN1).hit < .5) {
+                gi += hit0.color * sunLight * 2 * max(0, dot(vec3(hit0.mask), abs(sunDir)));
+            }
+            dir = reflect(dir, vec3(hit0.mask));
+            dir = CosWeightedRandomHemisphereDirection(dir, i * 2 + 1);
+            hitResult hit1 = raycast(hit0.position + dir * RAYTRACE_BIAS, dir, RAY_LEN0);
+            if(hit1.hit > .5) {
+                if(raycast(hit1.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN1).hit < .5) {
+                    gi += hit0.color * hit1.color * sunLight * 2 * max(0, dot(vec3(hit1.mask), abs(sunDir)));
+                }
+            } else {
+                gi += hit0.color * skyLight * 30;
+            }
+        } else {
+            gi += skyLight * 30;
+        }
+    }
+    gi /= samples;
+
     vec4 c = vec4(mix(mem.rgb, gi, mixAmt), d);
     vec4 p = vec4(_pos, (normal.x + 1) + (normal.y + 1) * 3 + (normal.z + 1) * 9);
     if(d == 1) {

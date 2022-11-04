@@ -7,7 +7,7 @@ namespace _3dTerrainGeneration.rendering
 {
     public abstract class Texture
     {
-        public static int TotalBytesAllocated = 0;
+        public static long TotalBytesAllocated = 0;
         protected static int GetFormatBytesPerPixel(PixelInternalFormat pixelInternalFormat)
         {
             switch (pixelInternalFormat)
@@ -24,6 +24,7 @@ namespace _3dTerrainGeneration.rendering
                 case PixelInternalFormat.R8: return 1;
                 case PixelInternalFormat.R16f: return 2;
                 case PixelInternalFormat.R32f: return 4;
+                case PixelInternalFormat.R8ui: return 1;
                 case (PixelInternalFormat)All.Rgb565: return 2;
             }
 

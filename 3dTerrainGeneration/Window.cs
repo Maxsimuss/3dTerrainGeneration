@@ -1,4 +1,4 @@
-﻿//#define RAYTRACE
+﻿#define RAYTRACE
 
 using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.entity;
@@ -42,7 +42,8 @@ namespace _3dTerrainGeneration
         private Framebuffer SourceBuffer0, SourceBuffer1, VolumetricBuffer, TempBuffer0, ShadowBuffer, BloomBuffer0, BloomBuffer1, HUDBuffer, OcclusionBuffer, TAABuffer0, TAABuffer1, DOFWeightBuffer, GIBuffer0, GIBuffer1, FinalBuffer0, FinalBuffer1;
         public Framebuffer SkyBuffer, StarBuffer;
 
-        int FireBallSSBO, LuminanceSSBO, worldTexHandle;
+        int FireBallSSBO, LuminanceSSBO;
+        private Texture3D<byte> rtgiWorldTex;
 
         private Camera camera;
         private bool _firstMove = true;
@@ -74,10 +75,11 @@ namespace _3dTerrainGeneration
             h = (int)(h * resolutionScale);
 
             if (GBuffer != null) GBuffer.Dispose();
-            GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
+            GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
                 new Texture2D(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
                 new Texture2D(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
-                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565, PixelFormat.Rgb));
+                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565, PixelFormat.Rgb),
+                new Texture2D(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
 
             int giR = 8;
             if (GIBuffer0 != null) GIBuffer0.Dispose();
@@ -161,15 +163,7 @@ namespace _3dTerrainGeneration
 
         private void InitRTGIWorldTexture()
         {
-            GL.DeleteTexture(worldTexHandle);
-            worldTexHandle = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
-            GL.TexImage3D(TextureTarget.Texture3D, 0, PixelInternalFormat.R8ui, SIZE, SIZE, SIZE, 0, PixelFormat.RedInteger, PixelType.UnsignedByte, worldData);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-            GL.TexParameter(TextureTarget.Texture3D, TextureParameterName.TextureWrapR, (int)TextureWrapMode.ClampToBorder);
+            rtgiWorldTex = new Texture3D<byte>(SIZE, SIZE, SIZE, PixelInternalFormat.R8ui, PixelFormat.RedInteger, PixelType.UnsignedByte, worldData).SetFilter<Texture3D<byte>>(TextureMinFilter.Nearest, TextureMagFilter.Nearest).SetWrap(TextureWrapMode.ClampToBorder);
         }
 
         private void InitShaders()
@@ -366,12 +360,13 @@ namespace _3dTerrainGeneration
             DOFWeightShader = new FragmentShader(path + "post.vert", path + "dofweight.frag");
             DOFWeightShader.SetInt("depthTex", 0);
 
-            SSRShader = new FragmentShader(path + "post.vert", path + "ssr.frag");
+            SSRShader = new FragmentShader(path + "post.vert", path + "rtgi.frag");
             SSRShader.SetInt("data", 0);
             SSRShader.SetInt("depthTex", 1);
             SSRShader.SetInt("normalTex", 2);
             SSRShader.SetInt("SIZE", SIZE);
             SSRShader.SetInt("memoryTex", 3);
+            SSRShader.SetInt("positionTex", 4);
 
             SharpenShader = new FragmentShader(path + "post.vert", path + "sharpen.frag");
             SharpenShader.SetInt("colorTex", 0);
@@ -712,6 +707,7 @@ namespace _3dTerrainGeneration
             // render shadowmap
             world.player.Visible = true;
             SSRShader.SetVector2("taaOffset", taaJitter);
+            SSRShader.SetVector2("wh", new Vector2(GIBuffer0.Width, GIBuffer0.Height));
             ShadowMapShader.SetVector2("taaOffset", taaJitter);
             ShadowShader.SetVector2("taaOffset", taaJitter);
             ShadowMapShader.SetMatrix4("view", camera.GetViewMatrix());
@@ -858,14 +854,13 @@ namespace _3dTerrainGeneration
             SSRShader.SetVector3("sunDir", World.sunPos);
             SSRShader.SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 1d));
 
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture3D, worldTexHandle);
-
             profiler.Start("RayTrace");
-            FragmentPass.Apply(SSRShader, pingPong ? GIBuffer0 : GIBuffer1, 1,
+            FragmentPass.Apply(SSRShader, pingPong ? GIBuffer0 : GIBuffer1,
+                rtgiWorldTex,
                 GBuffer.depthTex0,
                 GBuffer.colorTex[1],
-                pingPong ? GIBuffer1.colorTex[0] : GIBuffer0.colorTex[0]
+                pingPong ? GIBuffer1.colorTex[0] : GIBuffer0.colorTex[0],
+                GBuffer.colorTex[2]
             );
             profiler.End();
 

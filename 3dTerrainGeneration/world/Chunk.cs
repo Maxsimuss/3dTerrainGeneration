@@ -21,7 +21,7 @@ namespace _3dTerrainGeneration.world
         public byte[] blocks = null;
         public object dataLock = new object();
         public object meshLock = new object();
-        public static int lodCount = 1;
+        public static int lodCount = 4;
 
         public int X, Y, Z;
         private int loadedLod = -1;

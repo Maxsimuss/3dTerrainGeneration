@@ -2,7 +2,7 @@
 out vec4 FragColor;
   
 
-// #define RAYTRACE
+#define RAYTRACE
 
 in vec2 TexCoords;
 
@@ -44,7 +44,7 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
     return viewPos.xyz / viewPos.w;
 }
 
-const float zNear = .2;
+const float zNear = .5;
 const float zFar = 3072;
 float linearize_depth(float d)
 {

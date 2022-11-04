@@ -227,9 +227,9 @@ namespace _3dTerrainGeneration.world
 
         public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
-            //Time += fT * 1000;
+            //Time += fT * 5000;
             //Time += fT * 20000;
-            Time = 720000;
+            //Time = 350000;
             double t = Time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);

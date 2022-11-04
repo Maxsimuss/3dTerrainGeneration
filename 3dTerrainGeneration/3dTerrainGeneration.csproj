@@ -245,7 +245,7 @@
     <None Update="shaders\sharpen.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="shaders\ssr.frag">
+    <None Update="shaders\rtgi.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="shaders\tonemapping.frag">

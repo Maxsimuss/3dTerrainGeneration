@@ -26,7 +26,7 @@ namespace _3dTerrainGeneration.rendering
         private Queue<InderectDraw> queue = new Queue<InderectDraw>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1048576 * 128; //128 MB
+        public readonly int VramAllocated = 1048576 * 256; //256 MB
 
         public GameRenderer()
         {

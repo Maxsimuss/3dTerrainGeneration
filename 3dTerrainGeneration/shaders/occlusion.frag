@@ -14,7 +14,7 @@ uniform mat4 projectionPrev;
 uniform mat4 _projection;
 
 const float radius = 2.;
-const float zNear = .2;
+const float zNear = .5;
 const float zFar = 3072;
 
 float rand(vec2 co) {

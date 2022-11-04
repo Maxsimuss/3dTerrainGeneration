@@ -20,7 +20,7 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
 
 vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 
-const float zNear = .2;
+const float zNear = .5;
 const float zFar = 3072;
 float linearize_depth(float d) {
     float z_n = 2.0 * d - 1.0;

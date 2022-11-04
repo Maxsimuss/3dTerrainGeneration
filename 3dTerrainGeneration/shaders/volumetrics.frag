@@ -29,7 +29,7 @@ float rand(vec2 co){
     return fract(sin(dot((co + fract(time * 42.1249104)) * 1000, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-const float zNear = .2;
+const float zNear = .5;
 const float zFar = 3072;
 float linearize_depth(float d)
 {
