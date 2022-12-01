@@ -25,11 +25,11 @@ uniform int SIZE;
 uniform vec2 wh;
 
 #define RAD 1
-#define RAYTRACE_TAA_MIX .05
-#define RAYTRACE_SPP 6
+#define RAYTRACE_TAA_MIX .01
+#define RAYTRACE_SPP 2
 #define RAYTRACE_BIAS 0.0001
-#define RAY_LEN0 100
-#define RAY_LEN1 256
+#define RAY_LEN0 32
+#define RAY_LEN1 64
 
 float rand(vec2 co) {
     return fract(sin(dot((co + time) * 10, vec2(12.9898, 78.233))) * 43758.5453);
@@ -50,7 +50,7 @@ struct hitResult {
     bvec3 mask;
 };
 
-hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps) {
+hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps, ivec3 off) {
     vec3 rayDir = normalize(_rayDir);
 	ivec3 mapPos = ivec3(floor(rayPos));
 	vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
@@ -58,12 +58,12 @@ hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps) {
 	vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist; 
 	bvec3 mask;
 	for (int i = 0; i < steps; i++) {
-        int voxel = int(texelFetch(data, mapPos + ivec3(256), 0).r);
-		if (voxel != 0) {
+        uint voxel = uint(texelFetch(data, mapPos + off, 0).r);
+		if ((voxel & 0x01) != 0) {
             float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
             vec3 dst = rayPos + rayDir * d;
 
-            return hitResult(1, vec3(1), dst, mask);
+            return hitResult(1, vec3(((voxel >> 6) & 0x03) / 3., ((voxel >> 3) & 0x07) / 7., ((voxel >> 1) & 0x03) / 3.), dst, mask);
         }
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));
@@ -76,12 +76,12 @@ hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps) {
 
 vec3 CosWeightedRandomHemisphereDirection(vec3 normal, int i)
 {
-    vec3 randomVec = (vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1)) * RAD;
+    vec3 randomVec = vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1) * RAD;
     vec3 tangent   = (randomVec - normal.xyz * dot(randomVec, normal.xyz));
     vec3 bitangent = cross(normal.xyz, tangent);
     mat3 TBN       = mat3(tangent, bitangent, normal.xyz);  
     // get sample position
-    return TBN * (vec3(rand(TexCoords + i * 3 - 30), rand(TexCoords + i * 3 - 20), rand(TexCoords + i * 3 - 10))); // from tangent to view-space
+    return normalize(TBN * (vec3(rand(TexCoords + i * 3 - 30), rand(TexCoords + i * 3 - 20), rand(TexCoords + i * 3 - 10)))); // from tangent to view-space
 }
 
 const vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
@@ -110,39 +110,26 @@ void main() {
         minDepth = min(abs(linearize_depth(_d) - linearize_depth(prev.z)), minDepth);
     }
 
-    int samples = RAYTRACE_SPP;
     vec3 gi = vec3(0);
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1 || minDepth > .05 * linearize_depth(d)) {
         mixAmt = 1;
-        samples *= 2;
-        // gi += skyLight * 30;
     }
 
 
-    for (int i = 0; i < samples; i++) {
+    for (int i = 0; i < RAYTRACE_SPP; i++) {
         vec3 norm = CosWeightedRandomHemisphereDirection(normal, i * 2);
         vec3 dir = reflect(normalize(_pos - position), norm);
         
-        hitResult hit0 = raycast(_pos + dir * RAYTRACE_BIAS, dir, RAY_LEN0);
+        hitResult hit0 = raycast(_pos + dir * RAYTRACE_BIAS, dir, RAY_LEN0, ivec3(256));
         if(hit0.hit > .5) {
-            if(raycast(hit0.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN1).hit < .5) {
+            if(raycast(hit0.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN1, ivec3(256)).hit < .5) {
                 gi += hit0.color * sunLight * 2 * max(0, dot(vec3(hit0.mask), abs(sunDir)));
-            }
-            dir = reflect(dir, vec3(hit0.mask));
-            dir = CosWeightedRandomHemisphereDirection(dir, i * 2 + 1);
-            hitResult hit1 = raycast(hit0.position + dir * RAYTRACE_BIAS, dir, RAY_LEN0);
-            if(hit1.hit > .5) {
-                if(raycast(hit1.position + sunDir * RAYTRACE_BIAS, sunDir, RAY_LEN1).hit < .5) {
-                    gi += hit0.color * hit1.color * sunLight * 2 * max(0, dot(vec3(hit1.mask), abs(sunDir)));
-                }
-            } else {
-                gi += hit0.color * skyLight * 30;
             }
         } else {
             gi += skyLight * 30;
         }
     }
-    gi /= samples;
+    gi /= RAYTRACE_SPP;
 
     vec4 c = vec4(mix(mem.rgb, gi, mixAmt), d);
     vec4 p = vec4(_pos, (normal.x + 1) + (normal.y + 1) * 3 + (normal.z + 1) * 9);

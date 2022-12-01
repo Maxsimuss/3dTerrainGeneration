@@ -138,7 +138,7 @@ namespace _3dTerrainGeneration.rendering
                 baseInst += (uint)draw.instanceCount;
                 draw.instanceCount = 0;
             }
-            Console.WriteLine("vert c {0}k", vertDrawn / 3000);
+            //Console.WriteLine("vert c {0}k", vertDrawn / 3000);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MatrixVBO);
             GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrices.Count, matrices.ToArray(), BufferUsageHint.DynamicDraw);
             matrices.Clear();

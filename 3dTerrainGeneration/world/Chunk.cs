@@ -132,7 +132,7 @@ namespace _3dTerrainGeneration.world
                         else if (y - 1 < h)
                         {
 
-                            float temp = smoothstep(0, 1, GetPerlin(x, z, .00025f) - (y / 512f) + rnd.NextSingle() * .05f - .025f);
+                            float temp = smoothstep(0, 1, GetPerlin(x, z, .00025f) - (y / 512f));
                             if (temp < .16)
                             {
                                 SetBlock(x, y, z, Materials.IdOf(255, 255, 255));
@@ -142,19 +142,19 @@ namespace _3dTerrainGeneration.world
                                 temp -= .16f;
                                 temp /= 1f - .16f;
 
-                                float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f) + rnd.NextSingle() * .05f - .025f);
+                                float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f));
 
-                                if (rnd.NextSingle() < .001)
-                                {
-                                    ImportedStructure str = new ImportedStructure("trees/tree0/tree0.vox", x, y + 1, z);
-                                    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
-                                }
+                                //if (rnd.NextSingle() < .001)
+                                //{
+                                //    ImportedStructure str = new ImportedStructure("trees/tree0/tree0.vox", x, y + 1, z);
+                                //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
+                                //}
 
                                 SetBlock(x, y, z, Materials.IdOf(
                                     Color.HsvToRgb(
-                                        150 - (byte)((byte)(temp * 8) * 13),
-                                        166 + (byte)((byte)(humidity * 4) * 16),
-                                        220 - (byte)((byte)(humidity * 4) * 15)
+                                        150 - temp * 8 * 13,
+                                        166 + humidity * 4 * 16,
+                                        220 - humidity * 4 * 15
                                     )
                                 ));
                             }

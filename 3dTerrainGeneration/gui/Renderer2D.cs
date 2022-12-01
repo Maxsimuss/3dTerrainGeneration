@@ -11,7 +11,7 @@ namespace _3dTerrainGeneration.gui
         static FragmentShader shader;
 
         private static float* buffer;
-        private static int index = 0, prev = 0, bufferSize = 6 * 4 * 10000000;
+        private static int index = 0, prev = 0, bufferSize = 6 * 6 * 10000000;
         private static IntPtr sync = IntPtr.Zero;
 
         public static void Init()
@@ -39,7 +39,7 @@ namespace _3dTerrainGeneration.gui
 
         public static void DrawRect(float x, float y, float x2, float y2, Vector4 color, bool flush = true)
         {
-            if (index >= bufferSize / 4)
+            if (index >= bufferSize / 6)
             {
                 Flush(shader);
             }
@@ -52,6 +52,20 @@ namespace _3dTerrainGeneration.gui
             buffer[index++] = color.W;
 
             buffer[index++] = x2;
+            buffer[index++] = y;
+            buffer[index++] = color.X;
+            buffer[index++] = color.Y;
+            buffer[index++] = color.Z;
+            buffer[index++] = color.W;
+
+            buffer[index++] = x2;
+            buffer[index++] = y2;
+            buffer[index++] = color.X;
+            buffer[index++] = color.Y;
+            buffer[index++] = color.Z;
+            buffer[index++] = color.W;
+
+            buffer[index++] = x;
             buffer[index++] = y;
             buffer[index++] = color.X;
             buffer[index++] = color.Y;
@@ -92,13 +106,13 @@ namespace _3dTerrainGeneration.gui
             else
                 Renderer2D.shader.Use();
 
-            GL.DrawArrays(PrimitiveType.Quads, prev / 6, (index - prev) / 6);
+            GL.DrawArrays(PrimitiveType.Triangles, prev / 6, (index - prev) / 6);
             if (index >= bufferSize / 4)
             {
                 index = 0;
             }
             prev = index;
-
+            
             //buffer.Clear();
         }
     }

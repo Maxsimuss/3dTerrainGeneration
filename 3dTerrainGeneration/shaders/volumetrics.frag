@@ -17,7 +17,7 @@ uniform sampler2D shadowTex[3];
 uniform mat4 matrices[3];
 uniform int cuts[3];
 
-#define fogQuality 20.
+#define fogQuality 5.
 
 uniform vec3 viewPos;
 uniform float time;
@@ -74,7 +74,7 @@ void main() {
         fog += (((texture(shadowTex[idx], ShadowCoord.xy).r - ShadowCoord.z + BIAS) > 0 ? 1 : 0) * .5 + .5);
     }
     
-    float c = fog / fogQuality;
+    float c = fog / fogQuality ;
     FragColor = vec4(c, c, c, linearize_depth(depth) / zFar);
     // FragColor = fog / fogQuality;
 }

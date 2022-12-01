@@ -22,14 +22,16 @@ namespace _3dTerrainGeneration.audio
 
     public class SoundManager
     {
+        private GameSettings gameSettings;
         private Random rnd = new Random();
         private Dictionary<SoundType, List<ALBuffer>> buffers = new Dictionary<SoundType, List<ALBuffer>>();
 
         private IntPtr device, context;
         private int MaxSources;
         private List<SoundSource> sources = new List<SoundSource>();
-        public SoundManager()
+        public SoundManager(GameSettings gameSettings)
         {
+            this.gameSettings = gameSettings;
             device = ALC10.alcOpenDevice(null);
             context = ALC10.alcCreateContext(device, null);
             ALC10.alcMakeContextCurrent(context);
@@ -39,7 +41,6 @@ namespace _3dTerrainGeneration.audio
             ALC10.alcGetIntegerv(device, ALC11.ALC_MONO_SOURCES, 1, data);
             MaxSources = data[0];
 
-            AL10.alListenerf(AL10.AL_GAIN, GameSettings.VOLUME);
             AL11.alSpeedOfSound(660);
 
             foreach (var item in Enum.GetValues<SoundType>())
@@ -110,6 +111,9 @@ namespace _3dTerrainGeneration.audio
 
         public void Update(Camera camera, double fT)
         {
+            AL10.alListenerf(AL10.AL_GAIN, gameSettings.Volume);
+
+
             float yaw = camera.Yaw + 90;
             float[] directionvect = new float[6];
             directionvect[0] = (float)Math.Sin(Math.PI * yaw / 180.0);
@@ -141,9 +145,9 @@ namespace _3dTerrainGeneration.audio
             lock (sourceLock)
                 sources.RemoveAll((s) =>
                 {
-                    if (Math.Abs(s.position.X - camera.Position.X) > World.renderDist + Chunk.Size * 2 ||
-                        Math.Abs(s.position.Y - camera.Position.Y) > World.renderDist + Chunk.Size * 2 ||
-                        Math.Abs(s.position.Z - camera.Position.Z) > World.renderDist + Chunk.Size * 2)
+                    if (Math.Abs(s.position.X - camera.Position.X) > gameSettings.View_Distance + Chunk.Size * 2 ||
+                        Math.Abs(s.position.Y - camera.Position.Y) > gameSettings.View_Distance + Chunk.Size * 2 ||
+                        Math.Abs(s.position.Z - camera.Position.Z) > gameSettings.View_Distance + Chunk.Size * 2)
                     {
                         s.Stop();
                         return true;

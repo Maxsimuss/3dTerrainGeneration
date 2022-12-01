@@ -4,6 +4,7 @@ using _3dTerrainGeneration.rendering;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -29,8 +30,12 @@ namespace _3dTerrainGeneration.world
         private double SunPitch = ToRadians(25);
         private object delayLock = new object();
 
-        public static float renderDist = GameSettings.VIEW_DISTANCE;
-        public static int size = (int)(renderDist / Chunk.Size * 2);
+        private GameSettings gameSettings;
+        private int viewDistanceBlocks = 0;
+        private int viewDistanceChunks = 0;
+        private int totalChunkCount = 0;
+        private int currentlyGenerating = 0;
+
 
         public List<Structure> structures = new List<Structure>();
         public Dictionary<EntityType, Dictionary<int, DrawableEntity>> entities = new Dictionary<EntityType, Dictionary<int, DrawableEntity>>();
@@ -42,11 +47,13 @@ namespace _3dTerrainGeneration.world
         public Network network;
         public static GameRenderer gameRenderer;
         public Farlands Farlands;
-        public static int genDelay = 0;
 
-        int chunksLen = 0;
-        public World()
+        public World(GameSettings gameSettings)
         {
+            this.gameSettings = gameSettings;
+            viewDistanceBlocks = gameSettings.View_Distance;
+            viewDistanceChunks = viewDistanceBlocks / Chunk.Size * 2;
+
             gameRenderer = new GameRenderer();
             Farlands = new Farlands();
             player = new Player(this);
@@ -57,17 +64,17 @@ namespace _3dTerrainGeneration.world
                 entities[entityType] = new Dictionary<int, DrawableEntity>();
             }
 
-            chunksLen = size * size * size;
-            iterationOrder = new Vector3[size * size * size];
+            totalChunkCount = viewDistanceChunks * viewDistanceChunks * viewDistanceChunks;
+            iterationOrder = new Vector3[totalChunkCount];
 
             List<Vector3> order = new List<Vector3>();
-            for (int x = 0; x < size; x++)
+            for (int x = 0; x < viewDistanceChunks; x++)
             {
-                for (int y = 0; y < size; y++)
+                for (int y = 0; y < viewDistanceChunks; y++)
                 {
-                    for (int z = 0; z < size; z++)
+                    for (int z = 0; z < viewDistanceChunks; z++)
                     {
-                        order.Add(new Vector3(x - size / 2, y - size / 2, z - size / 2));
+                        order.Add(new Vector3(x - viewDistanceChunks / 2, y - viewDistanceChunks / 2, z - viewDistanceChunks / 2));
                     }
                 }
             }
@@ -229,7 +236,7 @@ namespace _3dTerrainGeneration.world
         {
             //Time += fT * 5000;
             //Time += fT * 20000;
-            //Time = 350000;
+            Time = 1000000;
             double t = Time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);
@@ -241,9 +248,9 @@ namespace _3dTerrainGeneration.world
             List<Vector3> removeChunks = new List<Vector3>();
             foreach (var chunk in chunks)
             {
-                if (Math.Abs(chunk.Key.X - (int)(camera.Position.X / Chunk.Size)) > size / 2 + 1 ||
-                    Math.Abs(chunk.Key.Y - (int)(camera.Position.Y / Chunk.Size)) > size / 2 + 1 ||
-                    Math.Abs(chunk.Key.Z - (int)(camera.Position.Z / Chunk.Size)) > size / 2 + 1)
+                if (Math.Abs(chunk.Key.X - (int)(camera.Position.X / Chunk.Size)) > viewDistanceChunks / 2 + 1 ||
+                    Math.Abs(chunk.Key.Y - (int)(camera.Position.Y / Chunk.Size)) > viewDistanceChunks / 2 + 1 ||
+                    Math.Abs(chunk.Key.Z - (int)(camera.Position.Z / Chunk.Size)) > viewDistanceChunks / 2 + 1)
                 {
                     removeChunks.Add(chunk.Key);
                     //Console.WriteLine("removing chunk {0} {1} {2} from memory", chunk.Key.X, chunk.Key.Y, chunk.Key.Z);
@@ -266,9 +273,9 @@ namespace _3dTerrainGeneration.world
             {
                 structures.RemoveAll((structure) =>
                 {
-                    return structure.blocks == 0 || Math.Abs(structure.xPos - (int)camera.Position.X) > renderDist + Chunk.Size * 2 ||
-                        Math.Abs(structure.yPos - (int)camera.Position.Y) > renderDist + Chunk.Size * 2 ||
-                        Math.Abs(structure.zPos - (int)camera.Position.Z) > renderDist + Chunk.Size * 2;
+                    return structure.blocks == 0 || Math.Abs(structure.xPos - (int)camera.Position.X) > viewDistanceBlocks + Chunk.Size * 2 ||
+                        Math.Abs(structure.yPos - (int)camera.Position.Y) > viewDistanceBlocks + Chunk.Size * 2 ||
+                        Math.Abs(structure.zPos - (int)camera.Position.Z) > viewDistanceBlocks + Chunk.Size * 2;
                 });
             }
 
@@ -279,9 +286,9 @@ namespace _3dTerrainGeneration.world
 
         public int RenderWorld(Vector3 Position, Matrix4x4 mat, FragmentShader shader, bool gen, bool ortho, double frameDelta)
         {
-            for (int i = 0; i < chunksLen; i++)
+            for (int i = 0; i < totalChunkCount; i++)
             {
-                Vector3 iPos = iterationOrder[ortho ? chunksLen - i - 1 : i];
+                Vector3 iPos = iterationOrder[ortho ? totalChunkCount - i - 1 : i];
                 int x = (int)(iPos.X + (int)Position.X / Chunk.Size);
                 int y = (int)(iPos.Y + (int)Position.Y / Chunk.Size);
                 int z = (int)(iPos.Z + (int)Position.Z / Chunk.Size);
@@ -298,7 +305,7 @@ namespace _3dTerrainGeneration.world
                             Vector3 chunkDelta = v - (new Vector3(Position.X, Position.Y, Position.Z) / Chunk.Size);
                             float distance = chunkDelta.Length();
 
-                            int lod = (int)Math.Clamp(distance / size * Chunk.lodCount, 0, Chunk.lodCount);
+                            int lod = (int)Math.Clamp(distance / viewDistanceChunks * Chunk.lodCount, 0, Chunk.lodCount);
                             chunk.Render(lod, ortho);
                         }
                     }
@@ -363,14 +370,14 @@ namespace _3dTerrainGeneration.world
 
         private bool TryGenChunk(float x, float y, float z)
         {
-            if (genDelay < GameSettings.MAX_CORES)
+            if (currentlyGenerating < GameSettings.MAX_CORES)
             {
                 int xC = (int)x;
                 int yC = (int)y;
                 int zC = (int)z;
                 chunks[new Vector3(xC, yC, zC)] = null;
 
-                genDelay++;
+                currentlyGenerating++;
                 Task.Run(() =>
                 {
                     generate(xC, yC, zC);
@@ -408,7 +415,7 @@ namespace _3dTerrainGeneration.world
             chunks[new Vector3(x, y, z)] = ch;
             lock (delayLock)
             {
-                genDelay--;
+                currentlyGenerating--;
             }
         }
     }
