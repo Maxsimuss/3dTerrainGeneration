@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
+using System.Linq;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -20,7 +21,11 @@ namespace _3dTerrainGeneration.rendering
 
         protected static string LoadSource(string path)
         {
-            using (var sr = new StreamReader(path, Encoding.UTF8))
+            string basePath = System.Reflection.Assembly.GetAssembly(typeof(FragmentShader)).Location;
+            string[] pathArr = basePath.Split("\\");
+            basePath = string.Join("\\", pathArr.Take(pathArr.Length - 1));
+            
+            using (var sr = new StreamReader(basePath + "\\" + path, Encoding.UTF8))
             {
                 return sr.ReadToEnd();
             }
