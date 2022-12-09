@@ -5,7 +5,7 @@ namespace _3dTerrainGeneration
     public class GameSettings
     {
         public int SSAO_SPP = 1;
-        public int View_Distance = 512;
+        public int View_Distance = 256;
 
         public bool RTGI = false;
         public int RTGI_Resolution = 256;

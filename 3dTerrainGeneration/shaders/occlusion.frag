@@ -1,6 +1,6 @@
-#version 420
+#version 330 core
 // #pragma optionNV (unroll all)
-#define SSAO_SAMPLES 1
+#define SSAO_SAMPLES 4
 
 out float occlusion;
 in vec2 TexCoords;
@@ -15,7 +15,7 @@ uniform mat4 _projection;
 
 const float radius = 2.;
 const float zNear = .5;
-const float zFar = 3072;
+const float zFar = 3072.0;
 
 float rand(vec2 co) {
     return fract(sin(dot(co + time, vec2(12.9898, 78.233))) * 43758.5453);
@@ -38,6 +38,7 @@ void main() {
 
     vec3 position = depthToView(TexCoords, depth, projection);
     vec3 normal = texture(normalTex, TexCoords).xyz * 2 - 1;
+    float occ = 0;
     for(int i = 0; i < SSAO_SAMPLES; ++i) {
         vec3 randomVec = (vec3(rand(TexCoords + i * 3) * 2 - 1, rand(TexCoords + i * 3 + 1.) * 2 - 1, rand(TexCoords + i * 3 + 2) * 2 - 1));
         vec3 tangent   = (randomVec - normal.xyz * dot(randomVec, normal.xyz));
@@ -54,8 +55,9 @@ void main() {
         
         float sampleDepth = linearize_depth(texture(depthTex, offset.xy).r);
         float rangeCheck = smoothstep(0.0, 1.0, radius / abs(linDepth - sampleDepth));
-        occlusion += (sampleDepth >= linearize_depth(offset.z) ? 0.0 : 1.0) * rangeCheck;
+        occ += (sampleDepth >= linearize_depth(offset.z) ? 0.0 : 1.0) * rangeCheck;
     }
 
-    occlusion = (1 - occlusion / SSAO_SAMPLES);
+    occlusion = (1 - occ / SSAO_SAMPLES);
+    // occlusion = depth;
 }

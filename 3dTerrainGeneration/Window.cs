@@ -1,4 +1,4 @@
-﻿#define RAYTRACE
+﻿// #define RAYTRACE
 
 using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.entity;
@@ -423,8 +423,14 @@ namespace _3dTerrainGeneration
 
         protected override void OnLoad()
         {
-            // GL.DebugMessageCallback(OnDebugMessage, IntPtr.Zero);
-            // GL.Enable(EnableCap.DebugOutput);
+            Console.WriteLine("OGL Version: {0}", GL.GetString(StringName.Version));
+            Console.WriteLine("OGL Vendor: {0}", GL.GetString(StringName.Vendor));
+            Console.WriteLine("OGL SL Version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
+            Console.WriteLine("OGL Renderer: {0}", GL.GetString(StringName.Renderer));
+            Console.WriteLine("OGL Extensions: {0}", GL.GetString(StringName.Extensions));
+
+            GL.DebugMessageCallback(OnDebugMessage, IntPtr.Zero);
+            GL.Enable(EnableCap.DebugOutput);
 
             // // Optionally
             // GL.Enable(EnableCap.DebugOutputSynchronous);
@@ -1067,7 +1073,7 @@ namespace _3dTerrainGeneration
             OpenTK.Graphics.OpenGL.ErrorCode err = GL.GetError();
             if (err != OpenTK.Graphics.OpenGL.ErrorCode.NoError)
             {
-                Console.WriteLine("OGL Error: {0}!", err);
+                // Console.WriteLine("OGL Error: {0}!", err);
             }
 
             base.OnRenderFrame(e);
