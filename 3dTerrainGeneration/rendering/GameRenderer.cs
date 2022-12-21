@@ -1,4 +1,6 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿#define INTEL
+
+using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -152,7 +154,16 @@ namespace _3dTerrainGeneration.rendering
                 VramUsage = d.first * sizeof(uint) * vertexSize + d.count * vertexSize * sizeof(uint);
             }
 
-            GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
+#if INTEL
+            for (int i = 0; i < inderect.Length; i++)
+            {
+                DrawArraysIndirectCommand cmd = inderect[i];
+                if(cmd.instanceCount > 0) {
+                    GL.DrawArraysInstancedBaseInstance(PrimitiveType.Triangles, (int)cmd.first, (int)cmd.count, (int)cmd.instanceCount, (int)cmd.baseInstance);
+                }
+            }
+#endif
+            // GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
         }
     }
 }

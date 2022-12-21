@@ -1,4 +1,4 @@
-﻿#define RAYTRACE
+﻿// #define RAYTRACE
 
 using _3dTerrainGeneration.audio;
 using _3dTerrainGeneration.entity;
@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Windowing.Common.Input;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace _3dTerrainGeneration
 {
@@ -55,9 +56,9 @@ namespace _3dTerrainGeneration
         public ParticleSystem ParticleSystem;
         public SoundManager SoundManager;
         public Random rnd = new Random();
-        
+
         private GameSettings gameSettings = new GameSettings();
-        
+
         public Window(int w, int h, GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings) : base(gameWindowSettings, nativeWindowSettings)
         {
             //Location = new System.Drawing.Point(OpenTK.DisplayDevice.Default.Width / 2 - w / 2, OpenTK.DisplayDevice.Default.Height / 2 - h / 2);
@@ -173,7 +174,7 @@ namespace _3dTerrainGeneration
         private void InitShaders()
         {
 #if RAYTRACE
-                //REGEN = true;
+            //REGEN = true;
             if (REGEN)
             {
                 REGEN = false;
@@ -399,8 +400,42 @@ namespace _3dTerrainGeneration
 
             base.OnMouseDown(e);
         }
+
+
+        private static void OnDebugMessage(
+            DebugSource source,     // Source of the debugging message.
+            DebugType type,         // Type of the debugging message.
+            int id,                 // ID associated with the message.
+            DebugSeverity severity, // Severity of the message.
+            int length,             // Length of the string in pMessage.
+            IntPtr pMessage,        // Pointer to message string.
+            IntPtr pUserParam)      // The pointer you gave to OpenGL, explained later.
+        {
+            // In order to access the string pointed to by pMessage, you can use Marshal
+            // class to copy its contents to a C# string without unsafe code. You can
+            // also use the new function Marshal.PtrToStringUTF8 since .NET Core 1.1.
+            string message = Marshal.PtrToStringAnsi(pMessage, length);
+
+            // The rest of the function is up to you to implement, however a debug output
+            // is always useful.
+            Console.WriteLine("[{0} source={1} type={2} id={3}] {4}", severity, source, type, id, message);
+        }
+
         protected override void OnLoad()
         {
+            Console.WriteLine("OGL Version: {0}", GL.GetString(StringName.Version));
+            Console.WriteLine("OGL Vendor: {0}", GL.GetString(StringName.Vendor));
+            Console.WriteLine("OGL SL Version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
+            Console.WriteLine("OGL Renderer: {0}", GL.GetString(StringName.Renderer));
+            Console.WriteLine("OGL Extensions: {0}", GL.GetString(StringName.Extensions));
+
+            GL.DebugMessageCallback(OnDebugMessage, IntPtr.Zero);
+            GL.Enable(EnableCap.DebugOutput);
+
+            // // Optionally
+            // GL.Enable(EnableCap.DebugOutputSynchronous);
+
+
             Materials.Init();
 
             Context.MakeCurrent();
@@ -1038,7 +1073,7 @@ namespace _3dTerrainGeneration
             OpenTK.Graphics.OpenGL.ErrorCode err = GL.GetError();
             if (err != OpenTK.Graphics.OpenGL.ErrorCode.NoError)
             {
-                Console.WriteLine("OGL Error: {0}!", err);
+                // Console.WriteLine("OGL Error: {0}!", err);
             }
 
             base.OnRenderFrame(e);

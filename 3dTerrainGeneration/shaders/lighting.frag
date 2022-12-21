@@ -2,7 +2,7 @@
 out vec4 FragColor;
   
 
-#define RAYTRACE
+// #define RAYTRACE
 
 in vec2 TexCoords;
 
