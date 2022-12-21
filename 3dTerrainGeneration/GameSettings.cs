@@ -8,7 +8,7 @@ namespace _3dTerrainGeneration
         public int View_Distance = 512;
 
         public bool RTGI = false;
-        public int RTGI_Resolution = 256;
+        public int RTGI_Resolution = 512;
         public int RTGI_SPP = 2;
 
         public float Volume = 5.5f;

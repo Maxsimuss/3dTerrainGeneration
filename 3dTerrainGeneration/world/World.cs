@@ -234,9 +234,13 @@ namespace _3dTerrainGeneration.world
 
         public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
         {
+            //int id = GetEntityId();
+            //SpawnEntity(id, EntityType.Frog, (float)player.x, (float)player.y, (float)player.z, 0, 0, 0);
+            //SetResponsible(id);
+
             //Time += fT * 5000;
-            //Time += fT * 20000;
-            Time = 1000000;
+            Time += fT * 20000;
+            //Time = 400000;
             double t = Time / 1000 / 1440 % 1;
 
             double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);

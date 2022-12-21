@@ -31,7 +31,7 @@ namespace _3dTerrainGeneration
             {
                 IsMultiThreaded = false,
                 RenderFrequency = 0,
-                UpdateFrequency = 60
+                UpdateFrequency = 20
             };
             NativeWindowSettings ns = new NativeWindowSettings()
             {

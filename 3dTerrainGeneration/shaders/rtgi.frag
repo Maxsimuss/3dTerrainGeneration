@@ -25,8 +25,8 @@ uniform int SIZE;
 uniform vec2 wh;
 
 #define RAD 1
-#define RAYTRACE_TAA_MIX .01
-#define RAYTRACE_SPP 2
+#define RAYTRACE_TAA_MIX .1
+#define RAYTRACE_SPP 6
 #define RAYTRACE_BIAS 0.0001
 #define RAY_LEN0 32
 #define RAY_LEN1 64
