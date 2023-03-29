@@ -7,17 +7,9 @@ using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
 {
-    public class FireBall : DrawableEntity
+    public class FireBall : DrawableEntity<FireBall>
     {
-        private static AxisAlignedBB aabb;
-        public override AxisAlignedBB Box => aabb;
-
-        private static float scale;
-        public override float Scale => scale;
-
-        private static uint[][] mesh;
-        private static InderectDraw[] draws;
-        public override InderectDraw[] InderectDraws => draws;
+        public override AxisAlignedBB Box => AABB;
 
         public float Radius = 50;
         public bool Dead = false;
@@ -26,22 +18,22 @@ namespace _3dTerrainGeneration.entity
         static FireBall()
         {
             Mesh data = MeshLoader.Load("fireball", 255);
-            scale = 2f / data.Height;
+            MeshScale = 2f / data.Height;
 
-            aabb = new AxisAlignedBB(data.Width * scale / 2f, data.Height * scale / 2f);
-            mesh = data.Data;
+            AABB = new AxisAlignedBB(data.Width * MeshScale / 2f, data.Height * MeshScale / 2f);
+            Mesh = data.Data;
         }
 
         public FireBall(World world, Vector3 position, Vector3 motion, int EntityId = -1) : base(world, EntityType.FireBall, EntityId)
         {
-            if (draws == null)
-            {
-                draws = new InderectDraw[mesh.Length];
-                for (int i = 0; i < mesh.Length; i++)
-                {
-                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
-                }
-            }
+            //if (draws == null)
+            //{
+            //    draws = new InderectDraw[mesh.Length];
+            //    for (int i = 0; i < mesh.Length; i++)
+            //    {
+            //        draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+            //    }
+            //}
 
             maxHealth = 10;
             health = maxHealth;
@@ -74,7 +66,7 @@ namespace _3dTerrainGeneration.entity
             {
                 health -= Math.Sqrt((prevX - x) * (prevX - x) + (prevY - y) * (prevY - y) + (prevZ - z) * (prevZ - z)) / 100;
 
-                if (aabb.isColliding(x, y - Box.height / 2, z, world))
+                if (AABB.isColliding(x, y - Box.height / 2, z, world))
                 {
                     health -= 5;
                 }
@@ -113,7 +105,7 @@ namespace _3dTerrainGeneration.entity
 
         public override Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, (float)(-Box.height / 2), (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(MeshScale) * Matrix4x4.CreateTranslation((float)-Box.width, (float)(-Box.height / 2), (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public override void Despawn()

@@ -5,40 +5,30 @@ using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
 {
-    class Demon : DrawableEntity
+    class Demon : DrawableEntity<Demon>
     {
         private double AIUpdateTimer, AttackCooldownTimer;
         private Player Target;
 
-        private static AxisAlignedBB aabb;
-        public override AxisAlignedBB Box => aabb;
-
-        private static float scale;
-        public override float Scale => scale;
-
-        private static uint[][] mesh;
-        private static InderectDraw[] draws;
-        public override InderectDraw[] InderectDraws => draws;
-
         static Demon()
         {
             Mesh data = MeshLoader.Load("demon");
-            scale = 4f / data.Height;
+            MeshScale = 4f / data.Height;
 
-            aabb = new AxisAlignedBB(data.Width * scale / 2f, data.Height * scale);
-            mesh = data.Data;
+            AABB = new AxisAlignedBB(data.Width * MeshScale / 2f, data.Height * MeshScale);
+            Mesh = data.Data;
         }
 
         public Demon(World world, Vector3 position, int EntityId) : base(world, EntityType.Demon, EntityId)
         {
-            if (draws == null)
-            {
-                draws = new InderectDraw[mesh.Length];
-                for (int i = 0; i < mesh.Length; i++)
-                {
-                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
-                }
-            }
+            //if (draws == null)
+            //{
+            //    draws = new InderectDraw[Mesh.Length];
+            //    for (int i = 0; i < Mesh.Length; i++)
+            //    {
+            //        draws[i] = World.gameRenderer.SubmitMesh(Mesh[i], null);
+            //    }
+            //}
 
             x = position.X; y = position.Y; z = position.Z;
         }

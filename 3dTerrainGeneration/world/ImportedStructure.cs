@@ -4,7 +4,7 @@ namespace _3dTerrainGeneration.world
 {
     class ImportedStructure : Structure
     {
-        public ImportedStructure(string fileName, int xPos, int yPos, int zPos) : base(xPos, yPos, zPos)
+        public ImportedStructure(string fileName)
         {
             VoxReader.Interfaces.IVoxFile file = VoxReader.VoxReader.Read("Resources/models/" + fileName);
 

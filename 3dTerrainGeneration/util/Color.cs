@@ -357,9 +357,6 @@ namespace _3dTerrainGeneration.util
         }
         public static uint HsvToRgb(double h, double S, double V)
         {
-            S /= 255;
-            V /= 255;
-
             double H = h;
             while (H < 0) { H += 360; };
             while (H >= 360) { H -= 360; };

@@ -8,7 +8,7 @@ uniform sampler2D depthTex; //pos
 uniform sampler2D normalTex; //normal   
 uniform sampler2D shadowTex[3]; //shadowmap
 uniform mat4 matrices[3];
-uniform int cuts[3];
+uniform float cuts[3];
 uniform vec2 taaOffset;
 
 uniform float time;

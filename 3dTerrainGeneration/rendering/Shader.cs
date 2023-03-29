@@ -5,6 +5,7 @@ using System.IO;
 using System.Numerics;
 using System.Text;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace _3dTerrainGeneration.rendering
 {
@@ -63,18 +64,21 @@ namespace _3dTerrainGeneration.rendering
             return GL.GetAttribLocation(Handle, attribName);
         }
 
-        protected void Init()
+        protected void Init(bool a = true)
         {
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
 
             _uniformLocations = new Dictionary<string, int>();
 
-            for (var i = 0; i < numberOfUniforms; i++)
+            if(a)
             {
-                var key = GL.GetActiveUniform(Handle, i, out _, out _);
-                var location = GL.GetUniformLocation(Handle, key);
+                for (var i = 0; i < numberOfUniforms; i++)
+                {
+                    var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                    var location = GL.GetUniformLocation(Handle, key);
 
-                _uniformLocations.Add(key, location);
+                    _uniformLocations.Add(key, location);
+                }
             }
         }
 
@@ -87,6 +91,14 @@ namespace _3dTerrainGeneration.rendering
         }
 
         public void SetIntArr(string name, int[] data)
+        {
+            if (!_uniformLocations.ContainsKey(name)) return;
+
+            GL.UseProgram(Handle);
+            GL.Uniform1(_uniformLocations[name], data.Length, data);
+        }
+
+        public void SetFloatArr(string name, float[] data)
         {
             if (!_uniformLocations.ContainsKey(name)) return;
 

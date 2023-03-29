@@ -131,8 +131,10 @@ namespace _3dTerrainGeneration.util
                 if (!sectionValues.ContainsKey(_frame.queryNames[i]))
                     sectionValues.Add(_frame.queryNames[i], (float)time);
 
-                sectionValues[_frame.queryNames[i]] += (float)time * .01f;
-                sectionValues[_frame.queryNames[i]] /= 1.01f;
+                sectionValues[_frame.queryNames[i]] = (float)time;
+
+                //sectionValues[_frame.queryNames[i]] += (float)time * .01f;
+                //sectionValues[_frame.queryNames[i]] /= 1.01f;
                 total += time;
             }
 
@@ -146,10 +148,11 @@ namespace _3dTerrainGeneration.util
 
                 frames.Dequeue();
             }
-            if (!sectionValues.ContainsKey("Total"))
-                sectionValues.Add("Total", (float)total);
-            sectionValues["Total"] += (float)total * .01f;
-            sectionValues["Total"] /= 1.01f;
+            if (!sectionValues.ContainsKey("GPU Time"))
+                sectionValues.Add("GPU Time", (float)total);
+            sectionValues["GPU Time"] = (float)total;
+            //sectionValues["GPU Time"] += (float)total * .01f;
+            //sectionValues["GPU Time"] /= 1.01f;
 
 
             foreach (var item in sectionValues.OrderBy(e => (int)(e.Value * 100) / 100f))

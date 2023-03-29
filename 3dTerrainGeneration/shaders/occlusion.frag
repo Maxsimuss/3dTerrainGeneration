@@ -1,6 +1,6 @@
 #version 330 core
 // #pragma optionNV (unroll all)
-#define SSAO_SAMPLES 4
+#define SSAO_SAMPLES 2
 
 out float occlusion;
 in vec2 TexCoords;

@@ -5,102 +5,40 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.world
 {
-
     public class Chunk
     {
-        static LibNoise.Primitive.BevinsValue bevins = new LibNoise.Primitive.BevinsValue();
-        static LibNoise.Primitive.SimplexPerlin perlin = new LibNoise.Primitive.SimplexPerlin();
+        public static readonly int Size = GameSettings.CHUNK_SIZE;
+        public static readonly int LodCount = 3;
 
-        public static int Size = GameSettings.CHUNK_SIZE;
+        private bool IsMeshReady = false;
+        public bool IsRemeshingNeeded = false;
+        public bool IsRemeshing = false;
+        public uint[][][] MeshData;
+        public int[] MeshDataLengths = new int[LodCount];
 
-        public uint[][][] mesh;
-        public int[] lengths = new int[lodCount];
-        public byte[] blocks = null;
-        public object dataLock = new object();
-        public object meshLock = new object();
-        public static int lodCount = 4;
+        public bool HasTerrain = false;
+        public bool IsPopulated = false;
 
-        public int X, Y, Z;
-        private int loadedLod = -1;
-        public bool empty = true;
-        public bool full = true;
+        public readonly World world;
         public List<byte> sounds;
         public List<byte> particles;
         public InderectDraw[] drawCall = new InderectDraw[6];
-        private Matrix4x4 modelMatrix;
 
-        public static float GetPerlin(float x, float z, float scale)
+        public int X, Y, Z;
+
+        public VoxelOctree Blocks = new VoxelOctree((int)Math.Log2(Size));
+
+        private int loadedLod = -1;
+
+        private readonly Matrix4x4 modelMatrix;
+
+        public Chunk(World world, int X, int Y, int Z)
         {
-            return perlin.GetValue(x * scale, z * scale) / 2 + .5f;
-        }
-        public static float GetPerlin(float x, float scale)
-        {
-            return perlin.GetValue(x * scale);
-        }
-
-        public static float GetNoise(float x, float y, float z, float scale)
-        {
-            return smoothstep(0, 1, bevins.GetValue(x * scale, y * scale, z * scale) / 2 + .5f);
-        }
-
-        public static float smoothstep(float edge0, float edge1, float x)
-        {
-            // Scale, bias and saturate x to 0..1 range
-            x = clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
-            // Evaluate polynomial
-            return x * x * (3 - 2 * x);
-        }
-
-        public static float clamp(float x, float lowerlimit, float upperlimit)
-        {
-            if (x < lowerlimit)
-                x = lowerlimit;
-            if (x > upperlimit)
-                x = upperlimit;
-            return x;
-        }
-
-        public static float OcataveNoise(float x, float z, float scale, int octaves)
-        {
-            float noise = 0;
-            for (int i = 1; i < octaves; i++)
-            {
-                noise += GetPerlin(x, z, scale * i * i * i) / i / i / i;
-            }
-
-            return noise;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte GetValue(byte[] arr, int x, int z, int y)
-        {
-            return arr[(x % Size * Size + z % Size) * Size + y % Size];
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void SetValue(byte[] arr, int x, int z, int y, byte val)
-        {
-            arr[(x * Size + z) * Size + y] = val;
-        }
-
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public static byte GetValue(Octree arr, int x, int z, int y)
-        //{
-        //    return arr.GetValue((byte)x, (byte)y, (byte)z);
-        //}
-
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //public static void SetValue(Octree arr, int x, int z, int y, byte val)
-        //{
-        //    arr.SetValue((byte)x, (byte)y, (byte)z, val);
-        //}
-
-        public Chunk(int X, int Y, int Z)
-        {
-            Random rnd = new Random((X * Size + Y) * Size + Z);
+            this.world = world;
             this.X = X;
             this.Y = Y;
             this.Z = Z;
@@ -111,225 +49,132 @@ namespace _3dTerrainGeneration.world
 
             sounds = new List<byte>();
             particles = new List<byte>();
-            //goto newgen;
-            for (int _x = 0; _x < Size; _x++)
-            {
-                int x = _x + X * Size;
-                for (int _z = 0; _z < Size; _z++)
-                {
-                    int z = _z + Z * Size;
-                    int yO = Y * Size;
-                    float h = GetHeight(x, z);
-
-                    for (int i = 0; i < Size; i++)
-                    {
-                        int y = yO + i;
-
-                        if (y < h)
-                        {
-                            SetBlock(x, y, z, Materials.IdOf(0x877F6C));
-                        }
-                        else if (y - 1 < h)
-                        {
-
-                            float temp = smoothstep(0, 1, GetPerlin(x, z, .00025f) - (y / 512f));
-                            if (temp < .16)
-                            {
-                                SetBlock(x, y, z, Materials.IdOf(255, 255, 255));
-                            }
-                            else
-                            {
-                                temp -= .16f;
-                                temp /= 1f - .16f;
-
-                                float humidity = smoothstep(0, 1, GetPerlin(x + 12312, z - 124124, .00025f));
-
-                                //if (rnd.NextSingle() < .001)
-                                //{
-                                //    ImportedStructure str = new ImportedStructure("trees/tree0/tree0.vox", x, y + 1, z);
-                                //    str.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size);
-                                //}
-
-                                SetBlock(x, y, z, Materials.IdOf(
-                                    Color.HsvToRgb(
-                                        150 - temp * 8 * 13,
-                                        166 + humidity * 4 * 16,
-                                        220 - humidity * 4 * 15
-                                    )
-                                ));
-                            }
-                        }
-                    }
-                }
-            }
-            goto mesh;
-        newgen:
-            for (int x = 0; x < Size; x++)
-            {
-                int _x = x + X * Size;
-                for (int z = 0; z < Size; z++)
-                {
-                    int _z = z + Z * Size;
-                    for (int y = 0; y < Size; y++)
-                    {
-                        int _y = y + Y * Size;
-                        if (Chunk.GetNoise(_x, _y, _z, .05f) > .75f)
-                        {
-                            if (Chunk.GetNoise(_x, _y + 2, _z, .05f) > .75f)
-                            {
-                                SetBlock(_x, _y, _z, Materials.IdOf(128, 128, 128));
-                            }
-                            else
-                            {
-                                SetBlock(_x, _y, _z, Materials.IdOf((byte)_x, (byte)_y, (byte)_z));
-                            }
-                        }
-                    }
-                }
-            }
-
-        mesh:
-            //lock (world.structureLock)
-            //{
-            //    foreach (var s in world.structures)
-            //    {
-            //        if (s.Spawn(ref blocks, ref dataLock, X * Size, Y * Size, Z * Size))
-            //        {
-            //            empty = false;
-            //        }
-            //    }
-            //}
 
             Mesh();
 
             ChunkIO.Save(this);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SetBlock(int x, int y, int z, byte type)
-        {
-            if (empty)
-            {
-                blocks = new byte[Size * Size * Size];
-                empty = false;
-            }
-            SetValue(blocks, x - X * Size, z - Z * Size, y - Y * Size, type);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float GetHeight(int x, int z)
-        {
-            return (float)Math.Pow(OcataveNoise(x, z, .0005f / 4, 8) * 1.2, 7) * GetPerlin(x, z, .0005f / 4) * 255 * 4;
-        }
-
         public void Mesh()
         {
-            if (empty)
+            if (IsRemeshing)
             {
-                full = false;
                 return;
             }
-            mesh = new uint[lodCount][][];
+            IsRemeshing = true;
+            IsRemeshingNeeded = false;
 
-            for (int i = 0; i < lodCount; i++)
+            Task.Run(() =>
             {
-                short lod = (short)Math.Pow(2, i);
-                int wl = Size / lod;
+                MeshData = new uint[LodCount][][];
 
-                MeshData data = new MeshData();
-                data.SetDimensions(wl, Size);
-
-                for (short x = 0; x < wl; x++)
+                for (int i = 0; i < LodCount; i++)
                 {
-                    for (short z = 0; z < wl; z++)
+                    short lod = (short)Math.Pow(2, i);
+                    int wl = Size / lod;
+
+                    MeshData data = new MeshData();
+                    data.SetDimensions(wl, Size);
+
+                    for (short x = 0; x < wl; x++)
                     {
-                        for (short y = 0; y < Size; y++)
+                        for (short z = 0; z < wl; z++)
                         {
-                            byte bl = GetValue(blocks, x * lod, z * lod, y);
-                            if (bl != 0)
+                            for (short y = 0; y < Size; y++)
                             {
-                                data.SetBlockUnsafe(x, y, z, Materials.Get((byte)(bl - 1)));
-                            }
-                            else
-                            {
-                                full = false;
+                                byte bl = Blocks.GetValue(x * lod, y, z * lod);
+                                if (bl != 0)
+                                {
+                                    data.SetBlockUnsafe(x, y, z, Materials.Get((byte)(bl - 1)));
+                                }
                             }
                         }
                     }
+
+                    MeshData[i] = data.Mesh(0, lod);
+                    MeshDataLengths[i] = MeshData[i].Length;
                 }
 
-
-                mesh[i] = data.Mesh(0, lod);
-                lengths[i] = mesh[i].Length;
-                if (i == loadedLod)
-                {
-                    loadedLod = -1;
-                }
-            }
+                loadedLod = -1;
+                IsRemeshing = false;
+                IsMeshReady = true;
+            });
         }
 
         public bool GetBlockAt(int x, int y, int z)
         {
-            return !empty && GetValue(blocks, x, z, y) != 0;
+            return Blocks.GetValue(x, y, z) != 0;
         }
 
         public int Render(int lod, bool ortho)
         {
-            if (empty || full) return 0;
+            if(IsRemeshingNeeded)
+            {
+                Mesh();
+            }
 
-            lod = Math.Min(lodCount - 1, lod);
+            if(!IsMeshReady)
+            {
+                return 0;
+            }
 
-            int cubeLenght = lengths[lod];
-            if (lod != loadedLod)
+            lod = Math.Min(LodCount - 1, lod);
+
+            if (lod != loadedLod && !IsRemeshing)
             {
                 for (int i = 0; i < 6; i++)
                 {
-                    drawCall[i] = World.gameRenderer.SubmitMesh(mesh[lod][i], drawCall[i]);
+                    drawCall[i] = GameRenderer.Instance.SubmitMesh(MeshData[lod][i], drawCall[i]);
                 }
                 loadedLod = lod;
             }
 
+            if (drawCall[0] == null)
+            {
+                return 0;
+            }
+
             if (ortho)
             {
-                Vector3 dir = World.sunPos;
+                Vector3 dir = world.SunPosition;
                 if (Vector3.Dot(dir, new Vector3(0, 0, 1)) < 0)
                 {
-                    World.gameRenderer.QueueRender(drawCall[5], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[5], modelMatrix);
                 }
                 else
                 {
-                    World.gameRenderer.QueueRender(drawCall[2], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[2], modelMatrix);
                 }
 
                 if (Vector3.Dot(dir, new Vector3(0, 1, 0)) < 0)
                 {
-                    World.gameRenderer.QueueRender(drawCall[4], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[4], modelMatrix);
                 }
                 else
                 {
-                    World.gameRenderer.QueueRender(drawCall[1], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[1], modelMatrix);
                 }
 
                 if (Vector3.Dot(dir, new Vector3(1, 0, 0)) < 0)
                 {
-                    World.gameRenderer.QueueRender(drawCall[3], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[3], modelMatrix);
                 }
                 else
                 {
-                    World.gameRenderer.QueueRender(drawCall[0], modelMatrix);
+                    GameRenderer.Instance.QueueRender(drawCall[0], modelMatrix);
                 }
             }
             else
             {
-                World.gameRenderer.QueueRender(drawCall[0], modelMatrix);
-                World.gameRenderer.QueueRender(drawCall[1], modelMatrix);
-                World.gameRenderer.QueueRender(drawCall[2], modelMatrix);
-                World.gameRenderer.QueueRender(drawCall[3], modelMatrix);
-                World.gameRenderer.QueueRender(drawCall[4], modelMatrix);
-                World.gameRenderer.QueueRender(drawCall[5], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[0], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[1], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[2], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[3], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[4], modelMatrix);
+                GameRenderer.Instance.QueueRender(drawCall[5], modelMatrix);
             }
 
-            return cubeLenght;
+            return MeshDataLengths[lod];
         }
     }
 }

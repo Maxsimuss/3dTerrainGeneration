@@ -1,16 +1,32 @@
-﻿#version 420
-out vec4 FragColor;
-  
-in vec2 TexCoords;
+#version 420
 
-uniform sampler2D depthTex;
-uniform sampler2D colorTex0;
-uniform sampler2D colorTex1;
-uniform int width;
-uniform int height;
-uniform mat4 projectionPrev;
-uniform mat4 projection;
-uniform vec2 taaOffset;
+#define TAA_SEARCH_RADIUS 9
+#define TAA_DEPTH_SEARCH_RADIUS 9
+
+layout (location = 0) out vec4 FragColor;
+  
+layout (location = 0) in vec2 TexCoords;
+
+layout (binding = 0) uniform sampler2D depthTex;
+layout (binding = 1) uniform sampler2D colorTex0;
+layout (binding = 2) uniform sampler2D colorTex1;
+layout (binding = 3) uniform ExampleBlock{ 
+    int width; 
+    int height; 
+    mat4 projectionPrev; 
+    mat4 projection; 
+    vec2 taaOffset; 
+};
+
+const vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+const float zNear = .5;
+const float zFar = 3072;
+
+// uniform int width;
+// uniform int height;
+// uniform mat4 projectionPrev;
+// uniform mat4 projection;
+// uniform vec2 taaOffset;
 
 vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
     vec4 ndc = vec4(texCoord, depth, 1) * 2 - 1;
@@ -18,10 +34,6 @@ vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
     return viewPos.xyz / viewPos.w;
 }
 
-vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
-
-const float zNear = .5;
-const float zFar = 3072;
 float linearize_depth(float d) {
     float z_n = 2.0 * d - 1.0;
     return 2.0 * zNear * zFar / (zFar + zNear - z_n * (zFar - zNear));
@@ -45,8 +57,6 @@ void main() {
     vec3 _max = curr;
     float minDepth = zFar * 2;
     float mixAmt = .1;
-#define TAA_SEARCH_RADIUS 9
-#define TAA_DEPTH_SEARCH_RADIUS 9
 
     for(int i = 0; i < TAA_SEARCH_RADIUS; i++) {
         vec3 _sample = texture(colorTex0, tc + offsets[i % 9] * vec2(x, y) * (1 + i / 9)).rgb;
@@ -62,7 +72,7 @@ void main() {
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1 || minDepth > .05 * linearize_depth(depth)) {
         mixAmt = 1;
     }
-    // color = mix(n.rgb, curr, mixAmt);
+    // color = mix(n.rgb, curr, .1);
     color = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
     FragColor = vec4(color, depth);
 }

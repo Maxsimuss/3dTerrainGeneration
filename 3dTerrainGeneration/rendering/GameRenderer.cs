@@ -1,4 +1,4 @@
-﻿#define INTEL
+﻿//#define INTEL
 
 using OpenTK.Graphics.OpenGL;
 using System;
@@ -19,6 +19,20 @@ namespace _3dTerrainGeneration.rendering
 
     public class GameRenderer
     {
+        private static GameRenderer instance = null;
+        public static GameRenderer Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new GameRenderer();
+                }
+
+                return instance;
+            }
+        }
+
         private readonly int matrixCount = 4096;
         private readonly int vertexSize = 1;
 
@@ -28,7 +42,7 @@ namespace _3dTerrainGeneration.rendering
         private Queue<InderectDraw> queue = new Queue<InderectDraw>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1048576 * 256; //256 MB
+        public readonly int VramAllocated = 1048576 * 384; //256 MB
 
         public GameRenderer()
         {
@@ -62,7 +76,7 @@ namespace _3dTerrainGeneration.rendering
             GL.VertexAttribDivisor(4, 1);
         }
 
-        public InderectDraw SubmitMesh(uint[] mesh, InderectDraw old)
+        public InderectDraw SubmitMesh(uint[] mesh, InderectDraw old = null)
         {
             memory.Remove(old);
 
@@ -162,8 +176,9 @@ namespace _3dTerrainGeneration.rendering
                     GL.DrawArraysInstancedBaseInstance(PrimitiveType.Triangles, (int)cmd.first, (int)cmd.count, (int)cmd.instanceCount, (int)cmd.baseInstance);
                 }
             }
+#else
+            GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
 #endif
-            // GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
         }
     }
 }

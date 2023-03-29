@@ -8,12 +8,13 @@ uniform sampler2D colortex1;
 
 uniform mat4 projectionPrev;
 uniform mat4 projection;
+uniform float time;
 
 #define MOTIONBLUR_QUALITY 20
 #define MOTIONBLUR_LENGTH .2
 
 float rand(vec2 co){
-    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(dot(co + time, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 

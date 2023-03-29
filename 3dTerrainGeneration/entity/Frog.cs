@@ -5,40 +5,30 @@ using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
 {
-    class Frog : DrawableEntity
+    class Frog : DrawableEntity<Frog>
     {
         private double AIUpdateTimer, AttackCooldownTimer;
         private Player Target;
 
-        private static AxisAlignedBB aabb;
-        public override AxisAlignedBB Box => aabb;
-
-        private static float scale;
-        public override float Scale => scale;
-
-        private static uint[][] mesh;
-        private static InderectDraw[] draws;
-        public override InderectDraw[] InderectDraws => draws;
-
         static Frog()
         {
             Mesh data = MeshLoader.Load("frog");
-            scale = 1f / data.Height;
+            MeshScale = 1f / data.Height;
 
-            aabb = new AxisAlignedBB(data.Width * scale / 2f, data.Height * scale);
-            mesh = data.Data;
+            AABB = new AxisAlignedBB(data.Width * MeshScale / 2f, data.Height * MeshScale);
+            Mesh = data.Data;
         }
 
         public Frog(World world, Vector3 position, int EntityId) : base(world, EntityType.Frog, EntityId)
         {
-            if (draws == null)
-            {
-                draws = new InderectDraw[mesh.Length];
-                for (int i = 0; i < mesh.Length; i++)
-                {
-                    draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
-                }
-            }
+            //if (draws == null)
+            //{
+            //    draws = new InderectDraw[mesh.Length];
+            //    for (int i = 0; i < mesh.Length; i++)
+            //    {
+            //        draws[i] = World.gameRenderer.SubmitMesh(mesh[i], null);
+            //    }
+            //}
 
             x = position.X; y = position.Y; z = position.Z;
         }

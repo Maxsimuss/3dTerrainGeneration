@@ -1,14 +1,19 @@
 ﻿using _3dTerrainGeneration.entity;
 using _3dTerrainGeneration.network;
 using _3dTerrainGeneration.rendering;
+using _3dTerrainGeneration.util;
+using CSCore.Streams;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing.Printing;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using TerrainServer.network;
+using static OpenTK.Mathematics.MathHelper;
 
 namespace _3dTerrainGeneration.world
 {
@@ -26,171 +31,247 @@ namespace _3dTerrainGeneration.world
 
     public class World
     {
-        private Vector3[] iterationOrder;
-        private double SunPitch = ToRadians(25);
-        private object delayLock = new object();
+        private static readonly Vector3 v0 = new Vector3(Chunk.Size, 0, 0),
+                                v1 = new Vector3(Chunk.Size, 0, Chunk.Size),
+                                v2 = new Vector3(0, 0, Chunk.Size),
+                                v3 = new Vector3(0, Chunk.Size, 0),
+                                v4 = new Vector3(Chunk.Size, Chunk.Size, 0),
+                                v5 = new Vector3(Chunk.Size, Chunk.Size, Chunk.Size),
+                                v6 = new Vector3(0, Chunk.Size, Chunk.Size);
 
-        private GameSettings gameSettings;
-        private int viewDistanceBlocks = 0;
-        private int viewDistanceChunks = 0;
-        private int totalChunkCount = 0;
-        private int currentlyGenerating = 0;
-
-
-        public List<Structure> structures = new List<Structure>();
-        public Dictionary<EntityType, Dictionary<int, DrawableEntity>> entities = new Dictionary<EntityType, Dictionary<int, DrawableEntity>>();
-        public ConcurrentDictionary<Vector3, Chunk> chunks = new ConcurrentDictionary<Vector3, Chunk>();
-        public Player player;
-        public double Time = 1000 * 420;
-        public object structureLock = new object();
-        public static Vector3 sunPos = new Vector3(0, 1, 0);
         public Network network;
-        public static GameRenderer gameRenderer;
-        public Farlands Farlands;
 
-        public World(GameSettings gameSettings)
+        private static readonly Vector3I[] ChunkIterationOrder;
+        private static readonly float SunPitch = DegreesToRadians(25);
+
+        private static readonly int viewDistanceBlocks = 0;
+        private static readonly int viewDistanceChunks = 0;
+        private static readonly int totalChunkCount = 0;
+
+        private ConcurrentDictionary<Vector3I, Chunk> chunks;
+        private TerrainGenerator terraingGenerator;
+
+        public Player player;
+
+        public double Time = 1000 * 420;
+        public Vector3 SunPosition = new Vector3(0, 1, 0);
+
+        private Queue<Vector3I> chunkQueue;
+
+        static World()
         {
-            this.gameSettings = gameSettings;
-            viewDistanceBlocks = gameSettings.View_Distance;
-            viewDistanceChunks = viewDistanceBlocks / Chunk.Size * 2;
-
-            gameRenderer = new GameRenderer();
-            Farlands = new Farlands();
-            player = new Player(this);
-            player.IsResponsible = true;
-
-            foreach (EntityType entityType in Enum.GetValues<EntityType>())
-            {
-                entities[entityType] = new Dictionary<int, DrawableEntity>();
-            }
-
+            viewDistanceBlocks = GameSettings.Instance.View_Distance;
+            viewDistanceChunks = viewDistanceBlocks / GameSettings.CHUNK_SIZE * 2;
             totalChunkCount = viewDistanceChunks * viewDistanceChunks * viewDistanceChunks;
-            iterationOrder = new Vector3[totalChunkCount];
 
-            List<Vector3> order = new List<Vector3>();
+            List<Vector3I> order = new List<Vector3I>();
             for (int x = 0; x < viewDistanceChunks; x++)
             {
                 for (int y = 0; y < viewDistanceChunks; y++)
                 {
                     for (int z = 0; z < viewDistanceChunks; z++)
                     {
-                        order.Add(new Vector3(x - viewDistanceChunks / 2, y - viewDistanceChunks / 2, z - viewDistanceChunks / 2));
+                        order.Add(new Vector3I(x - viewDistanceChunks / 2, y - viewDistanceChunks / 2, z - viewDistanceChunks / 2));
                     }
                 }
             }
 
-            order.Sort((a, b) => { return (int)((a.Length() - b.Length()) * 1000); });
+            order.Sort((a, b) => a.LengthSq() - b.LengthSq());
 
-            //order.Reverse();
-            iterationOrder = order.ToArray();
+            ChunkIterationOrder = order.ToArray();
+        }
+
+        public World()
+        {
+            player = new Player(this);
+            player.IsResponsible = true;
+
+            chunks = new ConcurrentDictionary<Vector3I, Chunk>();
+            chunkQueue = new Queue<Vector3I>();
+            terraingGenerator = new TerrainGenerator();
+
+            ChunkGenerationWorker();
+            //foreach (EntityType entityType in Enum.GetValues<EntityType>())
+            //{
+            //    entities[entityType] = new Dictionary<int, DrawableEntity>();
+            //}
         }
 
         public void SpawnEntity(int entityId, EntityType entityType, float x, float y, float z, float mx, float my, float mz)
         {
-            entities[entityType][entityId] = entityType.GetEntity(this, new Vector3(x, y, z), new Vector3(mx, my, mz), entityId);
+            //entities[entityType][entityId] = entityType.GetEntity(this, new Vector3(x, y, z), new Vector3(mx, my, mz), entityId);
         }
 
         public void DespawnEntity(int entityId)
         {
-            foreach (Dictionary<int, DrawableEntity> item in entities.Values)
-            {
-                if (item.ContainsKey(entityId))
-                {
-                    item[entityId].Despawn();
+            //foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            //{
+            //    if (item.ContainsKey(entityId))
+            //    {
+            //        item[entityId].Despawn();
 
-                    if (item.Remove(entityId))
-                    {
-                        break;
-                    }
-                }
-            }
+            //        if (item.Remove(entityId))
+            //        {
+            //            break;
+            //        }
+            //    }
+            //}
         }
 
         public void SetResponsible(int entityId)
         {
-            foreach (Dictionary<int, DrawableEntity> item in entities.Values)
-            {
-                if (item.ContainsKey(entityId))
-                {
-                    item[entityId].IsResponsible = true;
-                    break;
-                }
-            }
+            //foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            //{
+            //    if (item.ContainsKey(entityId))
+            //    {
+            //        item[entityId].IsResponsible = true;
+            //        break;
+            //    }
+            //}
         }
 
         public int GetEntityCount()
         {
-            int count = 0;
-            foreach (var e in entities)
-            {
-                count += e.Value.Count;
-            }
+            //int count = 0;
+            //foreach (var e in entities)
+            //{
+            //    count += e.Value.Count;
+            //}
 
-            return count;
+            //return count;
+
+            return 0;
         }
 
         public int GetEntityId()
         {
-            int c = GetEntityCount() + 1;
-            for (int i = 0; i < c; i++)
+            //int c = GetEntityCount() + 1;
+            //for (int i = 0; i < c; i++)
+            //{
+            //    foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            //    {
+            //        if (item.ContainsKey(i))
+            //        {
+            //            goto o;
+            //        }
+            //    }
+
+            //    return i;
+
+            //o:
+            //    {
+
+            //    }
+            //}
+
+            //throw new Exception("Cannot generate an entity id!");
+
+            return 0;
+        }
+
+        public List<EntityBase> GetEntities()
+        {
+            //List<DrawableEntity> _entities = new List<DrawableEntity>();
+            //foreach (var item in entities)
+            //{
+            //    _entities.AddRange(item.Value.Values);
+            //}
+
+            //return _entities;
+
+            return null;
+        }
+
+        public List<EntityBase> GetEntities(EntityType type)
+        {
+            //List<DrawableEntity> l = entities[type].Values.ToList();
+
+            //if (type == EntityType.Player)
+            //{
+            //    l.Add(player);
+            //}
+
+            //return l;
+
+            return null;
+        }
+
+        private void ChunkGenerationWorker()
+        {
+            Task.Run(() =>
             {
-                foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+                while (true)
                 {
-                    if (item.ContainsKey(i))
+                    Thread.Sleep(10);
+
+                    Vector3I chunkPosition;
+                    lock (chunkQueue)
                     {
-                        goto o;
+                        if (chunkQueue.Count == 0) continue;
+
+                        chunkPosition = chunkQueue.Peek();
+                    }
+
+                    Chunk chunk;
+                    if (chunks.ContainsKey(chunkPosition))
+                    {
+                        chunk = chunks[chunkPosition];
+                    }
+                    else
+                    {
+                        chunk = new Chunk(this, chunkPosition.X, chunkPosition.Y, chunkPosition.Z);
+                    }
+
+                    if (!chunk.HasTerrain)
+                    {
+                        terraingGenerator.GenerateTerrain(chunk);
+                    }
+
+                    terraingGenerator.Populate(chunk, chunks);
+                    chunk.IsRemeshingNeeded = true;
+
+                    lock (chunkQueue)
+                    {
+                        if (!chunks.ContainsKey(chunkPosition))
+                        {
+                            chunks[chunkPosition] = chunk;
+                        }
+                        chunkQueue.Dequeue();
                     }
                 }
-
-                return i;
-
-            o:
-                {
-
-                }
-            }
-
-            throw new Exception("Cannot generate an entity id!");
-        }
-
-        private static double ToRadians(double angle)
-        {
-            return Math.PI * angle / 180.0;
-        }
-
-        public List<DrawableEntity> GetEntities()
-        {
-            List<DrawableEntity> _entities = new List<DrawableEntity>();
-            foreach (var item in entities)
-            {
-                _entities.AddRange(item.Value.Values);
-            }
-
-            return _entities;
-        }
-
-        public List<DrawableEntity> GetEntities(EntityType type)
-        {
-            List<DrawableEntity> l = entities[type].Values.ToList();
-
-            if (type == EntityType.Player)
-            {
-                l.Add(player);
-            }
-
-            return l;
+            });
         }
 
         public void Tick(double fT)
         {
-            player.PhisycsUpdate(fT);
-            foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            Vector3 origin = player.GetEyePosition(0);
+
+            lock (chunkQueue)
             {
-                foreach (DrawableEntity entity in item.Values)
-                {
-                    entity.PhisycsUpdate(fT);
-                }
+                if (chunkQueue.Count < 5)
+                    for (int i = 0; i < totalChunkCount; i++)
+                    {
+                        Vector3I indexPosition = ChunkIterationOrder[i];
+                        Vector3I originChunkCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z) / GameSettings.CHUNK_SIZE;
+                        Vector3I chunkPosition = indexPosition + originChunkCoord;
+
+                        if ((!chunks.ContainsKey(chunkPosition) || !chunks[chunkPosition].IsPopulated) && !chunkQueue.Contains(chunkPosition))
+                        {
+                            chunkQueue.Enqueue(chunkPosition);
+                            break;
+                        }
+                    }
             }
+
+            player.PhisycsUpdate(fT);
+
+            //foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            //{
+            //    foreach (DrawableEntity entity in item.Values)
+            //    {
+            //        entity.PhisycsUpdate(fT);
+            //    }
+            //}
         }
 
         public bool GetBlockAt(Vector3 pos)
@@ -204,7 +285,7 @@ namespace _3dTerrainGeneration.world
             double chunkY = y / Chunk.Size;
             double chunkZ = z / Chunk.Size;
 
-            Vector3 chunkCoord = new Vector3((int)Math.Floor(chunkX), (int)Math.Floor(chunkY), (int)Math.Floor(chunkZ));
+            Vector3I chunkCoord = new Vector3I((int)Math.Floor(chunkX), (int)Math.Floor(chunkY), (int)Math.Floor(chunkZ));
             if (!chunks.ContainsKey(chunkCoord)) return y < 0;
 
             Chunk chunk = chunks[chunkCoord];
@@ -232,109 +313,54 @@ namespace _3dTerrainGeneration.world
             return chunk.GetBlockAt((int)Math.Floor(x), (int)Math.Floor(y), (int)Math.Floor(z));
         }
 
-        public int Render(FragmentShader shader, FragmentShader post, Camera camera, double fT, double frameDelta)
+        public int Render(FragmentShader shader, Camera camera, double fT, double frameDelta)
         {
             //int id = GetEntityId();
             //SpawnEntity(id, EntityType.Frog, (float)player.x, (float)player.y, (float)player.z, 0, 0, 0);
             //SetResponsible(id);
 
             //Time += fT * 5000;
-            Time += fT * 20000;
-            //Time = 400000;
-            double t = Time / 1000 / 1440 % 1;
+            //Time += fT * 20000;
+            Time = 800000;
+            float t = (float)(Time / 1000 / 1440 % 1);
 
-            double X = Math.Cos(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);
-            double Y = Math.Sin(t * 2 * Math.PI - Math.PI * .5) * Math.Cos(SunPitch);
-            double Z = Math.Sin(SunPitch);
+            double X = MathF.Cos(t * 2 * MathF.PI - MathF.PI * .5f) * MathF.Cos(SunPitch);
+            double Y = MathF.Sin(t * 2 * MathF.PI - MathF.PI * .5f) * MathF.Cos(SunPitch);
+            double Z = MathF.Sin(SunPitch);
 
-            sunPos = new Vector3((float)X, (float)Y, (float)Z);
+            SunPosition = new Vector3((float)X, (float)Y, (float)Z);
 
-            List<Vector3> removeChunks = new List<Vector3>();
-            foreach (var chunk in chunks)
-            {
-                if (Math.Abs(chunk.Key.X - (int)(camera.Position.X / Chunk.Size)) > viewDistanceChunks / 2 + 1 ||
-                    Math.Abs(chunk.Key.Y - (int)(camera.Position.Y / Chunk.Size)) > viewDistanceChunks / 2 + 1 ||
-                    Math.Abs(chunk.Key.Z - (int)(camera.Position.Z / Chunk.Size)) > viewDistanceChunks / 2 + 1)
-                {
-                    removeChunks.Add(chunk.Key);
-                    //Console.WriteLine("removing chunk {0} {1} {2} from memory", chunk.Key.X, chunk.Key.Y, chunk.Key.Z);
-                }
-            }
-
-            for (int i = 0; i < removeChunks.Count; i++)
-            {
-                Chunk ch;
-                chunks.TryRemove(removeChunks[i], out ch);
-                if (ch != null)
-                {
-                    for (int j = 0; j < 6; j++)
-                    {
-                        gameRenderer.FreeMemory(ch.drawCall[j]);
-                    }
-                }
-            }
-            lock (structureLock)
-            {
-                structures.RemoveAll((structure) =>
-                {
-                    return structure.blocks == 0 || Math.Abs(structure.xPos - (int)camera.Position.X) > viewDistanceBlocks + Chunk.Size * 2 ||
-                        Math.Abs(structure.yPos - (int)camera.Position.Y) > viewDistanceBlocks + Chunk.Size * 2 ||
-                        Math.Abs(structure.zPos - (int)camera.Position.Z) > viewDistanceBlocks + Chunk.Size * 2;
-                });
-            }
-
-            return RenderWorld(camera.Position, camera.GetViewMatrix() * camera.GetProjectionMatrix(), shader, true, false, frameDelta);
-
-            //System.Diagnostics.Debug.WriteLine("Verticles renderd: " + verticlesRendered);
+            return RenderWorld(camera.Position, camera.GetViewMatrix() * camera.GetProjectionMatrix(), shader, false, frameDelta);
         }
 
-        public int RenderWorld(Vector3 Position, Matrix4x4 mat, FragmentShader shader, bool gen, bool ortho, double frameDelta)
+        public int RenderWorld(Vector3 origin, Matrix4x4 mat, FragmentShader shader, bool ortho, double frameDelta)
         {
             for (int i = 0; i < totalChunkCount; i++)
             {
-                Vector3 iPos = iterationOrder[ortho ? totalChunkCount - i - 1 : i];
-                int x = (int)(iPos.X + (int)Position.X / Chunk.Size);
-                int y = (int)(iPos.Y + (int)Position.Y / Chunk.Size);
-                int z = (int)(iPos.Z + (int)Position.Z / Chunk.Size);
+                Vector3I indexPosition = ChunkIterationOrder[ortho ? totalChunkCount - i - 1 : i];
+                Vector3I originChunkCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z) / GameSettings.CHUNK_SIZE;
+                Vector3I chunkPosition = indexPosition + originChunkCoord;
 
-                Vector3 v = new Vector3(x, y, z);
-                if (ShouldRender(v * Chunk.Size, mat))
+                if (ShouldRender(new Vector3(chunkPosition.X, chunkPosition.Y, chunkPosition.Z) * GameSettings.CHUNK_SIZE, mat))
                 {
-                    if (chunks.ContainsKey(v))
+                    if (chunks.ContainsKey(chunkPosition))
                     {
-                        if (chunks[v] != null)
-                        {
-                            Chunk chunk = chunks[v];
+                        Chunk chunk = chunks[chunkPosition];
 
-                            Vector3 chunkDelta = v - (new Vector3(Position.X, Position.Y, Position.Z) / Chunk.Size);
-                            float distance = chunkDelta.Length();
+                        float distance = indexPosition.Length();
 
-                            int lod = (int)Math.Clamp(distance / viewDistanceChunks * Chunk.lodCount, 0, Chunk.lodCount);
-                            chunk.Render(lod, ortho);
-                        }
-                    }
-                    else if (gen && !TryGenChunk(x, y, z))
-                    {
-                        gen = false;
+                        int lod = (int)Math.Clamp(distance / viewDistanceChunks * Chunk.LodCount, 0, Chunk.LodCount);
+                        chunk.Render(lod, ortho);
                     }
                 }
             }
 
             RenderEntities(frameDelta);
-            Farlands.Render();
 
-            gameRenderer.Draw(shader);
+            GameRenderer.Instance.Draw(shader);
 
             return 0;
         }
-
-        private static readonly Vector3 v0 = new Vector3(Chunk.Size, 0, 0),
-                                        v1 = new Vector3(Chunk.Size, 0, Chunk.Size),
-                                        v2 = new Vector3(0, 0, Chunk.Size),
-                                        v3 = new Vector3(0, Chunk.Size, 0),
-                                        v4 = new Vector3(Chunk.Size, Chunk.Size, 0),
-                                        v5 = new Vector3(Chunk.Size, Chunk.Size, Chunk.Size),
-                                        v6 = new Vector3(0, Chunk.Size, Chunk.Size);
 
         private bool ShouldRender(Vector3 pos, Matrix4x4 mat)
         {
@@ -372,55 +398,17 @@ namespace _3dTerrainGeneration.world
             }
         }
 
-        private bool TryGenChunk(float x, float y, float z)
-        {
-            if (currentlyGenerating < GameSettings.MAX_CORES)
-            {
-                int xC = (int)x;
-                int yC = (int)y;
-                int zC = (int)z;
-                chunks[new Vector3(xC, yC, zC)] = null;
-
-                currentlyGenerating++;
-                Task.Run(() =>
-                {
-                    generate(xC, yC, zC);
-                }).ContinueWith((task) =>
-                {
-                    if (task.IsFaulted)
-                    {
-                        Console.WriteLine(task.Exception);
-                        Window.message = "Error generating chunk!";
-                    }
-                });
-
-                return true;
-            }
-            return false;
-        }
-
         private void RenderEntities(double frameDelta)
         {
             player.Render(frameDelta);
 
-            foreach (Dictionary<int, DrawableEntity> item in entities.Values)
-            {
-                foreach (DrawableEntity entity in item.Values)
-                {
-                    entity.Render(frameDelta);
-                }
-            }
-        }
-
-        private void generate(int x, int y, int z)
-        {
-            Chunk ch = new Chunk(x, y, z);
-
-            chunks[new Vector3(x, y, z)] = ch;
-            lock (delayLock)
-            {
-                currentlyGenerating--;
-            }
+            //foreach (Dictionary<int, DrawableEntity> item in entities.Values)
+            //{
+            //    foreach (DrawableEntity entity in item.Values)
+            //    {
+            //        entity.Render(frameDelta);
+            //    }
+            //}
         }
     }
 }

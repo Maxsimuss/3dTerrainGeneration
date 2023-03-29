@@ -48,10 +48,10 @@ namespace _3dTerrainGeneration.network
         {
             Window.message = "Reconnecting...";
 
-            foreach (Dictionary<int, DrawableEntity> en in world.entities.Values)
-            {
-                en.Clear();
-            }
+            //foreach (Dictionary<int, DrawableEntity> en in world.entities.Values)
+            //{
+            //    en.Clear();
+            //}
             buffer.Clear();
         }
 
@@ -163,21 +163,21 @@ namespace _3dTerrainGeneration.network
                             case PacketType.Movement:
                                 {
                                     MovementPacket packet = (MovementPacket)p;
-                                    foreach (Dictionary<int, DrawableEntity> item in world.entities.Values)
-                                    {
-                                        if (item.ContainsKey(packet.entityId))
-                                        {
-                                            EntityBase entity = item[packet.entityId];
-                                            entity.yaw = packet.yaw;
-                                            entity.x = packet.x;
-                                            entity.y = packet.y;
-                                            entity.z = packet.z;
-                                            entity.motionX = packet.mx;
-                                            entity.motionY = packet.my;
-                                            entity.motionZ = packet.mz;
-                                            break;
-                                        }
-                                    }
+                                    //foreach (Dictionary<int, DrawableEntity> item in world.entities.Values)
+                                    //{
+                                    //    if (item.ContainsKey(packet.entityId))
+                                    //    {
+                                    //        EntityBase entity = item[packet.entityId];
+                                    //        entity.yaw = packet.yaw;
+                                    //        entity.x = packet.x;
+                                    //        entity.y = packet.y;
+                                    //        entity.z = packet.z;
+                                    //        entity.motionX = packet.mx;
+                                    //        entity.motionY = packet.my;
+                                    //        entity.motionZ = packet.mz;
+                                    //        break;
+                                    //    }
+                                    //}
 
                                     break;
                                 }

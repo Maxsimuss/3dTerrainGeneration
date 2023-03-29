@@ -18,6 +18,7 @@ namespace _3dTerrainGeneration.entity
         protected bool isOnGround = true;
         public bool IsResponsible;
         public EntityType type;
+        public int EntityId;
 
         protected World world;
         public virtual AxisAlignedBB Box { get => DefaultAABB; }
@@ -214,7 +215,7 @@ namespace _3dTerrainGeneration.entity
 
     public static class EntityTypeExtensions
     {
-        public static DrawableEntity GetEntity(this EntityType entityType, World world, Vector3 pos, Vector3 motion, int id)
+        public static EntityBase GetEntity(this EntityType entityType, World world, Vector3 pos, Vector3 motion, int id)
         {
             switch (entityType)
             {

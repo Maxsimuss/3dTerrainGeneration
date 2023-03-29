@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using _3dTerrainGeneration.util;
+using OpenTK;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
@@ -10,11 +11,15 @@ namespace _3dTerrainGeneration
 {
     public static class Program
     {
-
         [DllImport("kernel32")]
         static extern int AllocConsole();
 
         private static void Main()
+        {
+            RunGame();
+        }
+
+        private static void RunGame()
         {
             Environment.SetEnvironmentVariable("ALSOFT_LOGLEVEL", "3");
 
@@ -29,9 +34,8 @@ namespace _3dTerrainGeneration
 
             GameWindowSettings gs = new GameWindowSettings()
             {
-                IsMultiThreaded = false,
-                RenderFrequency = 0,
-                UpdateFrequency = 20
+                UpdateFrequency = 500,
+                RenderFrequency = 500,
             };
             NativeWindowSettings ns = new NativeWindowSettings()
             {
@@ -42,7 +46,7 @@ namespace _3dTerrainGeneration
 
             if (!fullscreen)
             {
-                AllocConsole();
+                //AllocConsole();
             }
 
             window.Run();

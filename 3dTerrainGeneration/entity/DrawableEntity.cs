@@ -6,18 +6,20 @@ using TerrainServer.network;
 
 namespace _3dTerrainGeneration.entity
 {
-    public abstract class DrawableEntity : EntityBase
+    public abstract class DrawableEntity<T> : EntityBase
     {
+        protected static AxisAlignedBB AABB;
+        protected static InderectDraw[] InderectDraws;
+        protected static uint[][] Mesh;
+        protected static float MeshScale = 1;
+
         public bool Visible = true;
 
-        public virtual float Scale { get => 1; }
-        public abstract InderectDraw[] InderectDraws { get; }
-
-        public int EntityId;
         protected int AnimationFrame = 0;
-        private Vector3 LastAnimationPosition;
         protected double NetworkPositionUpdateTimer, AnimationResetTimer;
         protected double DistanceTraveled = 0;
+        
+        private Vector3 LastAnimationPosition;
 
         public DrawableEntity(World world, EntityType type, int EntityId = -1) : base(world, type)
         {
@@ -65,16 +67,24 @@ namespace _3dTerrainGeneration.entity
 
         public virtual Matrix4x4 GetModelMatrix(double frameDelta)
         {
-            return Matrix4x4.CreateScale(Scale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
+            return Matrix4x4.CreateScale(MeshScale) * Matrix4x4.CreateTranslation((float)-Box.width, 0, (float)-Box.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-yaw)) * Matrix4x4.CreateTranslation(GetPositionInterpolated(frameDelta));
         }
 
         public virtual void Render(double frameDelta)
         {
             if (!Visible) return;
 
+            if(InderectDraws == null)
+            {
+                InderectDraws = new InderectDraw[Mesh.Length];
+                for (int i = 0; i < Mesh.Length; i++)
+                {
+                    InderectDraws[i] = GameRenderer.Instance.SubmitMesh(Mesh[i]);
+                }
+            }
             InderectDraw draw = InderectDraws[AnimationFrame];
 
-            World.gameRenderer.QueueRender(draw, GetModelMatrix(frameDelta));
+            GameRenderer.Instance.QueueRender(draw, GetModelMatrix(frameDelta));
         }
     }
 }
