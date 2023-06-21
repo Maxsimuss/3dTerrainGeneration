@@ -12,7 +12,8 @@ layout(std430, binding = 1) buffer outputData
 uniform sampler2D colorTex;
 
 void main() {
-    vec3 color = texture(colorTex, TexCoords).rgb / lumaSmooth;
+    // vec3 color = texture(colorTex, TexCoords).rgb / lumaSmooth;
+    vec3 color = texture(colorTex, TexCoords).rgb / 3;
 
     FragColor = color;
 }

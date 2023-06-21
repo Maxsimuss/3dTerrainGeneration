@@ -63,7 +63,7 @@ hitResult raycast(vec3 rayPos, vec3 _rayDir, int steps, ivec3 off) {
             float d = length(vec3(mask) * (sideDist - deltaDist)); // rayDir normalized
             vec3 dst = rayPos + rayDir * d;
 
-            return hitResult(1, vec3(((voxel >> 6) & 0x03) / 3., ((voxel >> 3) & 0x07) / 7., ((voxel >> 1) & 0x03) / 3.), dst, mask);
+            return hitResult(1, vec3(float((voxel >> 6) & 0x03) / 3., float((voxel >> 3) & 0x07) / 7., float((voxel >> 1) & 0x03) / 3.), dst, mask);
         }
 
         mask = lessThanEqual(sideDist.xyz, min(sideDist.yzx, sideDist.zxy));

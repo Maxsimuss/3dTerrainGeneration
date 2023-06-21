@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Sockets;
 
 namespace TerrainServer.network
 {
@@ -49,7 +44,8 @@ namespace TerrainServer.network
                     {
                         Console.WriteLine("Reading 1 byte");
                         stream.Read(buffer, 0, 1);
-                    } catch { break; }
+                    }
+                    catch { break; }
 
                     PacketType type = (PacketType)buffer[0];
                     Console.WriteLine("Read packet type {0}", type);

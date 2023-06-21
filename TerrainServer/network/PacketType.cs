@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerrainServer.network.packet;
+﻿using TerrainServer.network.packet;
 
 namespace TerrainServer.network
 {
@@ -11,7 +6,7 @@ namespace TerrainServer.network
     {
         SpawnEntity = 0x0,
         DeSpawnEntity = 0x1,
-        Movement = 0x2,
+        Input = 0x2,
         Responsibility = 0x3,
         UpdateHealth = 0x4,
         SetTime = 0x5,
@@ -29,8 +24,8 @@ namespace TerrainServer.network
                     return 30;
                 case PacketType.DeSpawnEntity:
                     return 5;
-                case PacketType.Movement:
-                    return 31;
+                case PacketType.Input:
+                    return 29;
                 case PacketType.Responsibility:
                     return 5;
                 case PacketType.UpdateHealth:
@@ -40,7 +35,7 @@ namespace TerrainServer.network
                 case PacketType.Authentication:
                     return 66;
                 case PacketType.ConfirmLogin:
-                    return 1;
+                    return 9;
                 default:
                     throw new Exception("Unknown packet received");
             }
@@ -54,8 +49,8 @@ namespace TerrainServer.network
                     return new SpawnEntityPacket(data);
                 case PacketType.DeSpawnEntity:
                     return new DeSpawnEntityPacket(data);
-                case PacketType.Movement:
-                    return new MovementPacket(data);
+                case PacketType.Input:
+                    return new InputPacket(data);
                 case PacketType.Responsibility:
                     return new ResponsibilityPacket(data);
                 case PacketType.UpdateHealth:

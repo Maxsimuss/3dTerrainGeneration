@@ -1,7 +1,9 @@
 #version 460
 
-layout (location = 0) in uint aData;
-layout (location = 1) in mat4 model;
+layout (location = 0) in vec3 pos;
+layout (location = 1) in vec3 color;
+layout (location = 2) in vec2 other;
+layout (location = 3) in mat4 model;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -24,12 +26,10 @@ void main()
 {
     mat3 normalMatrix = inverse(mat3(model));
 
-    vec3 pos = vec3(aData >> 25 & (0x0000007F), aData >> 18 & (0x0000007F), aData >> 11 & (0x0000007F));
     Position = model * vec4(pos, 1.0);
 
-    uint face = aData >> 8 & 0x00000007;
-    Color = (vec3(((aData >> 5) & uint(7)) * 36, ((aData >> 2) & uint(7)) * 36, (aData & uint(3)) * 85) + 10) / 265.;
-    Normal = normalize(NORMALS[face] * normalMatrix) / 2 + .5;
+    Color = color;
+    Normal = normalize(NORMALS[uint(other.x)] * normalMatrix) / 2 + .5;
 
     vec4 clipPos = model * vec4(pos, 1.0) * view * projection;
     gl_Position = clipPos + vec4(taaOffset * clipPos.w, 0, 0);

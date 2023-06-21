@@ -10,23 +10,23 @@ layout (location = 0) in vec2 TexCoords;
 layout (binding = 0) uniform sampler2D depthTex;
 layout (binding = 1) uniform sampler2D colorTex0;
 layout (binding = 2) uniform sampler2D colorTex1;
-layout (binding = 3) uniform ExampleBlock{ 
-    int width; 
-    int height; 
-    mat4 projectionPrev; 
-    mat4 projection; 
-    vec2 taaOffset; 
-};
+// layout (binding = 3) uniform ExampleBlock{ 
+//     int width; 
+//     int height; 
+//     mat4 projectionPrev; 
+//     mat4 projection; 
+//     vec2 taaOffset; 
+// };
 
 const vec2 offsets[9] = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {0, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
 const float zNear = .5;
 const float zFar = 3072;
 
-// uniform int width;
-// uniform int height;
-// uniform mat4 projectionPrev;
-// uniform mat4 projection;
-// uniform vec2 taaOffset;
+uniform int width;
+uniform int height;
+uniform mat4 projectionPrev;
+uniform mat4 projection;
+uniform vec2 taaOffset;
 
 vec3 depthToView(vec2 texCoord, float depth, mat4 projInv) {
     vec4 ndc = vec4(texCoord, depth, 1) * 2 - 1;

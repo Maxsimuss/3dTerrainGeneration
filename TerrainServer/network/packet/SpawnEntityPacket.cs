@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TerrainServer.network.packet
+﻿namespace TerrainServer.network.packet
 {
     public class SpawnEntityPacket : Packet
     {
@@ -30,7 +24,7 @@ namespace TerrainServer.network.packet
 
         public SpawnEntityPacket(byte[] data) : base(data)
         {
-            
+
         }
 
         public override byte[] GetData()

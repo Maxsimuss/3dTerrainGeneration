@@ -1,9 +1,7 @@
-﻿using TerrainServer.network;
-using TerrainServer.network.packet;
-using System.Numerics;
+﻿using SuperSimpleTcp;
 using System.Diagnostics;
-using SuperSimpleTcp;
-using System.Collections.Concurrent;
+using TerrainServer.network;
+using TerrainServer.network.packet;
 
 namespace TerrainServer
 {
@@ -45,7 +43,7 @@ namespace TerrainServer
             Load();
 
             Timer t = null;
-            
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
             t = new Timer(o =>
@@ -66,13 +64,13 @@ namespace TerrainServer
                 switch (cmd[0])
                 {
                     case "time":
-                        if(cmd.Length != 2)
+                        if (cmd.Length != 2)
                         {
                             Console.WriteLine("Usage: time <time>");
                             break;
                         }
                         long add = 0;
-                        if(long.TryParse(cmd[1], out add))
+                        if (long.TryParse(cmd[1], out add))
                         {
                             time += add * 1000;
                             Console.WriteLine("Time is now set to {0}.", time);
@@ -87,7 +85,7 @@ namespace TerrainServer
                         Console.WriteLine("Stopping...");
                         running = false;
                         server.Stop();
-                        
+
                         break;
                     case "entitylimit":
                         if (cmd.Length != 2)
@@ -158,6 +156,9 @@ namespace TerrainServer
         }
 
         static HashSet<byte[]> accounts = new HashSet<byte[]>();
+
+        static int CurrentPhysicsTick = 0;
+
         private static void Events_DataReceived(object? sender, SuperSimpleTcp.DataReceivedEventArgs e)
         {
             lock (streamLock)
@@ -174,7 +175,7 @@ namespace TerrainServer
                     stream.Enqueue(e.Data[i]);
                 }
 
-                while(true)
+                while (true)
                 {
                     if (stream.Count < 1) break;
 
@@ -195,19 +196,20 @@ namespace TerrainServer
 
                     switch (type)
                     {
-                        case PacketType.Movement:
+                        case PacketType.Input:
                             {
-                                MovementPacket packet = (MovementPacket)p;
+                                InputPacket packet = (InputPacket)p;
                                 if (packet.entityId == -1)
                                     packet.entityId = sessions[e.IpPort];
 
                                 if (entities.ContainsKey(packet.entityId))
                                 {
-                                    EntityInfo i = entities[packet.entityId];
-                                    i.x = packet.x;
-                                    i.y = packet.y;
-                                    i.z = packet.z;
-                                    entities[packet.entityId] = i;
+                                    //EntityInfo i = entities[packet.entityId];
+                                    //i.x = packet.x;
+                                    //i.y = packet.y;
+                                    //i.z = packet.z;
+                                    //entities[packet.entityId] = i;
+                                    CurrentPhysicsTick = Math.Max(CurrentPhysicsTick, packet.Frame);
                                     Broadcast(packet, e.IpPort);
                                 }
                                 break;
@@ -226,9 +228,9 @@ namespace TerrainServer
                         case PacketType.Authentication:
                             {
                                 AuthenticationPacket packet = (AuthenticationPacket)p;
-                                if(packet.action == AuthAction.Register)
+                                if (packet.action == AuthAction.Register)
                                 {
-                                    if(!accounts.Any(x => x.SequenceEqual(packet.hash)))
+                                    if (!accounts.Any(x => x.SequenceEqual(packet.hash)))
                                     {
                                         accounts.Add(packet.hash);
                                         Save(packet.hash);
@@ -237,10 +239,10 @@ namespace TerrainServer
                                 }
                                 else
                                 {
-                                    if(accounts.Any(x => x.SequenceEqual(packet.hash)))
+                                    if (accounts.Any(x => x.SequenceEqual(packet.hash)))
                                     {
                                         Console.WriteLine("A user logged in!");
-                                        server.Send(e.IpPort, new ConfirmLoginPacket().GetData());
+                                        server.Send(e.IpPort, new ConfirmLoginPacket(sessions[e.IpPort], CurrentPhysicsTick).GetData());
                                     }
                                 }
                                 break;
@@ -272,52 +274,52 @@ namespace TerrainServer
 
             Broadcast(new SetTimePacket(time));
 
-            while (entities.Count < ENTITY_COUNT * sessions.Count)
-            {
-                lock (sessionLock)
-                {
-                    foreach (KeyValuePair<string, int> item in sessions)
-                    {
-                        if (entities.Count >= ENTITY_COUNT * sessions.Count)
-                        {
-                            break;
-                        }
-                        EntityInfo playerInfo = entities[item.Value];
-                        Vector3 pos = new Vector3(rand.NextSingle() - .5f, rand.NextSingle() - .5f, rand.NextSingle() - .5f);
-                        pos = pos / pos.Length();
-                        pos = pos * (20 + rand.NextSingle() * (ENTITY_DISTANCE - 20)) * 2;
-                        pos = pos + new Vector3(playerInfo.x, playerInfo.y, playerInfo.z);
+            //while (entities.Count < ENTITY_COUNT * sessions.Count)
+            //{
+            //    lock (sessionLock)
+            //    {
+            //        foreach (KeyValuePair<string, int> item in sessions)
+            //        {
+            //            if (entities.Count >= ENTITY_COUNT * sessions.Count)
+            //            {
+            //                break;
+            //            }
+            //            EntityInfo playerInfo = entities[item.Value];
+            //            Vector3 pos = new Vector3(rand.NextSingle() - .5f, rand.NextSingle() - .5f, rand.NextSingle() - .5f);
+            //            pos = pos / pos.Length();
+            //            pos = pos * (20 + rand.NextSingle() * (ENTITY_DISTANCE - 20)) * 2;
+            //            pos = pos + new Vector3(playerInfo.x, playerInfo.y, playerInfo.z);
 
-                        switch (rand.Next(4))
-                        {
-                            case 0: AddEntity(new EntityInfo(EntityType.Frog, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
-                            case 1: AddEntity(new EntityInfo(EntityType.BlueSlime, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
-                            case 2: AddEntity(new EntityInfo(EntityType.Demon, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
-                            case 3: AddEntity(new EntityInfo(EntityType.Spider, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
-                        }
-                    }
-                }
-            }
+            //            switch (rand.Next(4))
+            //            {
+            //                case 0: AddEntity(new EntityInfo(EntityType.Frog, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
+            //                case 1: AddEntity(new EntityInfo(EntityType.BlueSlime, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
+            //                case 2: AddEntity(new EntityInfo(EntityType.Demon, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
+            //                case 3: AddEntity(new EntityInfo(EntityType.Spider, pos.X, pos.Y, pos.Z, 0, 0, 0), item.Key); break;
+            //            }
+            //        }
+            //    }
+            //}
 
-            List<KeyValuePair<int, EntityInfo>> list = new List<KeyValuePair<int, EntityInfo>>(entities);
-            foreach (KeyValuePair<int, EntityInfo> info in list)
-            {
-                lock (sessionLock)
-                {
-                    foreach (KeyValuePair<string, int> item in sessions)
-                    {
-                        EntityInfo playerInfo = entities[item.Value];
-                        if (!IsTooFar(info.Value.x, playerInfo.x) && !IsTooFar(info.Value.z, playerInfo.z))
-                        {
-                            goto InRenderDistance;
-                        }
-                    }
-                }
+            //List<KeyValuePair<int, EntityInfo>> list = new List<KeyValuePair<int, EntityInfo>>(entities);
+            //foreach (KeyValuePair<int, EntityInfo> info in list)
+            //{
+            //    lock (sessionLock)
+            //    {
+            //        foreach (KeyValuePair<string, int> item in sessions)
+            //        {
+            //            EntityInfo playerInfo = entities[item.Value];
+            //            if (!IsTooFar(info.Value.x, playerInfo.x) && !IsTooFar(info.Value.z, playerInfo.z))
+            //            {
+            //                goto InRenderDistance;
+            //            }
+            //        }
+            //    }
 
-                RemoveEntity(info.Key);
+            //    RemoveEntity(info.Key);
 
-            InRenderDistance:;
-            }
+            //InRenderDistance:;
+            //}
         }
 
         private static bool IsTooFar(float a, float b)

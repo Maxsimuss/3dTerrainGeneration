@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TerrainServer.network.packet
+﻿namespace TerrainServer.network.packet
 {
     public class ConfirmLoginPacket : Packet
     {
-        public ConfirmLoginPacket()
+        public int EntityId = 0;
+        public int PhysicsFrame = 0;
+
+        public ConfirmLoginPacket(int EntityId, int PhysicsFrame)
         {
             packetType = PacketType.ConfirmLogin;
+            this.EntityId = EntityId;
+            this.PhysicsFrame = PhysicsFrame;
         }
 
         public ConfirmLoginPacket(byte[] data) : base(data)
@@ -20,12 +19,21 @@ namespace TerrainServer.network.packet
 
         public override byte[] GetData()
         {
-            return new byte[] { (byte)packetType };
+            List<byte> data = new List<byte>();
+
+            data.Add((byte)packetType);
+            data.AddRange(BitConverter.GetBytes(EntityId));
+            data.AddRange(BitConverter.GetBytes(PhysicsFrame));
+
+            return data.ToArray();
         }
 
         protected override void Parse(byte[] data)
         {
             packetType = (PacketType)data[0];
+
+            EntityId = BitConverter.ToInt32(data, 1);
+            PhysicsFrame = BitConverter.ToInt32(data, 5);
         }
     }
 }

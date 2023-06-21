@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <OutputType>WinExe</OutputType>
     <RootNamespace>_3dTerrainGeneration</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -19,6 +19,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>full</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Game\GameWorld\Entities\BlueSlime.cs" />
+    <Compile Remove="Game\GameWorld\Entities\Demon.cs" />
+    <Compile Remove="Game\GameWorld\Entities\EntityTypeExtensions.cs" />
+    <Compile Remove="Game\GameWorld\Entities\FireBall.cs" />
+    <Compile Remove="Game\GameWorld\Entities\Frog.cs" />
+    <Compile Remove="Game\GameWorld\Entities\Spider.cs" />
+    <Compile Remove="SoundManager.cs" />
+    <Compile Remove="Window.cs" />
+  </ItemGroup>
   <ItemGroup>
     <None Update="Resources\fonts\OpenSans-Light.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -340,6 +350,14 @@
     <Folder Include="Resources\textures\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="rendering\VoxReader\VoxReader.csproj" />
+    <None Include="Engine\Graphics\Backend\Models\VoxReader\VoxReader.csproj" />
+    <None Include="Game\GameWorld\Entities\BlueSlime.cs" />
+    <None Include="Game\GameWorld\Entities\Demon.cs" />
+    <None Include="Game\GameWorld\Entities\EntityTypeExtensions.cs" />
+    <None Include="Game\GameWorld\Entities\FireBall.cs" />
+    <None Include="Game\GameWorld\Entities\Frog.cs" />
+    <None Include="Game\GameWorld\Entities\Spider.cs" />
+    <None Include="SoundManager.cs" />
+    <None Include="Window.cs" />
   </ItemGroup>
 </Project>
