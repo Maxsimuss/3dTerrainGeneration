@@ -13,6 +13,7 @@ using _3dTerrainGeneration.Engine.Util;
 using _3dTerrainGeneration.Engine.Graphics.Backend.RenderActions;
 using _3dTerrainGeneration.Engine.Graphics._3D.Cameras;
 using _3dTerrainGeneration.Engine.Options;
+using _3dTerrainGeneration.Engine.Graphics.Backend;
 
 namespace _3dTerrainGeneration.Engine.Graphics
 {
@@ -99,7 +100,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
             OptionManager.Instance.RegisterOption("Graphics", "3D Resolution Scale", new DoubleOption(.125, 2, 1));
             OptionManager.Instance.RegisterOption("Graphics", "Sharpness", new DoubleOption(0, 1, .25));
             OptionManager.Instance.RegisterOption("Graphics", "Shadow Resolution", new DoubleOption(512, 8196, 4096));
-            OptionManager.Instance.RegisterOption("Graphics", "SSAO Quality", new DoubleOption(1, 16, 2));
+            OptionManager.Instance.RegisterOption("Graphics", "SSAO Quality", new DoubleOption(1, 16, 4));
             OptionManager.Instance.RegisterOption("Graphics", "RTGI Enabled", new BoolOption(false));
             OptionManager.Instance.RegisterOption("Graphics", "RTGI Resolution", new DoubleOption(1, 16, 1));
             OptionManager.Instance.RegisterOption("Graphics", "RTGI Quality", new DoubleOption(1, 16, 1));
@@ -215,7 +216,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
             SkyBuffer = new Framebuffer(w / 16, h / 16, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 16, h / 16, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
 
             if (StarBuffer != null) StarBuffer.Dispose();
-            StarBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.Rgb16f, PixelFormat.Rgb));
+            StarBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
 
             if (HUDBuffer != null) HUDBuffer.Dispose();
             HUDBuffer = new Framebuffer(Width, Height, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(Width, Height, PixelInternalFormat.Rgba8, PixelFormat.Rgba));
@@ -224,14 +225,16 @@ namespace _3dTerrainGeneration.Engine.Graphics
             OcclusionBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8, PixelFormat.Red));
 
             if (TAABuffer0 != null) TAABuffer0.Dispose();
-            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
+            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 }, 
+                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
+                new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
             if (TAABuffer1 != null) TAABuffer1.Dispose();
-            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
+            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 }, 
+                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
+                new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
 
             if (DOFWeightBuffer != null) DOFWeightBuffer.Dispose();
             DOFWeightBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 2, h / 2, PixelInternalFormat.R16f, PixelFormat.Red));
-
-
         }
 
         private void InitShaders()
@@ -281,7 +284,8 @@ namespace _3dTerrainGeneration.Engine.Graphics
             ShaderManager.Instance.RegisterFragmentShader("TAA", "post.vert", "post/taa.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("colorTex0", 1)
-                .SetInt("colorTex1", 2);
+                .SetInt("colorTex1", 2)
+                .SetInt("depthTex1", 3);
 
             ShaderManager.Instance.RegisterFragmentShader("Bloom", "post.vert", "post/bloom.frag").Compile()
                 .SetInt("colortex0", 0);
@@ -341,12 +345,17 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 depthColorShadowTex[i + 2] = ShadowBuffers[i].depthTex0;
             }
 
+            renderActions.Add(new StartProfilerSectionAction("Shadow Filter"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["ShadowFilter"], ShadowBuffer, depthColorShadowTex));
+            renderActions.Add(new StartProfilerSectionAction("Sky"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Sky"], SkyBuffer));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Stars"], StarBuffer));
+            renderActions.Add(new StartProfilerSectionAction("Volumetrics"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Volumetrics"], VolumetricBuffer, depthColorShadowTex));
+            renderActions.Add(new StartProfilerSectionAction("Occlusion"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Occlusion"], OcclusionBuffer, GBuffer.depthTex0, GBuffer.colorTex[1]));
 
+            renderActions.Add(new StartProfilerSectionAction("Lighting"));
             if (OptionManager.Instance["Graphics", "RTGI Enabled"])
             {
                 renderActions.Add(new ShaderPass(ShaderManager.Instance["Lighting"], RGB11BitBuffer0,
@@ -375,13 +384,20 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
             PingPongFramebuffer pingPongFramebuffer = new PingPongFramebuffer(TAABuffer0, TAABuffer1);
             PingPongTexture pingPongTexture = new PingPongTexture(TAABuffer1.colorTex[0], TAABuffer0.colorTex[0]);
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["TAA"], pingPongFramebuffer, GBuffer.depthTex0, RGB11BitBuffer0.colorTex[0], pingPongTexture));
+            PingPongTexture pingPongTextureD = new PingPongTexture(TAABuffer1.colorTex[1], TAABuffer0.colorTex[1]);
+            renderActions.Add(new StartProfilerSectionAction("TAA"));
+            renderActions.Add(new ShaderPass(ShaderManager.Instance["TAA"], pingPongFramebuffer, GBuffer.depthTex0, RGB11BitBuffer0.colorTex[0], pingPongTexture, pingPongTextureD));
             renderActions.Add(new SwapTexturesAction(pingPongTexture));
+            renderActions.Add(new SwapTexturesAction(pingPongTextureD));
             renderActions.Add(new SwapFramebuffersAction(pingPongFramebuffer));
+            renderActions.Add(new StartProfilerSectionAction("Tonemapping"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Tonemapping"], RGB11BitBuffer0, pingPongTexture));
+            renderActions.Add(new StartProfilerSectionAction("DOF"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["DOFWeight"], DOFWeightBuffer, GBuffer.depthTex0));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["DOFBlur"], RGB11BitBuffer1, DOFWeightBuffer.colorTex[0], RGB11BitBuffer0.colorTex[0], GBuffer.depthTex0));
+            renderActions.Add(new StartProfilerSectionAction("Sharpen"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Sharpen"], RGB11BitBuffer0, RGB11BitBuffer1.colorTex[0]));
+            renderActions.Add(new StartProfilerSectionAction("Bloom"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Bloom"], BloomBuffer0, RGB11BitBuffer0.colorTex[0]));
 
             for (int i = 0; i < 10; i++)
@@ -396,8 +412,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 renderActions.Add(new ShaderPass(ShaderManager.Instance["BlurUpsample"], BloomBuffer0, BloomBuffer1.colorTex[0]));
             }
 
+            renderActions.Add(new StartProfilerSectionAction("Compositing"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Final3D"], RGB8BtBuffer, RGB11BitBuffer0.colorTex[0], BloomBuffer0.colorTex[0]));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Final2D"], null, RGB8BtBuffer.colorTex[0], HUDBuffer.colorTex[0]));
+            renderActions.Add(new EndProfilerSectionAction());
         }
 
 
@@ -582,6 +600,8 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         public void RenderFrame(double frameTimeMillis)
         {
+            GPUProfilter.Instance.BeginFrame();
+
             FrameTimeMillis = frameTimeMillis;
             FrameTimeAvg = (FrameTimeAvg * 99 + frameTimeMillis) / 100.0F;
 
@@ -610,6 +630,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
             SetUniforms();
 
+            GPUProfilter.Instance.StartSection("Main Layer");
             mainLayer.Render(Camera, default);
             GBuffer.Use();
             GL.Viewport(0, 0, GBuffer.Width, GBuffer.Height);
@@ -617,8 +638,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             SceneRenderer.Instance.Render((FragmentShader)ShaderManager.Instance["GBuffer"]);
 
+            GPUProfilter.Instance.StartSection("Shadow Layer");
             RenderShadowMap();
 
+            GPUProfilter.Instance.StartSection("HUD Layer");
             HUDBuffer.Use();
             GL.Viewport(0, 0, HUDBuffer.Width, HUDBuffer.Height);
 
@@ -629,11 +652,14 @@ namespace _3dTerrainGeneration.Engine.Graphics
             UIRenderer.Instance.Render();
             UIRenderer.Instance.Flush();
             GL.Disable(EnableCap.Blend);
+            GPUProfilter.Instance.EndSection();
 
             foreach (var shaderPass in renderActions)
             {
                 shaderPass.Apply();
             }
+
+            GPUProfilter.Instance.EndFrame();
         }
     }
 }

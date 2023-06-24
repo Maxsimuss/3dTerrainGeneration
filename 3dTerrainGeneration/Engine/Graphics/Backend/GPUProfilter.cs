@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend
 {
-    internal class Frame
+    internal class ProfilerFrame
     {
         public List<string> queryNames = new List<string>();
         public List<int> startQueries = new List<int>();
@@ -14,22 +14,45 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
 
     internal class GPUProfilter
     {
+        private static GPUProfilter instance;
+        public static GPUProfilter Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new GPUProfilter();
+                }
+
+                return instance;
+            }
+        }
+
         private string sectionName = null;
 
         private int[] temp = new int[2];
         private Queue<int> queryBuffer = new Queue<int>();
-        private Queue<Frame> frames = new Queue<Frame>();
+        private Queue<ProfilerFrame> frames = new Queue<ProfilerFrame>();
         private Dictionary<string, float> sectionValues = new Dictionary<string, float>();
-        Frame frame = null;
+        private ProfilerFrame frame = null;
+
+        private GPUProfilter()
+        {
+
+        }
 
         public void BeginFrame()
         {
-            frame = new Frame();
+            frame = new ProfilerFrame();
         }
 
-        public void Start(string name)
+        public void StartSection(string name)
         {
-            if (sectionName != null) throw new Exception("Tried to start a GPUProfiler section before ending the previous one!");
+            if (sectionName != null)
+            {
+                EndSection();
+            }
+
             sectionName = name;
             int query;
             if (queryBuffer.Count > 0)
@@ -49,7 +72,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
             frame.queryNames.Add(name);
         }
 
-        public void End()
+        public void EndSection()
         {
             if (sectionName == null) throw new Exception("Tried to end a nonexistent GPUProfiler section!");
 
@@ -67,7 +90,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
                 frames.Enqueue(frame);
                 frame = null;
             }
-            Frame _frame = frames.Peek();
+            ProfilerFrame _frame = frames.Peek();
             for (int i = 0; i < _frame.startQueries.Count; i++)
             {
                 int q0 = _frame.endQueries[i];
@@ -107,7 +130,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
             {
                 return times;
             }
-            Frame _frame = frames.Peek();
+            ProfilerFrame _frame = frames.Peek();
             double total = 0;
             bool invalid = false;
             for (int i = 0; i < _frame.startQueries.Count; i++)
@@ -131,10 +154,10 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
                 if (!sectionValues.ContainsKey(_frame.queryNames[i]))
                     sectionValues.Add(_frame.queryNames[i], (float)time);
 
-                sectionValues[_frame.queryNames[i]] = (float)time;
+                //sectionValues[_frame.queryNames[i]] = (float)time;
 
-                //sectionValues[_frame.queryNames[i]] += (float)time * .01f;
-                //sectionValues[_frame.queryNames[i]] /= 1.01f;
+                sectionValues[_frame.queryNames[i]] += (float)time * .01f;
+                sectionValues[_frame.queryNames[i]] /= 1.01f;
                 total += time;
             }
 

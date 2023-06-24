@@ -3,13 +3,15 @@
 #define TAA_SEARCH_RADIUS 9
 #define TAA_DEPTH_SEARCH_RADIUS 9
 
-layout (location = 0) out vec4 FragColor;
+layout (location = 0) out vec3 FragColor;
+layout (location = 1) out float MemoryDepth;
   
 layout (location = 0) in vec2 TexCoords;
 
 layout (binding = 0) uniform sampler2D depthTex;
 layout (binding = 1) uniform sampler2D colorTex0;
 layout (binding = 2) uniform sampler2D colorTex1;
+layout (binding = 3) uniform sampler2D depthTex1;
 // layout (binding = 3) uniform ExampleBlock{ 
 //     int width; 
 //     int height; 
@@ -65,14 +67,15 @@ void main() {
     }
 
     for(int i = 0; i < TAA_DEPTH_SEARCH_RADIUS; i++) {
-        float d = texture(colorTex1, prev.xy + offsets[i % 9] * vec2(x, y) * (1 + i / 9)).a;
+        float d = texture(depthTex1, prev.xy + offsets[i % 9] * vec2(x, y) * (1 + i / 9)).r;
         minDepth = min(abs(linearize_depth(d) - linearize_depth(prev.z)), minDepth);
     }
 
     if(prev.x < 0 || prev.x > 1 || prev.y < 0 || prev.y > 1 || minDepth > .05 * linearize_depth(depth)) {
         mixAmt = 1;
     }
-    // color = mix(n.rgb, curr, .1);
-    color = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
-    FragColor = vec4(color, depth);
+    
+    // FragColor = mix(n.rgb, curr, .1);
+    FragColor = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
+    MemoryDepth = depth;
 }
