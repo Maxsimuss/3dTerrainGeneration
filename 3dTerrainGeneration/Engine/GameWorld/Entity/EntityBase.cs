@@ -5,7 +5,7 @@ namespace _3dTerrainGeneration.Engine.World.Entity
 {
     internal abstract class EntityBase
     {
-        public int EntityId = 0;
+        public int EntityId { get; private set; } = 0;
 
         public float Yaw, Pitch;
         public Vector3 Position, LastPosition;

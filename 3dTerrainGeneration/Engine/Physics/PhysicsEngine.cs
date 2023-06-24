@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using _3dTerrainGeneration.Engine.Input;
 using static OpenTK.Mathematics.MathHelper;
 
 namespace _3dTerrainGeneration.Engine.Physics
@@ -25,7 +26,7 @@ namespace _3dTerrainGeneration.Engine.Physics
         }
 
         public Dictionary<int, EntityPhysicsData[]> entityData = new Dictionary<int, EntityPhysicsData[]>();
-        public Queue<PhysicsInputData>[] inputData = new Queue<PhysicsInputData>[MAX_ENTITIES];
+        public Queue<InputState>[] inputData = new Queue<InputState>[MAX_ENTITIES];
 
         public int CurrentFrame = 0;
         public int ResimulationFrame = -1;
@@ -39,11 +40,11 @@ namespace _3dTerrainGeneration.Engine.Physics
         {
             for (int i = 0; i < MAX_ENTITIES; i++)
             {
-                inputData[i] = new Queue<PhysicsInputData>();
+                inputData[i] = new Queue<InputState>();
             }
         }
 
-        public void SetEntityInputAtFrame(PhysicsInputData input, int entityId, int frame)
+        public void SetEntityInputAtFrame(InputState input, int entityId, int frame)
         {
             //CurrentFrame = Math.Max(CurrentFrame, frame);
 
@@ -105,7 +106,7 @@ namespace _3dTerrainGeneration.Engine.Physics
                 for (int i = 0; i < MAX_ENTITIES; i++)
                 {
                     ref EntityPhysicsData data = ref nextState[i];
-                    PhysicsInputData input = new PhysicsInputData();
+                    InputState input = new InputState();
                     if (inputData[i].Count == 1)
                     {
                         input = inputData[i].Peek();

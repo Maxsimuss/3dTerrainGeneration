@@ -9,17 +9,11 @@ using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.GameWorld.Entity
 {
-    internal class LivingEntity<T> : DrawableEntity<T>
+    internal abstract class LivingEntity<T> : DrawableEntity<T>
     {
-        protected static AxisAlignedBB AABB;
 
         public LivingEntity(IWorld world, int id) : base(world, id)
         {
-        }
-
-        public override void Tick()
-        {
-
         }
     }
 }

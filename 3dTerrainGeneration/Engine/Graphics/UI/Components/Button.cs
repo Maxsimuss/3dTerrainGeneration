@@ -1,10 +1,12 @@
 ﻿using _3dTerrainGeneration.Engine.Audio;
 using _3dTerrainGeneration.Engine.Graphics.UI.Text;
+using _3dTerrainGeneration.Engine.Input;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Numerics;
 
 namespace _3dTerrainGeneration.Engine.Graphics.UI.Components
 {
-    internal class Button : BaseComponent
+    internal class Button : BaseComponent, IScreenInputHandler
     {
         public event OnClick Clicked;
         public delegate void OnClick();
@@ -24,19 +26,28 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Components
             this.text = text;
         }
 
-        public void Render()
+        public override void Render()
         {
             UIRenderer.Instance.DrawRect(X - Width, Y - Weight * GraphicsEngine.Instance.AspectRatio, X + Width, Y + Weight * GraphicsEngine.Instance.AspectRatio, color);
             renderer.DrawTextWithShadowCentered(X, Y, .0375f, text);
         }
 
-        public void MouseClicked(float x, float y)
+        public bool HandleInput(KeyboardState keyboardState, MouseState mouseState, Vector2 cursor)
         {
+            float x = cursor.X;
+            float y = cursor.Y;
+
+            if (!mouseState.IsButtonPressed(MouseButton.Left)) return false;
+
             if (x > X - Width && x < X + Width && y > Y - Weight * GraphicsEngine.Instance.AspectRatio && y < Y + Weight * GraphicsEngine.Instance.AspectRatio)
             {
                 AudioEngine.Instance.PlaySound("ClickConfirm");
                 Clicked();
+
+                return true;
             }
+
+            return false;
         }
     }
 }

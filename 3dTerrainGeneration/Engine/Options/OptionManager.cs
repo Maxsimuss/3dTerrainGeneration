@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,10 @@ namespace _3dTerrainGeneration.Engine.Options
             }
         }
 
+        public event OptionsChangedEvent OnOptionsChanged;
+        public delegate void OptionsChangedEvent(string category, string name);
+
+
         private Dictionary<string, Dictionary<string, Option>> options = new Dictionary<string, Dictionary<string, Option>>();
 
         public OptionManager()
@@ -30,9 +35,22 @@ namespace _3dTerrainGeneration.Engine.Options
 
         }
 
-        public void RegisterCategory(string category)
+        public void RegisterOption(string category, string name, Option option)
         {
-            options.Add(category, new Dictionary<string, Option>());
+            if (!options.ContainsKey(category))
+            {
+                options.Add(category, new Dictionary<string, Option>());
+            }
+
+            if (!options[category].ContainsKey(name))
+            {
+                options[category].Add(name, option);
+            }
+        }
+
+        public void UnregisterOption(string category, string name)
+        {
+            options[category].Remove(name);
         }
 
         public void UnregisterCategory(string category)
@@ -40,26 +58,22 @@ namespace _3dTerrainGeneration.Engine.Options
             options.Remove(category);
         }
 
-        public void RegisterOption(string category, string setting, double min, double max, double value)
-        {
-            options[category].Add(setting, new Option(min, max, value));
-        }
-
-        public void UnregisterOption(string categoty, string setting)
-        {
-            options[categoty].Remove(setting);
-        }
-
-        public double this[string category, string setting]
+        public Option this[string category, string name]
         {
             get
             {
-                return options[category][setting].Value;
+                return options[category][name];
             }
-            set
-            {
-                options[category][setting].Value = value;
-            }
+        }
+
+        public List<string> ListCategories()
+        {
+            return options.Keys.ToList();
+        }
+
+        public Dictionary<string, Option> ListOptionsForCategoty(string category)
+        {
+            return options[category].ToDictionary(e => e.Key, e => e.Value);
         }
     }
 }

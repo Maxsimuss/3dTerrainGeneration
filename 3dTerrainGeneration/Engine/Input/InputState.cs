@@ -1,8 +1,8 @@
 ﻿using System.Numerics;
 
-namespace _3dTerrainGeneration.Engine.Physics
+namespace _3dTerrainGeneration.Engine.Input
 {
-    public struct PhysicsInputData
+    public struct InputState
     {
         public Vector3 Movement;
         public float Yaw, Pitch;

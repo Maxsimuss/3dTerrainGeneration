@@ -58,28 +58,28 @@ namespace _3dTerrainGeneration.Game.Graphics.UI
 
         }
 
-        public void KeyPress(char keyChar)
-        {
-            if (usernameField.Focused)
-                usernameField.Append(keyChar);
-            if (passwordField.Focused)
-                passwordField.Append(keyChar);
-        }
+        //public void KeyPress(char keyChar)
+        //{
+        //    if (usernameField.Focused)
+        //        usernameField.Append(keyChar);
+        //    if (passwordField.Focused)
+        //        passwordField.Append(keyChar);
+        //}
 
-        public void BackSpacePress()
-        {
-            if (usernameField.Focused)
-                usernameField.Remove();
-            if (passwordField.Focused)
-                passwordField.Remove();
-        }
+        //public void BackSpacePress()
+        //{
+        //    if (usernameField.Focused)
+        //        usernameField.Remove();
+        //    if (passwordField.Focused)
+        //        passwordField.Remove();
+        //}
 
-        public void MouseClicked(float x, float y)
-        {
-            usernameField.MouseClicked(x, y);
-            passwordField.MouseClicked(x, y);
-            loginButton.MouseClicked(x, y);
-            registerButton.MouseClicked(x, y);
-        }
+        //public void MouseClicked(float x, float y)
+        //{
+        //    usernameField.MouseClicked(x, y);
+        //    passwordField.MouseClicked(x, y);
+        //    loginButton.MouseClicked(x, y);
+        //    registerButton.MouseClicked(x, y);
+        //}
     }
 }

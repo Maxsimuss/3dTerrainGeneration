@@ -2,34 +2,16 @@
 using _3dTerrainGeneration.Engine.Options;
 using _3dTerrainGeneration.Engine.Util;
 using _3dTerrainGeneration.Engine.World;
-using _3dTerrainGeneration.Engine.World.Entity;
-using _3dTerrainGeneration.Game.GameWorld.Entities;
 using _3dTerrainGeneration.Game.GameWorld.Generators;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Drawing.Printing;
 using System.Numerics;
-using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
-using TerrainServer.network;
 using static OpenTK.Mathematics.MathHelper;
 
 namespace _3dTerrainGeneration.Game.GameWorld
 {
-    public struct EntitySpawn
-    {
-        public EntitySpawn(EntityType type, float x, float y, float z)
-        {
-            this.type = type;
-            this.x = x; this.y = y; this.z = z;
-        }
-
-        public float x, y, z;
-        public EntityType type;
-    }
-
     internal class World : IWorld
     {
         private static readonly Vector3 v0 = new Vector3(Chunk.CHUNK_SIZE, 0, 0),
@@ -58,6 +40,8 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         static World()
         {
+            OptionManager.Instance.RegisterOption("World", "View Distance", new DoubleOption(128, 2048, 512));
+
             viewDistanceChunks = (int)OptionManager.Instance["World", "View Distance"] / Chunk.CHUNK_SIZE * 2;
             totalChunkCount = viewDistanceChunks * viewDistanceChunks * viewDistanceChunks;
 
@@ -219,10 +203,6 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public int Render(Camera camera)
         {
-            //int id = GetEntityId();
-            //SpawnEntity(id, EntityType.Frog, (float)player.x, (float)player.y, (float)player.z, 0, 0, 0);
-            //SetResponsible(id);
-
             //Time += fT * 5000;
             //Time += fT * 20000;
             Time = 800000;

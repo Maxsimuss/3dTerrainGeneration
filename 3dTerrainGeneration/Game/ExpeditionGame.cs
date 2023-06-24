@@ -1,12 +1,17 @@
 ﻿using _3dTerrainGeneration.Engine;
 using _3dTerrainGeneration.Engine.Audio;
+using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using _3dTerrainGeneration.Engine.Graphics;
 using _3dTerrainGeneration.Engine.Graphics._3D;
+using _3dTerrainGeneration.Engine.Graphics._3D.Cameras;
 using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Options;
 using _3dTerrainGeneration.Engine.World;
 using _3dTerrainGeneration.Game.GameWorld;
+using _3dTerrainGeneration.Game.GameWorld.Entities;
 using _3dTerrainGeneration.Game.Graphics._3D;
 using _3dTerrainGeneration.Game.Graphics.UI;
+using LibNoise.Combiner;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,12 +31,24 @@ namespace _3dTerrainGeneration.Game
         public ISceneLayer MainLayer => mainLayer;
         public ISceneLayer ShadowLayer => shadowLayer;
 
-        public void EntryPoint()
+        public void EntryPoint(VoxelEngine engine)
         {
             Task.Run(RegisterSounds);
             RegisterOptions();
 
             world = new World();
+
+            Player player = new Player(world, EntityManager.Instance.GetNextEntityId());
+            player.Visible = false;
+            EntityManager.Instance.AddEntity(player);
+
+            for (int i = 0; i < 10; i++)
+            {
+                EntityManager.Instance.AddEntity(new Frog(world, EntityManager.Instance.GetNextEntityId()));
+            }
+
+            engine.UserInputHandler.RegisterInputHandler(player);
+            GraphicsEngine.Instance.CameraPositionProvider = new EntityFollowingCamera<Player>(player);
 
             mainLayer = new MainSceneLayer(world);
             shadowLayer = new MainSceneLayer(world);
@@ -40,8 +57,7 @@ namespace _3dTerrainGeneration.Game
 
         private void RegisterOptions()
         {
-            OptionManager.Instance.RegisterCategory("World");
-            OptionManager.Instance.RegisterOption("World", "View Distance", 128, 2048, 1024);
+            OptionManager.Instance.RegisterOption("Audio", "Volume", new DoubleOption(0, 10, 5));
         }
 
         private void RegisterSounds()

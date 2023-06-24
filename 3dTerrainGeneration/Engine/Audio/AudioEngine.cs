@@ -64,7 +64,7 @@ namespace _3dTerrainGeneration.Engine.Audio
 
             soundSources.RemoveAll((source) =>
             {
-                if ((source.TTL -= deltaTime) < 0)
+                if ((source.TTL -= deltaTime / 1000) < 0)
                 {
                     source.Stop();
                     return true;
@@ -127,11 +127,11 @@ namespace _3dTerrainGeneration.Engine.Audio
             buffers.Remove(name);
         }
 
-        public void PlaySound(string name, Vector3 position = default)
+        public void PlaySound(string name)
         {
             AudioBuffer buffer = buffers[name][random.Next(buffers[name].Count)];
 
-            SoundSource soundSource = new SoundSource(buffer, position, false, 1.0f, 1.0f);
+            SoundSource soundSource = new SoundSource(buffer, false, 1.0f, 1.0f);
             soundSource.Play();
 
             soundSources.Add(soundSource);

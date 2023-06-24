@@ -4,7 +4,14 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 {
     public class ComputeShader : Shader
     {
+        private string srcPath;
+
         public ComputeShader(string srcPath) : base()
+        {
+            this.srcPath = srcPath;
+        }
+
+        public override Shader Compile()
         {
             string source = LoadSource(srcPath);
 
@@ -18,7 +25,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
             GL.DetachShader(Handle, shader);
             GL.DeleteShader(shader);
 
-            Init();
+            return base.Compile();
         }
     }
 }

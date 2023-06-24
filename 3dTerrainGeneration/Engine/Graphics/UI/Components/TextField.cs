@@ -26,10 +26,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Components
         Vector4 white = new(1f);
         Vector4 gray = new(1f, 1f, 1f, .5f);
 
-        public void Render()
+        public override void Render()
         {
-
-
             if (text.Length == 0)
                 renderer.DrawTextCentered(X, Y, scale, placeholder, gray);
             else

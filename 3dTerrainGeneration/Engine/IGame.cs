@@ -10,7 +10,7 @@ namespace _3dTerrainGeneration.Engine
 {
     internal interface IGame
     {
-        public void EntryPoint();
+        public void EntryPoint(VoxelEngine engine);
 
         public IWorld World { get; }
         public ISceneLayer MainLayer { get; }

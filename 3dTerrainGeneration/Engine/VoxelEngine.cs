@@ -10,17 +10,26 @@ using System.Diagnostics;
 using OpenTK.Graphics.OpenGL;
 using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
+using _3dTerrainGeneration.Engine.Input;
+using OpenTK.Windowing.Common;
+using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using OpenTK.Mathematics;
+using _3dTerrainGeneration.Engine.Audio;
 
 namespace _3dTerrainGeneration.Engine
 {
     internal class VoxelEngine
     {
+        private static readonly int MS_PER_TICK = 50;
+
         private bool running = true;
         private double tickBalance = 0;
         private Graphics.Window window = null;
         private IGame game;
         private Stopwatch frameTimer = new Stopwatch();
 
+        public UserInputHandler UserInputHandler { get; } = new UserInputHandler();
+        
         public VoxelEngine(IGame game)
         {
             this.game = game;
@@ -30,7 +39,7 @@ namespace _3dTerrainGeneration.Engine
             window.Context.MakeCurrent();
         }
 
-        private void Window_Resize(OpenTK.Windowing.Common.ResizeEventArgs obj)
+        private void Window_Resize(ResizeEventArgs obj)
         {
             GraphicsEngine.Instance.Resize(obj.Width, obj.Height);
         }
@@ -41,43 +50,63 @@ namespace _3dTerrainGeneration.Engine
             Kernel.AllocConsole();
 
             GraphicsEngine.Instance.Game = game;
-            game.EntryPoint();
+            game.EntryPoint(this);
 #if DEBUG
             UIRenderer.Instance.OpenScreen(new DebugHud());
 #endif
 
+            window.CursorState = CursorState.Grabbed;
+
             while (running)
             {
-                unsafe
-                {
-                    if (GLFW.WindowShouldClose(window.WindowPtr))
-                    {
-                        running = false;
-                    }
-                }
-
-                window.ProcessInputEvents();
-                GLFW.PollEvents();
-
-                long frameTimeMillis = frameTimer.ElapsedMilliseconds;
-                tickBalance += frameTimeMillis;
-                frameTimer.Restart();
-                GraphicsEngine.Instance.RenderFrame(frameTimeMillis);
-
-                if (tickBalance > 0)
-                {
-                    tickBalance -= 50;
-
-                    game.World.Tick(GraphicsEngine.Instance.Camera.Position);
-                }
-
-                if(window.KeyboardState.IsKeyDown(Keys.R))
-                {
-                    GraphicsEngine.Instance.Reload();
-                }
-
-                window.Context.SwapBuffers();
+                Update();
             }
+        }
+
+        private void Update()
+        {
+            unsafe
+            {
+                if (GLFW.WindowShouldClose(window.WindowPtr))
+                {
+                    running = false;
+                }
+            }
+
+            double frameTimeMillis = frameTimer.Elapsed.TotalMilliseconds;
+
+            GraphicsEngine.Instance.TickFraction = MathHelper.Clamp((float)tickBalance / MS_PER_TICK + 1, 0, 1);
+            tickBalance += frameTimeMillis;
+            frameTimer.Restart();
+
+
+            Render(frameTimeMillis);
+            
+            if (tickBalance > 0)
+            {
+                tickBalance -= MS_PER_TICK;
+
+                Tick();
+            }
+        }
+
+        private void Tick()
+        {
+            EntityManager.Instance.Tick();
+            game.World.Tick(GraphicsEngine.Instance.Camera.Position);
+            AudioEngine.Instance.Tick(GraphicsEngine.Instance.Camera.Position, default, GraphicsEngine.Instance.Camera.Front, MS_PER_TICK);
+        }
+
+        private void Render(double frameTimeMillis)
+        {
+            //swap buffers for previous frame, hiding cpu -> gpu delay
+            window.Context.SwapBuffers();
+
+            window.ProcessInputEvents();
+            GLFW.PollEvents();
+            UserInputHandler.HandleInput(window.KeyboardState, window.MouseState);
+
+            GraphicsEngine.Instance.RenderFrame(frameTimeMillis);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using _3dTerrainGeneration.Engine.Graphics._3D;
+﻿using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using _3dTerrainGeneration.Engine.Graphics._3D;
 using _3dTerrainGeneration.Game.GameWorld;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ namespace _3dTerrainGeneration.Game.Graphics._3D
         public void Render(Camera camera, Matrix4x4 matrix)
         {
             world.Render(camera);
+            EntityManager.Instance.Render();
         }
     }
 }

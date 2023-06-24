@@ -1,7 +1,10 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics.Backend.Shaders;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
+using _3dTerrainGeneration.Engine.Input;
+using _3dTerrainGeneration.Engine.Options;
 using OpenTK.Compute.OpenCL;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -40,7 +43,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
         private int index = 0, prev = 0;
         private IntPtr sync = IntPtr.Zero;
 
-        private Queue<BaseScreen> openScreens = new Queue<BaseScreen>();
+        private List<BaseScreen> openScreens = new List<BaseScreen>();
+        Vector2 cursor;
 
         private UIRenderer()
         {
@@ -128,7 +132,9 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
             else
                 ShaderManager.Instance["UI"].Use();
 
+            GL.Disable(EnableCap.DepthTest);
             GL.DrawArrays(PrimitiveType.Triangles, prev / 6, (index - prev) / 6);
+            
             if (index >= BUFFER_SIZE / 4)
             {
                 index = 0;
@@ -146,9 +152,34 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
             }
         }
 
-        public void OpenScreen(BaseScreen screen)
+        public BaseScreen OpenScreen(BaseScreen screen)
         {
-            openScreens.Enqueue(screen);
+            openScreens.Add(screen);
+
+            return screen;
+        }
+        public void CloseScreen(BaseScreen screen)
+        {
+            openScreens.Remove(screen);
+        }
+
+        public bool HandleInput(KeyboardState keyboardState, MouseState mouseState)
+        {
+            float sens = (float)OptionManager.Instance["Controls", "Mouse Sensitivity"];
+            cursor += new Vector2(mouseState.Delta.X * sens / 200, -mouseState.Delta.Y * sens / 200 * GraphicsEngine.Instance.AspectRatio);
+            cursor.X = Math.Clamp(cursor.X, -1, 1);
+            cursor.Y = Math.Clamp(cursor.Y, -1, 1);
+
+            for (int i = openScreens.Count - 1; i >= 0; i--)
+            {
+                IScreenInputHandler handler = openScreens[i] as IScreenInputHandler;
+                if (handler != null && handler.HandleInput(keyboardState, mouseState, cursor))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

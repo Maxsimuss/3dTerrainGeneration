@@ -33,7 +33,6 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
         public Vector3 Position;
         public Vector3 Velocity;
 
-        // This is simply the aspect ratio of the viewport, used for the projection matrix
         public float AspectRatio { get; set; }
 
         public Vector3 Front

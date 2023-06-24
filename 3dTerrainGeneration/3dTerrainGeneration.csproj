@@ -24,7 +24,6 @@
     <Compile Remove="Game\GameWorld\Entities\Demon.cs" />
     <Compile Remove="Game\GameWorld\Entities\EntityTypeExtensions.cs" />
     <Compile Remove="Game\GameWorld\Entities\FireBall.cs" />
-    <Compile Remove="Game\GameWorld\Entities\Frog.cs" />
     <Compile Remove="Game\GameWorld\Entities\Spider.cs" />
     <Compile Remove="SoundManager.cs" />
     <Compile Remove="Window.cs" />
@@ -355,7 +354,6 @@
     <None Include="Game\GameWorld\Entities\Demon.cs" />
     <None Include="Game\GameWorld\Entities\EntityTypeExtensions.cs" />
     <None Include="Game\GameWorld\Entities\FireBall.cs" />
-    <None Include="Game\GameWorld\Entities\Frog.cs" />
     <None Include="Game\GameWorld\Entities\Spider.cs" />
     <None Include="SoundManager.cs" />
     <None Include="Window.cs" />

@@ -12,9 +12,8 @@ float rand(vec2 co) {
 }
 
 void main() {
-	float amount = 0;
-	float neighbor = amount * -1;
-	float center = amount * 4 + 1;
+	float neighbor = AMOUNT * -1;
+	float center = AMOUNT * 4 + 1;
 
     vec2 s = vec2(width, height);
 

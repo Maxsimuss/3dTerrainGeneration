@@ -1,6 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -8,17 +9,42 @@ using System.Text;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 {
-    public class Shader
+    public class Shader : IDisposable
     {
-        public int Handle;
-        private Dictionary<string, int> _uniformLocations;
+        private bool ready = false;
+        private Dictionary<string, int> uniformLocations = new Dictionary<string, int>();
+        private string flags = "#pragma optionNV(strict on)\n"; // #pragma optionNV(unroll all) #pragma optionNV(inline all)
+        protected int Handle { get; private set; } = -1;
 
         public Shader()
         {
             Handle = GL.CreateProgram();
         }
 
-        protected static string LoadSource(string path)
+        public Shader Define(string name, float value)
+        {
+            flags += "#define " + name + " " + value;
+
+            return this;
+        }
+
+        public virtual Shader Compile()
+        {
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
+            for (var i = 0; i < numberOfUniforms; i++)
+            {
+                var key = GL.GetActiveUniform(Handle, i, out _, out _);
+                var location = GL.GetUniformLocation(Handle, key);
+
+                uniformLocations.Add(key, location);
+            }
+
+            ready = true;
+
+            return this;
+        }
+
+        protected string LoadSource(string path)
         {
             string basePath = System.Reflection.Assembly.GetAssembly(typeof(Shader)).Location;
             string[] pathArr = basePath.Split("\\");
@@ -30,13 +56,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
                 source = sr.ReadToEnd();
             }
 
-            string flags =
-                """
-
-                """;
-
-            //flags = "";
-
             List<string> lines = source.Split("\n").ToList();
             lines.Insert(1, flags);
 
@@ -46,12 +65,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
         protected static void CompileShader(int shader)
         {
             GL.CompileShader(shader);
-            //GL.GetShader(shader, ShaderParameter.CompileStatus, out var code);
-            //if (code != (int)All.True)
-            //{
-            //    var infoLog = GL.GetShaderInfoLog(shader);
-            //    Console.WriteLine($"Error occurred whilst compiling Shader({shader}).\n\n{infoLog}");
-            //}
 
             string log = GL.GetShaderInfoLog(shader);
             if (log.Length > 0)
@@ -65,12 +78,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
         {
             GL.LinkProgram(program);
 
-            GL.GetProgram(program, GetProgramParameterName.LinkStatus, out var code);
-            if (code != (int)All.True)
-            {
-                Console.WriteLine($"Error occurred whilst linking Program({program})");
-            }
-
             string log = GL.GetProgramInfoLog(program);
             if (log.Length > 0)
             {
@@ -81,117 +88,99 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 
         public void Use()
         {
-            OGLStateManager.UseProgram(Handle);
-        }
-
-        public int GetAttribLocation(string attribName)
-        {
-            return GL.GetAttribLocation(Handle, attribName);
-        }
-
-        protected void Init(bool a = true)
-        {
-            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var numberOfUniforms);
-
-            _uniformLocations = new Dictionary<string, int>();
-
-            if (a)
+            if(!ready)
             {
-                for (var i = 0; i < numberOfUniforms; i++)
-                {
-                    var key = GL.GetActiveUniform(Handle, i, out _, out _);
-                    var location = GL.GetUniformLocation(Handle, key);
-
-                    _uniformLocations.Add(key, location);
-                }
+                throw new Exception("Shader not compiled!");
             }
+
+            OGLStateManager.UseProgram(Handle);
         }
 
         public Shader SetInt(string name, int data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform1(_uniformLocations[name], data);
+            GL.Uniform1(uniformLocations[name], data);
 
             return this;
         }
 
         public Shader SetIntArr(string name, int[] data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform1(_uniformLocations[name], data.Length, data);
+            GL.Uniform1(uniformLocations[name], data.Length, data);
             return this;
         }
 
         public Shader SetFloatArr(string name, float[] data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform1(_uniformLocations[name], data.Length, data);
+            GL.Uniform1(uniformLocations[name], data.Length, data);
             return this;
         }
 
         public Shader SetFloat(string name, float data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform1(_uniformLocations[name], data);
+            GL.Uniform1(uniformLocations[name], data);
             return this;
         }
 
         public unsafe Shader SetMatrix4(string name, Matrix4x4 data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
 
-            GL.UniformMatrix4(_uniformLocations[name], 1, true, &data.M11);
+            GL.UniformMatrix4(uniformLocations[name], 1, true, &data.M11);
             return this;
         }
 
         public unsafe Shader SetMatrix4Arr(string name, Matrix4x4[] data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
 
             fixed (Matrix4x4* ptr = data)
             {
-                GL.UniformMatrix4(_uniformLocations[name], data.Length, true, (float*)ptr);
+                GL.UniformMatrix4(uniformLocations[name], data.Length, true, (float*)ptr);
             }
             return this;
         }
 
         public unsafe Shader SetVector2(string name, Vector2 data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform2(_uniformLocations[name], data.X, data.Y);
+            GL.Uniform2(uniformLocations[name], data.X, data.Y);
 
             return this;
         }
 
         public unsafe Shader SetVector3(string name, Vector3 data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform3(_uniformLocations[name], data.X, data.Y, data.Z);
+            GL.Uniform3(uniformLocations[name], data.X, data.Y, data.Z);
             return this;
         }
 
         public unsafe Shader SetVector4(string name, Vector4 data)
         {
-            if (!_uniformLocations.ContainsKey(name)) return this;
+            if (!uniformLocations.ContainsKey(name)) return this;
 
             OGLStateManager.UseProgram(Handle);
-            GL.Uniform4(_uniformLocations[name], data.X, data.Y, data.Z, data.W);
+            GL.Uniform4(uniformLocations[name], data.X, data.Y, data.Z, data.W);
             return this;
         }
 

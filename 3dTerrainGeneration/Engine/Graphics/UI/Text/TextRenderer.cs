@@ -68,6 +68,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
                 bitmap.UnlockBits(data);
             }
             TextShader = new FragmentShader("Shaders/post.vert", "Shaders/text.frag");
+            TextShader.Compile();
             TextShader.SetInt("colortex0", 0);
             texture.ActiveBind();
 
@@ -125,8 +126,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
 
         public void DrawText(float x, float y, float scale, string text, Vector4 color)
         {
-            GL.Enable(EnableCap.Blend);
-
             float scaleY = scale * GraphicsEngine.Instance.AspectRatio;
 
             float[] buffer = new float[text.Length * 24];
@@ -171,8 +170,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
             TextShader.SetVector4("color", color);
             texture.ActiveBind();
             GL.DrawArrays(PrimitiveType.Triangles, 0, buffer.Length / 4);
-
-            GL.Disable(EnableCap.Blend);
 
             void vertex2(ref int offset, float x, float y)
             {
