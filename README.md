@@ -7,10 +7,9 @@ Meshes are generated using a greedy algorithm pasted from somewhere.
 Can read .vox files using https://github.com/sandrofigo/VoxReader which was for some reason pasted into the project some time ago.
 
 Heavily depends on TAA for antialiasing and denoising the 2 sample per pixel ssao implementation from learnopengl.com
-TAA is very expensive (1.7ms on GTX980@4k) running at full res with rgba32f textures going in. 
+TAA is expensive (1.1ms on GTX980@4k) running at full res with r11g11b10f & r32f textures going in. 
 32bit float is used to store previous fragment depth for depth based rejection.
 Not sure if this concept has been used before, but combined with color rejection it gets rid of most ghosting artifacts 😄.
-I could probably use r11g11b10 for hdr color + r32f for depth textures instead of a rgba32f to spare some vram bandwidth, but eh...
 
 Using persistently mapped buffers for 2d rendering in /Engine/Graphics/UI/UIRenderer.cs for fun.
 It will cause problems later though...
