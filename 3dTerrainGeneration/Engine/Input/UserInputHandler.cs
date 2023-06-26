@@ -23,6 +23,8 @@ namespace _3dTerrainGeneration.Engine.Input
             OptionManager.Instance.RegisterOption("Controls", "Move Backward", new KeyboardOption(Keys.S));
             OptionManager.Instance.RegisterOption("Controls", "Move Left", new KeyboardOption(Keys.A));
             OptionManager.Instance.RegisterOption("Controls", "Move Right", new KeyboardOption(Keys.D));
+            OptionManager.Instance.RegisterOption("Controls", "Jump", new KeyboardOption(Keys.Space));
+            OptionManager.Instance.RegisterOption("Controls", "Sneak", new KeyboardOption(Keys.LeftShift));
         }
 
         public void RegisterInputHandler(IEntityInputHandler handler)
@@ -74,6 +76,10 @@ namespace _3dTerrainGeneration.Engine.Input
 
             inputState.Movement.X += keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Forward"]) ? 1 : 0;
             inputState.Movement.X -= keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Backward"]) ? 1 : 0;
+
+            inputState.Movement.Y += keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Jump"]) ? 1 : 0;
+            inputState.Movement.Y -= keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Sneak"]) ? 1 : 0;
+
             inputState.Movement.Z -= keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Left"]) ? 1 : 0;
             inputState.Movement.Z += keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Right"]) ? 1 : 0;
 
