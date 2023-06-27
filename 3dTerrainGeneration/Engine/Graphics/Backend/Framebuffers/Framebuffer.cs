@@ -31,7 +31,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers
 
         public void Use()
         {
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+            OGLStateManager.BindFrameBuffer(FramebufferTarget.Framebuffer, FBO);
         }
 
         public virtual void Dispose()
@@ -47,7 +47,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers
         {
             for (int i = 0; i < colorTex.Length; i++)
             {
-                colorTex[i].ActiveBind(TextureUnit.Texture0 + i + offset);
+                colorTex[i].ActiveBind(i + offset);
             }
 
             return colorTex.Length + offset;

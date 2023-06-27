@@ -5,7 +5,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
 {
     internal class OGLStateManager
     {
-        private static int Program, Framebuffer, ReadFramebuffer, DrawFramebuffer;
+        private static int Program = -1, Framebuffer = -1;
 
         public static void UseProgram(int id)
         {
@@ -24,32 +24,11 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
 
         public static void BindFrameBuffer(FramebufferTarget target, int id)
         {
-            switch (target)
+            if (id != Framebuffer)
             {
-                case FramebufferTarget.ReadFramebuffer:
-                    if (id != ReadFramebuffer)
-                    {
-                        GL.BindFramebuffer(target, id);
-                        ReadFramebuffer = id;
-                    }
-                    break;
-                case FramebufferTarget.DrawFramebuffer:
-                    if (id != DrawFramebuffer)
-                    {
-                        GL.BindFramebuffer(target, id);
-                        DrawFramebuffer = id;
-                    }
-                    break;
-                case FramebufferTarget.Framebuffer:
-                    if (id != Framebuffer)
-                    {
-                        GL.BindFramebuffer(target, id);
-                        Framebuffer = id;
-                    }
-                    break;
-                default:
-                    throw new Exception("Target not supported.");
-            }
+                GL.BindFramebuffer(target, id);
+                Framebuffer = id;
+            } 
         }
     }
 }

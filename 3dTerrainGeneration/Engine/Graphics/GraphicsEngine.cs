@@ -1,19 +1,19 @@
-﻿using _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers;
+﻿using _3dTerrainGeneration.Engine.Graphics._3D;
+using _3dTerrainGeneration.Engine.Graphics._3D.Cameras;
+using _3dTerrainGeneration.Engine.Graphics.Backend;
+using _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers;
+using _3dTerrainGeneration.Engine.Graphics.Backend.RenderActions;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Shaders;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
 using _3dTerrainGeneration.Engine.Graphics.UI;
-using _3dTerrainGeneration.Engine.Graphics._3D;
+using _3dTerrainGeneration.Engine.Options;
+using _3dTerrainGeneration.Engine.Util;
 using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using _3dTerrainGeneration.Engine.Util;
-using _3dTerrainGeneration.Engine.Graphics.Backend.RenderActions;
-using _3dTerrainGeneration.Engine.Graphics._3D.Cameras;
-using _3dTerrainGeneration.Engine.Options;
-using _3dTerrainGeneration.Engine.Graphics.Backend;
 
 namespace _3dTerrainGeneration.Engine.Graphics
 {
@@ -33,7 +33,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
             }
         }
 
-        private static readonly int shadowCascades = 3;
+        private static readonly int SHADOW_CASCADES = 3;
 
         private static readonly Vector2[] TAA_OFFSETS = new Vector2[] { new(-1, 1), new(0, 1), new(1, 1), new(-1, 0), new(0, 0), new(1, 0), new(-1, -1), new(0, -1), new(1, -1) };
 
@@ -47,7 +47,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         private List<IRenderAction> renderActions = new List<IRenderAction>();
 
-        private Matrix4x4[] shadowMatrices = new Matrix4x4[shadowCascades];
+        private Matrix4x4[] shadowMatrices = new Matrix4x4[SHADOW_CASCADES];
         private float[] shadowNears = new float[] { .2f, 16f, 16f * 8 };
         private float[] shadowFars = new float[] { 16f, 16f * 8, 16f * 8 * 8 };
 
@@ -99,7 +99,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
         {
             OptionManager.Instance.RegisterOption("Graphics", "3D Resolution Scale", new DoubleOption(.125, 2, 1));
             OptionManager.Instance.RegisterOption("Graphics", "Sharpness", new DoubleOption(0, 1, .25));
-            OptionManager.Instance.RegisterOption("Graphics", "Shadow Resolution", new DoubleOption(512, 8196, 4096));
+            OptionManager.Instance.RegisterOption("Graphics", "Shadow Resolution", new DoubleOption(512, 8192, 4096));
             OptionManager.Instance.RegisterOption("Graphics", "SSAO Quality", new DoubleOption(1, 16, 4));
             OptionManager.Instance.RegisterOption("Graphics", "RTGI Enabled", new BoolOption(false));
             OptionManager.Instance.RegisterOption("Graphics", "RTGI Resolution", new DoubleOption(1, 16, 1));
@@ -153,11 +153,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
             h = (int)(h * resolutionScale);
 
             if (GBuffer != null) GBuffer.Dispose();
-            GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
+            GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
                 new Texture2D(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
                 new Texture2D(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
-                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565, PixelFormat.Rgb),
-                new Texture2D(w, h, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
+                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565, PixelFormat.Rgb));
 
             if (OptionManager.Instance["Graphics", "RTGI Enabled"])
             {
@@ -184,8 +183,8 @@ namespace _3dTerrainGeneration.Engine.Graphics
                     item.Dispose();
                 }
             }
-            ShadowBuffers = new DepthAttachedFramebuffer[shadowCascades];
-            for (int i = 0; i < shadowCascades; i++)
+            ShadowBuffers = new DepthAttachedFramebuffer[SHADOW_CASCADES];
+            for (int i = 0; i < SHADOW_CASCADES; i++)
             {
                 ShadowBuffers[i] = new DepthAttachedFramebuffer(shadowResoluion, shadowResoluion, new DrawBuffersEnum[0],
                     new Texture2D(shadowResoluion, shadowResoluion, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent).SetWrap(TextureWrapMode.ClampToBorder).SetBorderColor<Texture2D>(1, 1, 1, 1));
@@ -225,11 +224,11 @@ namespace _3dTerrainGeneration.Engine.Graphics
             OcclusionBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8, PixelFormat.Red));
 
             if (TAABuffer0 != null) TAABuffer0.Dispose();
-            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 }, 
+            TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
                 new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
                 new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
             if (TAABuffer1 != null) TAABuffer1.Dispose();
-            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 }, 
+            TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
                 new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
                 new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
 
@@ -245,7 +244,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
             ShaderManager.Instance.RegisterFragmentShader("ShadowFilter", "post.vert", "shadow.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1)
-                .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + shadowCascades).ToArray());
+                .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
             ShaderManager.Instance.RegisterFragmentShader("Lighting", "post.vert", "lighting.frag").Compile()
                 .SetInt("depthTex", 0)
@@ -279,7 +278,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
             ShaderManager.Instance.RegisterFragmentShader("Volumetrics", "post.vert", "volumetrics.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1)
-                .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + shadowCascades).ToArray());
+                .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
             ShaderManager.Instance.RegisterFragmentShader("TAA", "post.vert", "post/taa.frag").Compile()
                 .SetInt("depthTex", 0)
@@ -337,10 +336,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
         {
             renderActions.Clear();
 
-            Texture[] depthColorShadowTex = new Texture[shadowCascades + 2];
+            Texture[] depthColorShadowTex = new Texture[SHADOW_CASCADES + 2];
             depthColorShadowTex[0] = GBuffer.depthTex0;
             depthColorShadowTex[1] = GBuffer.colorTex[1];
-            for (int i = 0; i < shadowCascades; i++)
+            for (int i = 0; i < SHADOW_CASCADES; i++)
             {
                 depthColorShadowTex[i + 2] = ShadowBuffers[i].depthTex0;
             }
@@ -486,9 +485,14 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         private void RenderShadowMap()
         {
-            for (int i = 0; i < shadowCascades; i++)
+            shadowMatrices[0] = RenderShadowMapLayer(ShadowBuffers[0], shadowNears[0], shadowFars[0]);
+            if(FrameIndex % 2 == 0)
             {
-                shadowMatrices[i] = RenderShadowMapLayer(ShadowBuffers[i], shadowNears[i], shadowFars[i]);
+                shadowMatrices[1] = RenderShadowMapLayer(ShadowBuffers[1], shadowNears[1], shadowFars[1]);
+            }
+            else
+            {
+                shadowMatrices[2] = RenderShadowMapLayer(ShadowBuffers[2], shadowNears[2], shadowFars[2]);
             }
 
             ShaderManager.Instance["ShadowFilter"]

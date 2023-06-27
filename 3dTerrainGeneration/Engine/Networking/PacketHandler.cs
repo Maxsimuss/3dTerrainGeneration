@@ -1,6 +1,4 @@
 ﻿using TerrainServer.network;
-using TerrainServer.network.packet;
-using _3dTerrainGeneration.Engine.Physics;
 
 namespace _3dTerrainGeneration.Engine.Networking
 {

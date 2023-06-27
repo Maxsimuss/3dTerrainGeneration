@@ -1,6 +1,4 @@
-﻿using _3dTerrainGeneration.Engine.Graphics._3D;
-
-namespace _3dTerrainGeneration.Game.GameWorld
+﻿namespace _3dTerrainGeneration.Game.GameWorld
 {
     public class Farlands
     {

@@ -1,5 +1,5 @@
-﻿using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.Common;
+﻿using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
 
 namespace _3dTerrainGeneration.Engine.Graphics
 {

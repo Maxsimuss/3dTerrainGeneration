@@ -1,20 +1,15 @@
-﻿using _3dTerrainGeneration.Engine.Graphics;
-using _3dTerrainGeneration.Engine.Options;
-using _3dTerrainGeneration.Engine.Util;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using System;
-using System.Runtime.InteropServices;
-using _3dTerrainGeneration.Engine.Graphics._3D;
-using _3dTerrainGeneration.Engine.Physics;
-using System.Diagnostics;
-using OpenTK.Graphics.OpenGL;
+﻿using _3dTerrainGeneration.Engine.Audio;
+using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using _3dTerrainGeneration.Engine.Graphics;
 using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 using _3dTerrainGeneration.Engine.Input;
-using OpenTK.Windowing.Common;
-using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using _3dTerrainGeneration.Engine.Util;
 using OpenTK.Mathematics;
-using _3dTerrainGeneration.Engine.Audio;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.Diagnostics;
 
 namespace _3dTerrainGeneration.Engine
 {
@@ -29,7 +24,7 @@ namespace _3dTerrainGeneration.Engine
         private Stopwatch frameTimer = new Stopwatch();
 
         public UserInputHandler UserInputHandler { get; } = new UserInputHandler();
-        
+
         public VoxelEngine(IGame game)
         {
             this.game = game;
@@ -81,7 +76,7 @@ namespace _3dTerrainGeneration.Engine
 
 
             Render(frameTimeMillis);
-            
+
             if (tickBalance > 0)
             {
                 tickBalance -= MS_PER_TICK;

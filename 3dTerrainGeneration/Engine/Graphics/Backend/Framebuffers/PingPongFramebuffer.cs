@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers
+﻿namespace _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers
 {
     internal class PingPongFramebuffer : IFramebuffer
     {
@@ -34,7 +27,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Framebuffers
 
         public void Use()
         {
-            if(pingPong)
+            if (pingPong)
             {
                 framebuffer0.Use();
             }

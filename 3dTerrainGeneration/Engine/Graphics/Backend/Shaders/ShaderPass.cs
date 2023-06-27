@@ -2,11 +2,6 @@
 using _3dTerrainGeneration.Engine.Graphics.Backend.RenderActions;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
 using OpenTK.Graphics.OpenGL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 {
@@ -65,9 +60,9 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
             GL.Disable(EnableCap.DepthTest);
             GL.BindVertexArray(quadVAO);
 
-            if(targetFramebuffer == null)
+            if (targetFramebuffer == null)
             {
-                GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+                OGLStateManager.BindFrameBuffer(FramebufferTarget.DrawFramebuffer, 0);
                 GL.Viewport(0, 0, GraphicsEngine.Instance.Width, GraphicsEngine.Instance.Height);
             }
             else
@@ -80,7 +75,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 
             for (int i = 0; i < sourceTextures.Length; i++)
             {
-                sourceTextures[i].ActiveBind(TextureUnit.Texture0 + i + offset);
+                sourceTextures[i].ActiveBind(i + offset);
             }
 
             GL.DrawArrays(PrimitiveType.Triangles, 0, 6);

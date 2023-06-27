@@ -3,12 +3,8 @@ using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 using _3dTerrainGeneration.Engine.Options;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Input
 {
@@ -63,7 +59,7 @@ namespace _3dTerrainGeneration.Engine.Input
                 }
             }
 
-            if(UIRenderer.Instance.HandleInput(keyboardState, mouseState))
+            if (UIRenderer.Instance.HandleInput(keyboardState, mouseState))
             {
                 return;
             }

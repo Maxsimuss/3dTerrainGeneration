@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Util
 {
@@ -18,7 +14,7 @@ namespace _3dTerrainGeneration.Engine.Util
 
         public void Insert(T value)
         {
-            if(PopulatedCount == array.Length)
+            if (PopulatedCount == array.Length)
             {
                 throw new InvalidOperationException("Array is full!");
             }

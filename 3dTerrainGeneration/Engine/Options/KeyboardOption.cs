@@ -1,5 +1,4 @@
 ﻿using OpenTK.Windowing.GraphicsLibraryFramework;
-using System;
 
 namespace _3dTerrainGeneration.Engine.Options
 {

@@ -75,7 +75,7 @@ void main() {
         mixAmt = 1;
     }
     
-    // FragColor = mix(n.rgb, curr, .1);
-    FragColor = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
+    // FragColor = mix(n.rgb, curr, mixAmt);
+    FragColor = mix(clamp(n.rgb, _min * .9, _max * 1.1), curr, mixAmt);
     MemoryDepth = depth;
 }

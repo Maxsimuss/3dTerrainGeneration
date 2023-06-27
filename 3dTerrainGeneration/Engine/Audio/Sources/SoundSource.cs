@@ -13,7 +13,7 @@ namespace _3dTerrainGeneration.Engine.Audio.Sources
         private Vector3 position;
         public Vector3 Position
         {
-            get => position; 
+            get => position;
             set
             {
                 position = value;

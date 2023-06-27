@@ -7,10 +7,11 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D.Particles
 {
     internal class ParticleRenderer
     {
-        private static int MaxParticles = 100000;
-        int index;
-        Matrix4x4[] transforms;
-        int instanceVBO, cubeVBO, VAO;
+        private static readonly int MaxParticles = 100000;
+
+        private int index;
+        private int instanceVBO, cubeVBO, VAO;
+        private Matrix4x4[] transforms;
 
         public ParticleRenderer()
         {

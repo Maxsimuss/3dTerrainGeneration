@@ -1,7 +1,7 @@
-﻿using System;
+﻿using _3dTerrainGeneration.Engine.Input;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
-using _3dTerrainGeneration.Engine.Input;
 using static OpenTK.Mathematics.MathHelper;
 
 namespace _3dTerrainGeneration.Engine.Physics

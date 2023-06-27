@@ -11,7 +11,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
             : base(TextureTarget.Texture1D)
         {
             Width = width;
-            GL.TexImage1D(TextureTarget, 0, pixelInternalFormat, Width, 0, pixelFormat, pixelType, data);
+            GL.TextureStorage1D(Handle, 1, (SizedInternalFormat)pixelInternalFormat, Width);
+            GL.TextureSubImage1D(Handle, 0, 0, width, pixelFormat, pixelType, data);
             SizeInBytes = Width * GetFormatBytesPerPixel(pixelInternalFormat);
             TotalBytesAllocated += SizeInBytes;
 
@@ -23,7 +24,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 
         public override Texture1D SetWrap(TextureWrapMode wrapMode)
         {
-            GL.TexParameter(TextureTarget, TextureParameterName.TextureWrapS, (int)wrapMode);
+            GL.TextureParameter(Handle, TextureParameterName.TextureWrapS, (int)wrapMode);
             return this;
         }
     }

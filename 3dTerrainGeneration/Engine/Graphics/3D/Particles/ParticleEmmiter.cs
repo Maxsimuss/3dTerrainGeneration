@@ -12,9 +12,9 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D.Particles
             public float TTL;
         }
 
-        private static Matrix4x4 ParticleOffset = Matrix4x4.CreateTranslation(-.5f, -.5f, -.5f);
+        private static readonly Matrix4x4 ParticleOffset = Matrix4x4.CreateTranslation(-.5f, -.5f, -.5f);
+        private static readonly int ParticleCount = 100;
 
-        private static int ParticleCount = 100;
         private ParticleRenderer renderer;
         private Random random;
 

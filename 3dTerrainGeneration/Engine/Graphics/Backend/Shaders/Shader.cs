@@ -1,7 +1,6 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -88,7 +87,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 
         public void Use()
         {
-            if(!ready)
+            if (!ready)
             {
                 throw new Exception("Shader not compiled!");
             }

@@ -1,8 +1,7 @@
-﻿using _3dTerrainGeneration.Engine.Graphics.Backend.Models;
+﻿using _3dTerrainGeneration.Engine.Graphics._3D;
+using _3dTerrainGeneration.Engine.Graphics.Backend.Models;
 using _3dTerrainGeneration.Engine.Util;
-using _3dTerrainGeneration.Engine.Graphics._3D;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace _3dTerrainGeneration.Game.GameWorld

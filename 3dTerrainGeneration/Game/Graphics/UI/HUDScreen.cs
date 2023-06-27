@@ -1,11 +1,4 @@
-﻿using _3dTerrainGeneration.Engine.Graphics.UI;
-using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 
 namespace _3dTerrainGeneration.Game.Graphics.UI
 {

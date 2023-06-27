@@ -11,11 +11,6 @@ using _3dTerrainGeneration.Game.GameWorld;
 using _3dTerrainGeneration.Game.GameWorld.Entities;
 using _3dTerrainGeneration.Game.Graphics._3D;
 using _3dTerrainGeneration.Game.Graphics.UI;
-using LibNoise.Combiner;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Game

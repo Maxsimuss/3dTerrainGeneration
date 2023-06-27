@@ -1,5 +1,4 @@
 ﻿using LibNoise.Primitive;
-using System;
 
 namespace _3dTerrainGeneration.Engine.Util
 {
@@ -21,7 +20,7 @@ namespace _3dTerrainGeneration.Engine.Util
 
                 noise += noiseValue;
                 maxValue += amplitude;
-                
+
                 frequency *= lacunarity;
                 amplitude *= persistence;
             }

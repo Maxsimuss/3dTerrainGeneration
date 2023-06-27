@@ -1,10 +1,5 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics._3D;
 using _3dTerrainGeneration.Engine.World;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine
 {

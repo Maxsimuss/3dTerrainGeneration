@@ -9,7 +9,6 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform vec2 taaOffset;
 
-out vec4 Position;
 out vec3 Normal;
 out vec3 Color;
 
@@ -25,8 +24,6 @@ vec3 NORMALS[6] = vec3[] (
 void main()
 {
     mat3 normalMatrix = inverse(mat3(model));
-
-    Position = model * vec4(pos, 1.0);
 
     Color = color;
     Normal = normalize(NORMALS[uint(other.x)] * normalMatrix) / 2 + .5;

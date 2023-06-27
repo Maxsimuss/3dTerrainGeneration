@@ -1,14 +1,9 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics.UI.Components;
 using _3dTerrainGeneration.Engine.Input;
 using _3dTerrainGeneration.Engine.Options;
-using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
 {
@@ -60,7 +55,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
 
             UIRenderer.Instance.DrawRect(-1, -1, 1, 1, new Vector4(0, 0, 0, .75f));
             base.Render();
-         
+
             UIRenderer.Instance.DrawRect(cursor.X - .01f, cursor.Y - .01f * asp, cursor.X + .01f, cursor.Y + .01f * asp, new Vector4(1, 1, 1, 1));
 
             textRenderer.DrawTextWithShadowCentered(0, .8f, .04f, currentCategory);

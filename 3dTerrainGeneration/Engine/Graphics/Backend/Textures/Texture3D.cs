@@ -12,7 +12,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
             Width = width;
             Height = height;
             Depth = depth;
-            GL.TexImage3D(TextureTarget, 0, pixelInternalFormat, Width, Height, Depth, 0, pixelFormat, pixelType, data);
+            GL.TextureStorage3D(Handle, 1, (SizedInternalFormat)pixelInternalFormat, Width, Height, Depth);
+            GL.TextureSubImage3D(Handle, 0, 0, 0, 0, width, height, depth, pixelFormat, pixelType, data);
             SizeInBytes = Width * Height * Depth * GetFormatBytesPerPixel(pixelInternalFormat);
             TotalBytesAllocated += SizeInBytes;
             SetFilter<Texture3D<T>>(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
@@ -23,9 +24,9 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 
         public override Texture3D<T> SetWrap(TextureWrapMode wrapMode)
         {
-            GL.TexParameter(TextureTarget, TextureParameterName.TextureWrapS, (int)wrapMode);
-            GL.TexParameter(TextureTarget, TextureParameterName.TextureWrapT, (int)wrapMode);
-            GL.TexParameter(TextureTarget, TextureParameterName.TextureWrapR, (int)wrapMode);
+            GL.TextureParameter(Handle, TextureParameterName.TextureWrapS, (int)wrapMode);
+            GL.TextureParameter(Handle, TextureParameterName.TextureWrapT, (int)wrapMode);
+            GL.TextureParameter(Handle, TextureParameterName.TextureWrapR, (int)wrapMode);
             return this;
         }
     }

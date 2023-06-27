@@ -12,7 +12,7 @@ namespace _3dTerrainGeneration.Engine.Networking
         {
             get
             {
-                if(instance == null)
+                if (instance == null)
                 {
                     instance = new NetworkEngine();
                 }

@@ -6,7 +6,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Models
 {
     class Model
     {
-        Dictionary<Vector3, uint> data = new Dictionary<Vector3, uint>();
+        private Dictionary<Vector3, uint> data = new Dictionary<Vector3, uint>();
         public uint[] blocks;
 
         protected int xMax, yMax, zMax;

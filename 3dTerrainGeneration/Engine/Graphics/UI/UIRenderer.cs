@@ -2,16 +2,11 @@
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 using _3dTerrainGeneration.Engine.Input;
 using _3dTerrainGeneration.Engine.Options;
-using OpenTK.Compute.OpenCL;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Graphics.UI
 {
@@ -134,7 +129,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
 
             GL.Disable(EnableCap.DepthTest);
             GL.DrawArrays(PrimitiveType.Triangles, prev / 6, (index - prev) / 6);
-            
+
             if (index >= BUFFER_SIZE / 4)
             {
                 index = 0;

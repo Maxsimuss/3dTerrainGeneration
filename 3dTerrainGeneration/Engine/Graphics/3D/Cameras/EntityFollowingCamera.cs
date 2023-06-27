@@ -1,10 +1,4 @@
-﻿using _3dTerrainGeneration.Engine.GameWorld.Entity;
-using _3dTerrainGeneration.Engine.World.Entity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using _3dTerrainGeneration.Engine.World.Entity;
 
 namespace _3dTerrainGeneration.Engine.Graphics._3D.Cameras
 {

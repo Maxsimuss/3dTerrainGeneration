@@ -1,25 +1,20 @@
 ﻿using OpenTK.Graphics.OpenGL;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 {
     internal class PingPongTexture : Texture
     {
         public Texture Texture0, Texture1;
-        public PingPongTexture(Texture texture0, Texture texture1) : base(texture0.TextureTarget)
+        public PingPongTexture(Texture texture0, Texture texture1)
         {
             this.Texture0 = texture0;
             this.Texture1 = texture1;
         }
 
-        public override void ActiveBind(TextureUnit unit = TextureUnit.Texture0)
+        public override void ActiveBind(int unit = 0)
         {
-            GL.ActiveTexture(unit);
-            GL.BindTexture(TextureTarget, Texture0.Handle);
+            Texture0.ActiveBind(unit);
         }
 
         public void Swap()
@@ -31,8 +26,10 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 
         public override Texture SetWrap(TextureWrapMode wrapMode)
         {
-            // yolo
-            throw new NotImplementedException();
+            Texture0.SetWrap(wrapMode);
+            Texture1.SetWrap(wrapMode);
+
+            return this;
         }
     }
 }

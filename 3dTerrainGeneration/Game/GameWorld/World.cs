@@ -220,7 +220,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
         public int RenderWorld(Vector3 origin, Matrix4x4 mat, bool ortho, Vector3 viewDirection = default)
         {
             Vector3I originChunkCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z) / Chunk.CHUNK_SIZE;
-            
+
             for (int i = 0; i < totalChunkCount; i++)
             {
                 Vector3I indexPosition = ChunkIterationOrder[ortho ? totalChunkCount - i - 1 : i];
