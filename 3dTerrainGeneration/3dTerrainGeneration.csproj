@@ -33,6 +33,9 @@
     <None Update="Resources\fonts\PressStart2P-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\libs\Native.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\models\demon\demon-0.vox">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -69,6 +72,30 @@
     <None Update="Resources\models\trees\cactus0\cactus0.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\models\trees\deadtree0.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\deadtree1.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\deadtree2.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\pine.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\pine0.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\pine1.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\pine2.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\models\trees\pine3.vox">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\models\trees\rock0\rock0.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -81,40 +108,13 @@
     <None Update="Resources\models\trees\rock0\rock3.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\models\trees\tree0\tree0.vox">
+    <None Update="Resources\models\trees\tree1.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\models\trees\tree0\tree1.vox">
+    <None Update="Resources\models\trees\tree2.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\models\trees\tree0\tree2.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree0\tree3.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree1\tree0.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree1\tree1.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree1\tree2.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree1\tree3.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree2\tree0.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree2\tree1.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree2\tree2.vox">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\models\trees\tree2\tree3.vox">
+    <None Update="Resources\models\trees\tree3.vox">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\sounds\click-low-0.mp3">

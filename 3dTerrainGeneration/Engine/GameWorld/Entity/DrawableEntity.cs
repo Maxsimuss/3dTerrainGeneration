@@ -13,6 +13,8 @@ namespace _3dTerrainGeneration.Engine.World.Entity
         protected static VertexData[][] Mesh;
         protected static float MeshScale = 1;
 
+        public AxisAlignedBB HitBox => AABB;
+
         public bool Visible = true;
 
         protected int AnimationFrame = 0;

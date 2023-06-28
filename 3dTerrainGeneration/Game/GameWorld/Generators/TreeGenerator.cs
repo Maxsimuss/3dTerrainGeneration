@@ -9,7 +9,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
         private Random random;
         public TreeGenerator(int seed)
         {
-            random = new Random(1234);
+            random = new Random(seed);
         }
 
         public Structure GenerateBlobTree()
@@ -18,7 +18,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
             uint leaveColor = Color.HsvToRgb(random.NextDouble() * 170 + 290, random.NextDouble() * .25 + .5, 1);
             for (int y = 0; y < 20; y++)
             {
-                tree.SetBlock(0, y, 0, 0x664422);
+                tree.SetBlock(0, y, 0, Color.ToInt(120, 100, 80));
             }
 
             int max = 20;

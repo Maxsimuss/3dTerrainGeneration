@@ -29,6 +29,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Entities
 
         public override void Tick()
         {
+            LastPosition = Position;
             //if ((JumpTimer -= fT) < 0 && isOnGround)
             //{
             //    physicsData.Yaw += RANDOM.NextSingle() * 180 - 90;

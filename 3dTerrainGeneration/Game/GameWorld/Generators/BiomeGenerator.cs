@@ -41,9 +41,9 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
 
         public BiomeInfo GetBiomeInfo(int X, int Z)
         {
-            float Temperature = NoiseUtil.GetPerlin(X - 32898, Z + 29899, 1000) * 30; // -30 to 30 deg
-            float Humidity = Math.Clamp(NoiseUtil.GetPerlin(X + 21389, Z - 8937, 1000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
-            float Fertility = Math.Clamp(NoiseUtil.GetPerlin(X - 3874, Z + 3298, 1000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
+            float Temperature = NoiseUtil.GetPerlin(X - 32898, Z + 29899, 10000) * 40 + 10; // -30 to 50 deg
+            float Humidity = Math.Clamp(NoiseUtil.GetPerlin(X + 21389, Z - 8937, 10000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
+            float Fertility = Math.Clamp(NoiseUtil.GetPerlin(X - 3874, Z + 3298, 10000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
 
             return new BiomeInfo(Temperature, Humidity, Fertility);
         }

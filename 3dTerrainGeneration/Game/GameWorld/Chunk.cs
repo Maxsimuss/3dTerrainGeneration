@@ -2,6 +2,7 @@
 using _3dTerrainGeneration.Engine.Graphics.Backend.Models;
 using _3dTerrainGeneration.Engine.Util;
 using System;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace _3dTerrainGeneration.Game.GameWorld
@@ -11,18 +12,18 @@ namespace _3dTerrainGeneration.Game.GameWorld
         public static readonly int CHUNK_SIZE = 128;
         public static readonly int LOD_COUNT = 4;
 
-        private bool isMeshReady = false;
+        private volatile bool isMeshReady = false;
         private int loadedLod = -1;
 
         private readonly Matrix4x4 modelMatrix;
         private InderectDraw[] drawCalls = new InderectDraw[6];
-        private VertexData[][][] meshData;
-        private int[] meshDataLengths = new int[LOD_COUNT];
+        private volatile VertexData[][][] meshData;
+        private volatile int[] meshDataLengths = new int[LOD_COUNT];
 
-        public bool IsRemeshingNeeded = false;
-        public bool IsRemeshing = false;
-        public bool HasTerrain = false;
-        public bool IsPopulated = false;
+        public volatile bool IsRemeshingNeeded = false;
+        public volatile bool IsRemeshing = false;
+        public volatile bool HasTerrain = false;
+        public volatile bool IsPopulated = false;
 
         public readonly int X, Y, Z;
         public Vector3I Position => new Vector3I(X, Y, Z);
@@ -55,9 +56,11 @@ namespace _3dTerrainGeneration.Game.GameWorld
             IsRemeshingNeeded = false;
 
             meshData = new VertexData[LOD_COUNT][][];
-
+            Stopwatch sw = Stopwatch.StartNew();
+            sw.Start();
             for (int i = 0; i < LOD_COUNT; i++)
             {
+
                 short lod = (short)Math.Pow(2, i);
                 int wl = CHUNK_SIZE / lod;
 
@@ -82,6 +85,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
                 meshData[i] = data.Mesh(0, lod);
                 meshDataLengths[i] = meshData[i].Length;
             }
+            Console.WriteLine(sw.ElapsedMilliseconds);
 
             loadedLod = -1;
             IsRemeshing = false;

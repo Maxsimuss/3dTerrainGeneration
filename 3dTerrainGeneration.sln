@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dTerrainGeneration", "3dTerrainGeneration\3dTerrainGeneration.csproj", "{DE3BCF3F-520A-4C98-9DCF-81EFA7A0EFF9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{649EE5AC-8319-4765-8927-548D52A48988} = {649EE5AC-8319-4765-8927-548D52A48988}
+		{6B9F93FE-4DC4-447F-B90C-5949BFE48080} = {6B9F93FE-4DC4-447F-B90C-5949BFE48080}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TerrainServer", "TerrainServer\TerrainServer.csproj", "{649EE5AC-8319-4765-8927-548D52A48988}"

@@ -1,7 +1,8 @@
 {
   "profiles": {
     "3dTerrainGeneration": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "nativeDebugging": false
     }
   }
 }

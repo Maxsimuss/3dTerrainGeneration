@@ -14,6 +14,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D.Cameras
         public void Provide(Camera camera)
         {
             camera.Position = entity.InterpolatedPosition;
+            camera.Position.Y += entity.HitBox.height * .9f;
             camera.Yaw = entity.Yaw;
             camera.Pitch = entity.Pitch;
         }

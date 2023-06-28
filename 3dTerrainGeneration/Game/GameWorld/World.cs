@@ -1,9 +1,12 @@
-﻿using _3dTerrainGeneration.Engine.Graphics._3D;
+﻿using _3dTerrainGeneration.Engine.GameWorld.Entity;
+using _3dTerrainGeneration.Engine.Graphics._3D;
 using _3dTerrainGeneration.Engine.Options;
 using _3dTerrainGeneration.Engine.Util;
 using _3dTerrainGeneration.Engine.World;
+using _3dTerrainGeneration.Game.GameWorld.Entities;
 using _3dTerrainGeneration.Game.GameWorld.Generators;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading;
@@ -28,7 +31,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
         private static readonly int viewDistanceChunks = 0;
         private static readonly int totalChunkCount = 0;
 
-        private Dictionary<Vector3I, Chunk> chunks;
+        private ConcurrentDictionary<Vector3I, Chunk> chunks;
 
         private TerrainGenerator terraingGenerator;
 
@@ -37,6 +40,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         private Queue<Vector3I> chunkQueue;
         private Queue<Chunk> chunkMeshQueue;
+        private Random rnd = new Random();
 
         static World()
         {
@@ -63,7 +67,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public World()
         {
-            chunks = new Dictionary<Vector3I, Chunk>();
+            chunks = new ConcurrentDictionary<Vector3I, Chunk>();
             chunkQueue = new Queue<Vector3I>();
             chunkMeshQueue = new Queue<Chunk>();
             terraingGenerator = new TerrainGenerator();
@@ -144,14 +148,74 @@ namespace _3dTerrainGeneration.Game.GameWorld
             });
         }
 
+        public bool IsChunkLoadedAt(double x, double y, double z)
+        {
+            double chunkX = x / Chunk.CHUNK_SIZE;
+            double chunkY = y / Chunk.CHUNK_SIZE;
+            double chunkZ = z / Chunk.CHUNK_SIZE;
+
+            return IsChunkLoadedAt(new Vector3I((int)Math.Floor(chunkX), (int)Math.Floor(chunkY), (int)Math.Floor(chunkZ)));
+        }
+
+        public bool IsChunkLoadedAt(Vector3I chunkPosition)
+        {
+            return chunks.ContainsKey(chunkPosition) && chunks[chunkPosition].IsPopulated;
+        }
+
+        public Vector3I PickSpawnLocation(Vector3I origin, Func<uint, bool> blockCondition)
+        {
+            Vector3I position = new Vector3I(rnd.Next(-256, 256), 0, rnd.Next(-256, 256)) + origin;
+            for (int i = 0; i < 256; i++)
+            {
+                if (!IsChunkLoadedAt(position.X, position.Y + i, position.Z) || !IsChunkLoadedAt(position.X, position.Y + i + 1, position.Z))
+                {
+                    continue;
+                }
+
+                if (blockCondition(GetBlockAt(position.X, position.Y + i, position.Z)) && GetBlockAt(position.X, position.Y + i + 1, position.Z) == 0)
+                {
+                    position.Y += i + 1;
+                    return position;
+                }
+
+                if (!IsChunkLoadedAt(position.X, position.Y - i, position.Z) || !IsChunkLoadedAt(position.X, position.Y - i + 1, position.Z))
+                {
+                    continue;
+                }
+
+                if (blockCondition(GetBlockAt(position.X, position.Y - i, position.Z)) && GetBlockAt(position.X, position.Y - i + 1, position.Z) == 0)
+                {
+                    position.Y += -i + 1;
+                    return position;
+                }
+            }
+
+            throw new InvalidOperationException("Unable to find a suitable spawn location!");
+        }
+
         public void Tick(Vector3 origin)
         {
+            Vector3I originCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z);
+            Vector3I originChunkCoord = originCoord / Chunk.CHUNK_SIZE;
+
+            try
+            {
+                Vector3I position = PickSpawnLocation(originCoord, b => b != 0);
+                Frog entity = new Frog(this, EntityManager.Instance.GetNextEntityId());
+                entity.Position = new Vector3(position.X, position.Y, position.Z);
+                EntityManager.Instance.AddEntity(entity);
+            }
+            catch (InvalidOperationException e)
+            {
+
+            }
+
+
             lock (chunkQueue)
             {
                 for (int i = 0; i < totalChunkCount; i++)
                 {
                     Vector3I indexPosition = ChunkIterationOrder[i];
-                    Vector3I originChunkCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z) / Chunk.CHUNK_SIZE;
                     Vector3I chunkPosition = indexPosition + originChunkCoord;
 
                     if (chunkMeshQueue.Count < 5 && chunks.ContainsKey(chunkPosition) && chunks[chunkPosition].IsRemeshingNeeded && !chunkMeshQueue.Contains(chunks[chunkPosition]))
@@ -174,10 +238,9 @@ namespace _3dTerrainGeneration.Game.GameWorld
             double chunkZ = z / Chunk.CHUNK_SIZE;
 
             Vector3I chunkCoord = new Vector3I((int)Math.Floor(chunkX), (int)Math.Floor(chunkY), (int)Math.Floor(chunkZ));
-            if (!chunks.ContainsKey(chunkCoord)) return (uint)(y < 0 ? 1 : 0);
+            if (!chunks.ContainsKey(chunkCoord)) return (uint)(y < 0 ? 1 : 0); // throw new Exception("Chunk not loaded!");
 
             Chunk chunk = chunks[chunkCoord];
-            if (chunk == null) return (uint)(y < 0 ? 1 : 0);
 
             x %= Chunk.CHUNK_SIZE;
             y %= Chunk.CHUNK_SIZE;

@@ -41,5 +41,10 @@ namespace _3dTerrainGeneration.Engine.Util
         {
             return perlinNoise.GetValue(x / scale, z / scale);
         }
+
+        public static float GetPerlin(float x, float y, float z, float scale)
+        {
+            return perlinNoise.GetValue(x / scale, y / scale, z / scale);
+        }
     }
 }

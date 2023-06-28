@@ -5,7 +5,7 @@ namespace _3dTerrainGeneration.Engine.GameWorld.Entity
 {
     internal class EntityManager
     {
-        Dictionary<int, EntityBase> entities = new Dictionary<int, EntityBase>();
+        private Dictionary<int, EntityBase> entities = new Dictionary<int, EntityBase>();
 
         private static EntityManager instance;
         public static EntityManager Instance
@@ -31,6 +31,11 @@ namespace _3dTerrainGeneration.Engine.GameWorld.Entity
             entities.Add(entity.EntityId, entity);
 
             return entity;
+        }
+
+        public EntityBase GetEntity(int entityId)
+        {
+            return entities[entityId];
         }
 
         public int GetNextEntityId()

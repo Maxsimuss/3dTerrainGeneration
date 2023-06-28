@@ -11,18 +11,18 @@
 
         public void SetVoxel(int x, int y, int z, uint value)
         {
-            lock (root)
+            //lock (root)
                 root.SetVoxel(x, y, z, value);
         }
 
         public uint GetValue(int x, int y, int z)
         {
-            lock (root)
+            //lock (root)
                 return root.GetValue(x, y, z);
         }
     }
 
-    public class OctreeNode
+    public struct OctreeNode
     {
         private bool isLeaf;
         private OctreeNode[] children;
@@ -30,8 +30,6 @@
 
         private byte CenterX, CenterY, CenterZ;
         private byte x, y, z;
-        private byte childDepth;
-        private byte childSize;
         private byte depth;
         public OctreeNode(byte x, byte y, byte z, byte depth)
         {
@@ -43,8 +41,8 @@
             isLeaf = true;
             value = 0;
 
-            childDepth = (byte)(depth - 1);
-            childSize = (byte)(1 << childDepth);
+            byte childDepth = (byte)(depth - 1);
+            byte childSize = (byte)(1 << childDepth);
 
             CenterX = (byte)(x + childSize);
             CenterY = (byte)(y + childSize);
@@ -53,6 +51,9 @@
 
         private void InitChildren()
         {
+            byte childDepth = (byte)(depth - 1);
+            byte childSize = (byte)(1 << childDepth);
+
             children = new OctreeNode[8];
             children[0] = new OctreeNode(x, y, z, childDepth);
             children[1] = new OctreeNode((byte)(x + childSize), y, z, childDepth);

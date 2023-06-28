@@ -13,7 +13,7 @@ namespace _3dTerrainGeneration.Engine.Util
         public static uint ToInt(byte r, byte g, byte b)
         {
             //return (uint)(((r / 85 * 85) << 16) | ((g / 36 * 36) << 8) | (b / 85 * 85));
-            return (uint)(r << 16 | g << 8 | b);
+            return (uint)(r << 24 | g << 16 | b << 8);
 
         }
 
