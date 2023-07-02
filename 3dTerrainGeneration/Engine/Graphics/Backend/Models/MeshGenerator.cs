@@ -1,11 +1,4 @@
-﻿using _3dTerrainGeneration.Engine.Util;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
+﻿using System.Runtime.InteropServices;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend.Models
 {
@@ -37,7 +30,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Models
 
                         result[i] = new VertexData[len];
 
-                        fixed(VertexData* resultPtr = result[i])
+                        fixed (VertexData* resultPtr = result[i])
                         {
                             byte* src = (byte*)nativeMeshData.Vertices[i];
                             byte* dst = (byte*)resultPtr;

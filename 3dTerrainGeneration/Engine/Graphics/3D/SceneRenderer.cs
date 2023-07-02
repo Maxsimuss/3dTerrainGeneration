@@ -50,7 +50,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
         private Queue<MeshSubmit> submitQueue = new Queue<MeshSubmit>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1048576 * 384; //256 MB
+        public readonly int VramAllocated = 1048576 * 384; // 384MB
 
         private SceneRenderer()
         {
@@ -62,7 +62,6 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MeshVBO);
             GL.BufferData(BufferTarget.ArrayBuffer, VramAllocated, IntPtr.Zero, BufferUsageHint.StaticDraw);
-
             GL.EnableVertexAttribArray(0);
             GL.EnableVertexAttribArray(1);
             GL.EnableVertexAttribArray(2);
@@ -203,6 +202,11 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
 
             GL.MultiDrawArraysIndirect(PrimitiveType.Triangles, IntPtr.Zero, inderect.Length, 0);
 #endif
+        }
+
+        public void EnsureNotNull()
+        {
+
         }
     }
 }

@@ -13,8 +13,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
             Width = width;
             Height = height;
             GL.TextureStorage2D(Handle, 1, (SizedInternalFormat)pixelInternalFormat, Width, Height);
-            
-            if(data != default)
+
+            if (data != default)
                 GL.TextureSubImage2D(Handle, 0, 0, 0, width, height, pixelFormat, pixelType, data);
             SizeInBytes = Width * Height * GetFormatBytesPerPixel(pixelInternalFormat);
             TotalBytesAllocated += SizeInBytes;

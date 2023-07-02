@@ -46,7 +46,7 @@ namespace _3dTerrainGeneration.Game
             GraphicsEngine.Instance.CameraPositionProvider = new EntityFollowingCamera<Player>(player);
 
             mainLayer = new MainSceneLayer(world);
-            shadowLayer = new MainSceneLayer(world);
+            shadowLayer = new ShadowSceneLayer(world);
             UIRenderer.Instance.OpenScreen(new HUDScreen());
         }
 

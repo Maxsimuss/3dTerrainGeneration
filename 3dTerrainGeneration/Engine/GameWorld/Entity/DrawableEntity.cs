@@ -8,12 +8,12 @@ namespace _3dTerrainGeneration.Engine.World.Entity
 {
     internal abstract class DrawableEntity<T> : EntityBase, IDrawableEntity
     {
-        protected static AxisAlignedBB AABB;
+        protected static AxisAlignedBBPrototype AABB;
         protected static InderectDraw[] InderectDraws;
         protected static VertexData[][] Mesh;
         protected static float MeshScale = 1;
 
-        public AxisAlignedBB HitBox => AABB;
+        public AxisAlignedBBPrototype HitBox => AABB;
 
         public bool Visible = true;
 

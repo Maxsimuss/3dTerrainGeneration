@@ -44,7 +44,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D.Particles
         public void Update(float dT)
         {
             renderer.Reset();
-        
+
             foreach (var item in emmiters)
             {
                 item.Update(dT);

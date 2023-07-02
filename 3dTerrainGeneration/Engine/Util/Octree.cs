@@ -2,6 +2,39 @@
 {
     public class VoxelOctree
     {
+        //[DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern IntPtr CreateSVO(int depth);
+
+        //[DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern void DeleteSVO(IntPtr svo);
+
+        //[DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern void SetVoxel(IntPtr svo, int x, int y, int z, uint value);
+
+        //[DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        //private static extern uint GetValue(IntPtr svo, int x, int y, int z);
+
+        //IntPtr svo;
+        //public VoxelOctree(int depth)
+        //{
+        //    svo = CreateSVO(depth);
+        //}
+
+        //~VoxelOctree()
+        //{
+        //    DeleteSVO(svo);
+        //}
+
+        //public void SetVoxel(int x, int y, int z, uint value)
+        //{
+        //    SetVoxel(svo, x, y, z, value);
+        //}
+
+        //public uint GetValue(int x, int y, int z)
+        //{
+        //    return GetValue(svo, x, y, z);
+        //}
+
         private OctreeNode root;
 
         public VoxelOctree(int depth)
@@ -12,13 +45,13 @@
         public void SetVoxel(int x, int y, int z, uint value)
         {
             //lock (root)
-                root.SetVoxel(x, y, z, value);
+            root.SetVoxel(x, y, z, value);
         }
 
         public uint GetValue(int x, int y, int z)
         {
             //lock (root)
-                return root.GetValue(x, y, z);
+            return root.GetValue(x, y, z);
         }
     }
 
@@ -29,14 +62,10 @@
         private uint value;
 
         private byte CenterX, CenterY, CenterZ;
-        private byte x, y, z;
         private byte depth;
         public OctreeNode(byte x, byte y, byte z, byte depth)
         {
             this.depth = depth;
-            this.x = x;
-            this.y = y;
-            this.z = z;
 
             isLeaf = true;
             value = 0;
@@ -55,6 +84,11 @@
             byte childSize = (byte)(1 << childDepth);
 
             children = new OctreeNode[8];
+
+            byte x = (byte)(CenterX - childSize);
+            byte y = (byte)(CenterY - childSize);
+            byte z = (byte)(CenterZ - childSize);
+
             children[0] = new OctreeNode(x, y, z, childDepth);
             children[1] = new OctreeNode((byte)(x + childSize), y, z, childDepth);
             children[2] = new OctreeNode(x, (byte)(y + childSize), z, childDepth);

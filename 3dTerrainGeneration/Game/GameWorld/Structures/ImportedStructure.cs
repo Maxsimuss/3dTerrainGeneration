@@ -1,5 +1,4 @@
 ﻿using VoxReader;
-using VoxReader.Chunks;
 using VoxReader.Interfaces;
 
 namespace _3dTerrainGeneration.Game.GameWorld.Structures

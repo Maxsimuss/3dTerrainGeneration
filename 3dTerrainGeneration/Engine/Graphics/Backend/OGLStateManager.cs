@@ -28,7 +28,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend
             {
                 GL.BindFramebuffer(target, id);
                 Framebuffer = id;
-            } 
+            }
         }
     }
 }

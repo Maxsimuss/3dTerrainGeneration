@@ -1,9 +1,7 @@
 ﻿using _3dTerrainGeneration.Engine.GameWorld.Entity;
-using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 using _3dTerrainGeneration.Game.GameWorld.Entities;
 using _3dTerrainGeneration.Game.GameWorld.Generators;
-using System.Numerics;
 
 namespace _3dTerrainGeneration.Game.Graphics.UI
 {
@@ -18,8 +16,6 @@ namespace _3dTerrainGeneration.Game.Graphics.UI
             BiomeInfo biome = biomeGenerator.GetBiomeInfo((int)player.Position.X, (int)player.Position.Z);
 
             textRenderer.DrawTextWithShadowCentered(0, -.8f, .04f, string.Format("T: {0:0} H: {1:0} F: {2:0}", biome.Temperature, biome.Humidity, biome.Fertility));
-
-            //UIRenderer.Instance.DrawRect(0, 0, 1, 1, new Vector4(1, 0, 0, 1), true);
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using OpenTK.Graphics.OpenGL;
-using System;
 
 namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 {

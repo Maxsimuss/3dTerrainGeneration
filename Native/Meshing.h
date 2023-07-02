@@ -1,4 +1,3 @@
-#include "pch.h"
 #include <vector>
 
 struct VertexData
@@ -102,10 +101,10 @@ struct vec3 {
 };
 
 #define MAX_SIZE 128
-bool merged[MAX_SIZE * MAX_SIZE];
 
 extern "C" __declspec(dllexport) MeshData __stdcall GreedyMesh(uint32_t * blocks, int width, int height, short scale, char emission)
 {
+	static thread_local bool merged[MAX_SIZE * MAX_SIZE];
 	std::vector<VertexData>* quads[6];
 	for (size_t i = 0; i < 6; i++)
 	{

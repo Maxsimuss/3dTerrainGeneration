@@ -16,7 +16,7 @@ namespace _3dTerrainGeneration.Game.Graphics._3D
 
         public void Render(Camera camera, Matrix4x4 matrix)
         {
-            world.RenderWorld(camera.Position, matrix, true, -world.SunPosition);
+            world.RenderWorld(camera.Position, matrix, true, world.SunPosition);
             EntityManager.Instance.Render();
         }
     }

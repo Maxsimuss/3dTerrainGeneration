@@ -1,4 +1,6 @@
-﻿namespace _3dTerrainGeneration.Engine.Util
+﻿using System;
+
+namespace _3dTerrainGeneration.Engine.Util
 {
     public static class MathUtil
     {
@@ -20,6 +22,22 @@
             x = (x - edge0) / (edge1 - edge0);
 
             return x * x * (3 - 2 * x);
+        }
+
+
+        public static float HaltonSequence(int i, int b)
+        {
+            float f = 1.0f;
+            float r = 0.0f;
+
+            while (i > 0)
+            {
+                f /= b;
+                r = r + f * (i % b);
+                i = (int)(Math.Floor(i / (float)(b)));
+            }
+
+            return r;
         }
     }
 }

@@ -35,8 +35,6 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         private static readonly int SHADOW_CASCADES = 3;
 
-        private static readonly Vector2[] TAA_OFFSETS = new Vector2[] { new(-1, 1), new(0, 1), new(1, 1), new(-1, 0), new(0, 0), new(1, 0), new(-1, -1), new(0, -1), new(1, -1) };
-
         private ComputeShader LuminanceCompute, LuminanceSmoothCompute;
 
         private DepthAttachedFramebuffer GBuffer;
@@ -486,7 +484,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
         private void RenderShadowMap()
         {
             shadowMatrices[0] = RenderShadowMapLayer(ShadowBuffers[0], shadowNears[0], shadowFars[0]);
-            if(FrameIndex % 2 == 0)
+            if (FrameIndex % 2 == 0)
             {
                 shadowMatrices[1] = RenderShadowMapLayer(ShadowBuffers[1], shadowNears[1], shadowFars[1]);
             }
@@ -610,7 +608,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
             FrameTimeAvg = (FrameTimeAvg * 99 + frameTimeMillis) / 100.0F;
 
             FrameIndex++;
-            taaJitter = TAA_OFFSETS[FrameIndex % 9] * new Vector2(1f / GBuffer.Width, 1f / GBuffer.Height) * .5f;
+
+            float haltonX = 2.0f * MathUtil.HaltonSequence(FrameIndex % 243 + 1, 2) - 1.0f;
+            float haltonY = 2.0f * MathUtil.HaltonSequence(FrameIndex % 243 + 1, 3) - 1.0f;
+            taaJitter = new Vector2(haltonX, haltonY) / new Vector2(GBuffer.Width, GBuffer.Height);
 
             GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.AlphaTest);

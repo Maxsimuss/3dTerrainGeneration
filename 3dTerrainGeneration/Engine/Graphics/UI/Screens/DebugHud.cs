@@ -1,12 +1,15 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics._3D;
 using _3dTerrainGeneration.Engine.Graphics.Backend;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
 {
     internal class DebugHud : BaseScreen
     {
+        public static ConcurrentDictionary<string, string> DebugInfo = new ConcurrentDictionary<string, string>();
+
         public override void Render()
         {
             textRenderer.DrawTextWithShadowCentered(0, .9f, .05f, string.Format("TEXURE VRAM {0}MB", Texture.TotalBytesAllocated / 1024 / 1024));
@@ -18,6 +21,13 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
             for (int i = 0; i < times.Count; i++)
             {
                 textRenderer.DrawTextWithShadow(-1, .5f - (i + 1) * .025f, .0125f, times[i]);
+            }
+
+            int line = 0;
+            foreach (var item in DebugInfo)
+            {
+                textRenderer.DrawTextWithShadow(.7f, .5f - (line + 1) * .025f, .0125f, item.Key + ": " + item.Value);
+                line++;
             }
         }
     }

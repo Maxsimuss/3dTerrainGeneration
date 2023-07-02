@@ -1,13 +1,8 @@
 ﻿using _3dTerrainGeneration.Engine.Util;
 using _3dTerrainGeneration.Game.GameWorld.Generators;
 using _3dTerrainGeneration.Game.GameWorld.Structures;
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dTerrainGeneration.Game.GameWorld.Features
 {
@@ -48,7 +43,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
             return random && !structure && !road;
         }
 
-        public void Process(Chunk chunk, ConcurrentDictionary<Vector3I, Chunk> chunks, HashSet<Chunk> modifiedChunks, int x, int y, int z, BiomeInfo biome, VoxelOctree octree)
+        public void Process(Chunk chunk, ChunkManager chunkManager, int x, int y, int z, BiomeInfo biome, VoxelOctree octree)
         {
             int X = chunk.X * Chunk.CHUNK_SIZE + x;
             int Y = chunk.Y * Chunk.CHUNK_SIZE + y;
@@ -59,7 +54,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
                 Vector3I localPos = new Vector3I(x, y - 1, z);
                 int variation = (int)(terrainGenerator.Random(localPos) * (rocks.Count - 1));
 
-                terrainGenerator.PlaceStructure(chunk, chunks, modifiedChunks, rocks[variation], localPos);
+                terrainGenerator.PlaceStructure(chunk, chunkManager, rocks[variation], localPos);
             }
         }
     }

@@ -15,7 +15,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Entities
             MeshedModel data = ModelLoader.Load("player");
             MeshScale = 3f / data.Height;
 
-            AABB = new AxisAlignedBB(data.Width * MeshScale / 2f, data.Height * MeshScale);
+            AABB = new AxisAlignedBBPrototype(data.Width * MeshScale / 2f, data.Height * MeshScale);
             Mesh = data.Data;
         }
 

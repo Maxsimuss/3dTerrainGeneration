@@ -1,9 +1,7 @@
 ﻿using _3dTerrainGeneration.Engine.Util;
 using _3dTerrainGeneration.Game.GameWorld.Features;
 using _3dTerrainGeneration.Game.GameWorld.Structures;
-using LibNoise.Modifier;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace _3dTerrainGeneration.Game.GameWorld.Generators
@@ -32,6 +30,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                 new CactusFeature(this),
                 new PineFeature(this),
                 new DeadTreeFeature(this),
+                new CrystalFeature(this),
             };
         }
 
@@ -48,7 +47,8 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                     int Z = location.Z + z;
 
                     BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
-                    bool isRoad = Math.Abs(NoiseUtil.GetPerlin(X, Z, 1000)) < .02f;
+                    float distanceToRoad = Math.Clamp((Math.Abs(NoiseUtil.GetPerlin(X, Z, 1000)) - .02f) * 10, 0, 1);
+                    bool isRoad = distanceToRoad == 0;
 
                     float height = NoiseUtil.OctavePerlinNoise(X, Z, 7, .5f, 3, 2000) * 100;
                     float variance = 1;
@@ -98,16 +98,16 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                         height += 150;
                     }
 
-                    if (height > -25 && height < 100)
+                    if (height > -25 && height < 50)
                     {
                         height += 25;
-                        height /= 125;
+                        height /= 75;
                         height *= 2;
                         height -= 1;
-                        height = MathF.Pow(height, 3);
+                        height = MathF.Pow(height, 3) * (1 - distanceToRoad) + height * distanceToRoad;
                         height += 1;
                         height /= 2;
-                        height *= 125;
+                        height *= 75;
                         height -= 25;
                     }
                     else
@@ -116,7 +116,6 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                     }
 
                     height = (int)Math.Round(height);
-
 
                     for (int y = 0; y < Chunk.CHUNK_SIZE && y <= height - location.Y; y++)
                     {
@@ -158,14 +157,13 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                 }
             }
 
-            chunk.HasTerrain = true;
+            chunk.State |= ChunkState.HasTerrain;
         }
 
-        public void Populate(Chunk chunk, ConcurrentDictionary<Vector3I, Chunk> chunks)
+        public void Populate(Chunk chunk, ChunkManager chunkManager)
         {
             VoxelOctree octree = chunk.Blocks;
             Vector3I location = new Vector3I(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE;
-            HashSet<Chunk> modifiedChunks = new HashSet<Chunk>();
 
             for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
             {
@@ -181,17 +179,14 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
 
                         for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
                         {
-                            feature.Process(chunk, chunks, modifiedChunks, x, y, z, biome, octree);
+                            feature.Process(chunk, chunkManager, x, y, z, biome, octree);
                         }
                     }
                 }
             }
 
-            foreach (var item in modifiedChunks)
-            {
-                item.IsRemeshingNeeded = true;
-            }
-            chunk.IsPopulated = true;
+            chunk.State |= ChunkState.IsPopulated;
+            chunk.State |= ChunkState.NeedsRemeshing;
         }
 
         public float Random(Vector3I pos)
@@ -199,7 +194,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
             return MathF.Abs(MathF.Sin(pos.X + (pos.Y + pos.Z * Chunk.CHUNK_SIZE) * Chunk.CHUNK_SIZE));
         }
 
-        public void PlaceStructure(Chunk chunk, ConcurrentDictionary<Vector3I, Chunk> chunks, HashSet<Chunk> modifiedChunks, Structure structure, Vector3I offset)
+        public void PlaceStructure(Chunk chunk, ChunkManager chunkManager, Structure structure, Vector3I offset)
         {
             foreach (var item in structure.Data)
             {
@@ -211,20 +206,14 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                         (int)Math.Floor((float)pos.Y / Chunk.CHUNK_SIZE) + chunk.Y,
                         (int)Math.Floor((float)pos.Z / Chunk.CHUNK_SIZE) + chunk.Z);
 
-                    Chunk targetChunk;
-                    if (chunks.ContainsKey(chunkLocation))
-                    {
-                        targetChunk = chunks[chunkLocation];
-                    }
-                    else
-                    {
-                        targetChunk = new Chunk(chunk.World, chunkLocation.X, chunkLocation.Y, chunkLocation.Z);
-                        chunks[chunkLocation] = targetChunk;
-                    }
+                    Chunk targetChunk = chunkManager.GetChunkAt(chunkLocation);
 
-                    if (!targetChunk.HasTerrain)
+                    if (targetChunk == null || (targetChunk.State & ChunkState.HasTerrain) == 0)
                     {
-                        GenerateTerrain(targetChunk);
+                        chunk.State &= ~ChunkState.IsPopulated;
+
+                        //stop population immediately, has overhead, but idc rn
+                        throw new Exception();
                     }
 
                     pos.X = MathUtil.Mod(pos.X, Chunk.CHUNK_SIZE);
@@ -232,9 +221,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                     pos.Z = MathUtil.Mod(pos.Z, Chunk.CHUNK_SIZE);
 
                     targetChunk.Blocks.SetVoxel(pos.X, pos.Y, pos.Z, item.Value | (uint)BlockMask.Structure);
-
-                    if (targetChunk.IsPopulated)
-                        modifiedChunks.Add(targetChunk);
+                    targetChunk.State |= ChunkState.NeedsRemeshing;
                 }
                 else
                 {
