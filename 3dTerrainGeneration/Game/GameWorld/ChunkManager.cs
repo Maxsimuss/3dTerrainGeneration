@@ -161,20 +161,20 @@ namespace _3dTerrainGeneration.Game.GameWorld
                         }
                     }
 
-                    for (int i = 0; i < totalChunkCount && !populationWorker.IsBusy(); i++)
-                    {
-                        Vector3I indexPosition = chunkIterationOrder[i];
-                        Vector3I chunkPosition = indexPosition + originChunkCoord;
+                    //for (int i = 0; i < totalChunkCount && !populationWorker.IsBusy(); i++)
+                    //{
+                    //    Vector3I indexPosition = chunkIterationOrder[i];
+                    //    Vector3I chunkPosition = indexPosition + originChunkCoord;
 
-                        if (chunks.ContainsKey(chunkPosition))
-                        {
-                            Chunk chunk = chunks[chunkPosition];
-                            if ((chunk.State & (ChunkState.AwaitingTerrainPopulation | ChunkState.IsPopulated)) == 0 && (chunk.State & ChunkState.HasTerrain) != 0)
-                            {
-                                populationWorker.SubmitWork(chunk);
-                            }
-                        }
-                    }
+                    //    if (chunks.ContainsKey(chunkPosition))
+                    //    {
+                    //        Chunk chunk = chunks[chunkPosition];
+                    //        if ((chunk.State & (ChunkState.AwaitingTerrainPopulation | ChunkState.IsPopulated)) == 0 && (chunk.State & ChunkState.HasTerrain) != 0)
+                    //        {
+                    //            populationWorker.SubmitWork(chunk);
+                    //        }
+                    //    }
+                    //}
 
                     DebugHud.DebugInfo["Mesh"] = WorkersBusy(meshWorkers).ToString();
                     for (int i = 0; i < totalChunkCount && !WorkersBusy(meshWorkers); i++)
@@ -252,7 +252,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
                         {
                             if (!ortho)
                             {
-                                int lod = (int)Math.Ceiling(Math.Clamp(Math.Log(1f / lodBias / screenPct * Chunk.CHUNK_SIZE) / Math.Log(2), 0, Chunk.LOD_COUNT));
+                                int lod = (int)Math.Ceiling(Math.Clamp(Math.Log(1f / lodBias / screenPct * Chunk.CHUNK_SIZE) / Math.Log(2), 0, Chunk.LOD_COUNT - 1));
                                 chunk.SetLOD(lod);
                             }
 

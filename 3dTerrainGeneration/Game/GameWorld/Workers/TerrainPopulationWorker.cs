@@ -40,7 +40,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
                         {
                             generator.Populate(chunk, chunkManager);
                         }
-                        catch (Exception ex)
+                        catch (InvalidOperationException ex)
                         {
                             onFailed(chunk);
                         }
@@ -59,7 +59,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
 
         public bool IsBusy()
         {
-            return queue.Count > 1;
+            return queue.Count > 16;
         }
     }
 }

@@ -7,9 +7,13 @@
 #ifndef PCH_H
 #define PCH_H
 
+#define NOMINMAX
+
 // add headers that you want to pre-compile here
 #include "framework.h"
 #include "Meshing.h"
 #include "Octree.h"
+#include "BiomeGenerator.h"
+#include "TerrainGen.h"
 
 #endif //PCH_H

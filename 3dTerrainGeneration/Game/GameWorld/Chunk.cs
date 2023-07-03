@@ -52,34 +52,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
         {
             State &= ~ChunkState.NeedsRemeshing;
 
-            for (int i = 0; i < LOD_COUNT; i++)
-            {
-                short lod = (short)Math.Pow(2, i);
-                int wl = CHUNK_SIZE / lod;
-
-                Model data = new Model();
-                data.SetDimensions(wl, CHUNK_SIZE);
-
-                for (short x = 0; x < wl; x++)
-                {
-                    for (short z = 0; z < wl; z++)
-                    {
-                        for (short y = 0; y < CHUNK_SIZE; y++)
-                        {
-                            uint bl = Blocks.GetValue(x * lod, y, z * lod);
-                            if (bl != 0)
-                            {
-                                data.SetBlockUnsafe(x, y, z, bl);
-                            }
-                        }
-                    }
-                }
-
-                lock (meshData)
-                {
-                    meshData[i] = data.Mesh(0, lod);
-                }
-            }
+            meshData = MeshGenerator.MeshLODs(this);
 
             State |= ChunkState.NeedsUploading;
         }
