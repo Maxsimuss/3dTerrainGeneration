@@ -7,6 +7,6 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
     {
         public bool Inhabitable(BiomeInfo biome);
 
-        public void Process(Chunk chunk, ChunkManager chunkManager, int x, int y, int z, BiomeInfo biome, VoxelOctree octree);
+        public void Process(Chunk chunk, ChunkManager chunkManager, int x, int y, int z, BiomeInfo biome, uint[] octree);
     }
 }

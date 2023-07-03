@@ -2,7 +2,7 @@
   "profiles": {
     "3dTerrainGeneration": {
       "commandName": "Project",
-      "nativeDebugging": true,
+      "nativeDebugging": false,
       "remoteDebugEnabled": false
     }
   }

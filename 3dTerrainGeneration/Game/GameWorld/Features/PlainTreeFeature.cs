@@ -32,21 +32,21 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool CanPlace(int X, int Y, int Z, int x, int y, int z, BiomeInfo biome, VoxelOctree octree)
+        private bool CanPlace(int X, int Y, int Z, int x, int y, int z, BiomeInfo biome, uint[] octree)
         {
-            if (y < 1 || octree.GetValue(x, y, z) != 0)
+            if (y < 1 || octree[y] != 0)
             {
                 return false;
             }
 
-            bool isFertile = (octree.GetValue(x, y - 1, z) & (uint)BlockMask.Fertile) != 0;
-            bool road = (octree.GetValue(x, y, z) & (uint)BlockMask.Road) != 0;
+            bool isFertile = (octree[y - 1] & (uint)BlockMask.Fertile) != 0;
+            bool road = (octree[y] & (uint)BlockMask.Road) != 0;
             bool random = NoiseUtil.GetPerlin(X, Z + 4214, 2) > .98f;
 
             return isFertile && !road && random;
         }
 
-        public void Process(Chunk chunk, ChunkManager chunkManager, int x, int y, int z, BiomeInfo biome, VoxelOctree octree)
+        public void Process(Chunk chunk, ChunkManager chunkManager, int x, int y, int z, BiomeInfo biome, uint[] octree)
         {
             int X = chunk.X * Chunk.CHUNK_SIZE + x;
             int Y = chunk.Y * Chunk.CHUNK_SIZE + y;

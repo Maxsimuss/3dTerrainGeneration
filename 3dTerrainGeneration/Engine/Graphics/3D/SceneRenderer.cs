@@ -50,7 +50,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
         private Queue<MeshSubmit> submitQueue = new Queue<MeshSubmit>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1048576 * 384; // 384MB
+        public readonly int VramAllocated = 1048576 * 512; // 512MB
 
         private SceneRenderer()
         {

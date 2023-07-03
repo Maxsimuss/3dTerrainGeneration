@@ -42,7 +42,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
 
         public bool IsBusy()
         {
-            return queue.Count > 0;
+            return queue.Count > 1;
         }
     }
 }

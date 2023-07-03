@@ -4,7 +4,7 @@
 class OctreeNode
 {
 public:
-	OctreeNode() 
+	OctreeNode()
 	{
 		depth = 0;
 
@@ -164,7 +164,29 @@ extern "C" __declspec(dllexport) void DeleteSVO(SparseVoxelOctree * svo) {
 }
 
 extern "C" __declspec(dllexport) void SetVoxel(SparseVoxelOctree * svo, int x, int y, int z, uint32_t value) {
-	return svo->SetVoxel(x, y, z, value);
+	svo->SetVoxel(x, y, z, value);
+}
+
+extern "C" __declspec(dllexport) void FillArea(SparseVoxelOctree * svo, uint32_t * data, int x, int y, int z, int w, int h, int d) {
+	for (size_t _x = 0; _x < w; _x++)
+	{
+		for (size_t _z = 0; _z < d; _z++)
+		{
+			for (size_t _y = 0; _y < h; _y++)
+			{
+				uint32_t value = data[(_x * w + _z) * h];
+
+				svo->SetVoxel(x, y, z, value);
+			}
+		}
+	}
+}
+
+extern "C" __declspec(dllexport) void GetRow(SparseVoxelOctree * svo, uint32_t* data, int x, int z) {
+	for (size_t i = 0; i < 128; i++)
+	{
+		data[i] = svo->GetValue(x, i, z);
+	}
 }
 
 extern "C" __declspec(dllexport) uint32_t GetValue(SparseVoxelOctree * svo, int x, int y, int z) {

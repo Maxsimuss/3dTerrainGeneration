@@ -1,4 +1,5 @@
 #include <vector>
+#include "Octree.h"
 
 struct VertexData
 {
@@ -101,6 +102,9 @@ struct vec3 {
 };
 
 #define MAX_SIZE 128
+#define MAX_LODs 5
+thread_local static MeshData meshData[MAX_LODs];
+thread_local static uint32_t tempBlocks[MAX_SIZE * MAX_SIZE * MAX_SIZE];
 
 extern "C" __declspec(dllexport) MeshData __stdcall GreedyMesh(uint32_t * blocks, int width, int height, short scale, char emission)
 {
@@ -303,9 +307,9 @@ extern "C" __declspec(dllexport) MeshData __stdcall QuickMesh(uint32_t * blocks,
 				uint32_t id = getBlock(x, y, z);
 				if (id != 0)
 				{
-					char r = (char)(id >> 16 & 0xFF);
-					char g = (char)(id >> 8 & 0xFF);
-					char b = (char)(id & 0xFF);
+					char r = (char)(id >> 24 & 0xFF);
+					char g = (char)(id >> 16 & 0xFF);
+					char b = (char)(id >> 8 & 0xFF);
 
 					if ((y + 1 == height || getBlock(x, y + 1, z) == 0))
 					{
@@ -351,6 +355,30 @@ extern "C" __declspec(dllexport) MeshData __stdcall QuickMesh(uint32_t * blocks,
 	}
 
 	return { vertecies, sizes };
+}
+
+extern "C" __declspec(dllexport) MeshData * MeshLODs(SparseVoxelOctree * svo, int chunkSize, int lodCount) {
+	for (int i = 0; i < lodCount; i++)
+	{
+		short lod = (short)pow(2, i);
+		int wl = chunkSize / lod;
+
+		for (short x = 0; x < wl; x++)
+		{
+			for (short z = 0; z < wl; z++)
+			{
+				for (short y = 0; y < chunkSize; y++)
+				{
+					uint32_t bl = svo->GetValue(x * lod, y, z * lod);
+					tempBlocks[(x * wl + z) * chunkSize + y] = bl;
+				}
+			}
+		}
+
+		meshData[i] = GreedyMesh(tempBlocks, wl, chunkSize, lod, 0);
+	}
+
+	return meshData;
 }
 
 extern "C" __declspec(dllexport) void __stdcall FreeMeshData(MeshData mesh)

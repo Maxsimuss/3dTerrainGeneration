@@ -3,6 +3,8 @@ using _3dTerrainGeneration.Game.GameWorld.Features;
 using _3dTerrainGeneration.Game.GameWorld.Structures;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace _3dTerrainGeneration.Game.GameWorld.Generators
 {
@@ -17,6 +19,9 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
     {
         public BiomeGenerator BiomeGenerator;
         private List<IFeature> features;
+
+        [ThreadStatic]
+        private static uint[] tempRow = new uint[128];
 
         public TerrainGenerator()
         {
@@ -34,152 +39,48 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
             };
         }
 
+
+
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private extern static void GenerateTerrain(IntPtr svo, IntPtr biomeGenerator, int chunkSize, int locationX, int locationY, int locationZ);
+
         public void GenerateTerrain(Chunk chunk)
         {
-            VoxelOctree octree = chunk.Blocks;
             Vector3I location = new Vector3I(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE;
-
-            for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
-            {
-                int X = location.X + x;
-                for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
-                {
-                    int Z = location.Z + z;
-
-                    BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
-                    float distanceToRoad = Math.Clamp((Math.Abs(NoiseUtil.GetPerlin(X, Z, 1000)) - .02f) * 10, 0, 1);
-                    bool isRoad = distanceToRoad == 0;
-
-                    float height = NoiseUtil.OctavePerlinNoise(X, Z, 7, .5f, 3, 2000) * 100;
-                    float variance = 1;
-
-                    if (height < -25)
-                    {
-                        height += 25;
-                        height *= 25;
-                        variance *= 25;
-                        height -= 25;
-                    }
-
-                    if (height < 0)
-                    {
-                        height /= 5;
-                    }
-
-                    if (height < -150)
-                    {
-                        height += 150;
-                        height /= 5;
-                        variance /= 5;
-                        height -= 150;
-                    }
-
-                    if (height < -200)
-                    {
-                        height += 200;
-                        height /= 5;
-                        variance /= 5;
-                        height -= 200;
-                    }
-
-                    if (height > 25)
-                    {
-                        height -= 25;
-                        height *= 5;
-                        variance *= 5;
-                        height += 25;
-                    }
-
-                    if (height > 150)
-                    {
-                        height -= 150;
-                        height /= 5;
-                        variance /= 5;
-                        height += 150;
-                    }
-
-                    if (height > -25 && height < 50)
-                    {
-                        height += 25;
-                        height /= 75;
-                        height *= 2;
-                        height -= 1;
-                        height = MathF.Pow(height, 3) * (1 - distanceToRoad) + height * distanceToRoad;
-                        height += 1;
-                        height /= 2;
-                        height *= 75;
-                        height -= 25;
-                    }
-                    else
-                    {
-                        isRoad = false;
-                    }
-
-                    height = (int)Math.Round(height);
-
-                    for (int y = 0; y < Chunk.CHUNK_SIZE && y <= height - location.Y; y++)
-                    {
-                        int Y = location.Y + y;
-
-                        if (height == Y)
-                        {
-                            uint block = 0;
-
-                            if (NoiseUtil.GetPerlin(X, Z, 2) * .5 + .5 > biome.Temperature / -30)
-                            {
-                                if (isRoad)
-                                {
-                                    block = Color.ToInt(120, 80, 60);
-                                    block |= (uint)BlockMask.Road;
-                                }
-                                else
-                                {
-                                    block = BiomeGenerator.GetGrassColor(biome);
-                                    if (variance < 5)
-                                    {
-                                        block |= (uint)BlockMask.Fertile;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                block = Color.ToInt(200, 200, 220);
-                            }
-
-
-                            octree.SetVoxel(x, y, z, block);
-                        }
-                        else
-                        {
-                            octree.SetVoxel(x, y, z, Color.ToInt(100, 100, 100));
-                        }
-                    }
-                }
-            }
-
+         
+            GenerateTerrain(chunk.Blocks.Handle, BiomeGenerator.Handle, Chunk.CHUNK_SIZE, location.X, location.Y, location.Z);
+         
             chunk.State |= ChunkState.HasTerrain;
         }
 
-        public void Populate(Chunk chunk, ChunkManager chunkManager)
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private extern static void GetRow(IntPtr svo, IntPtr data, int x, int z);
+
+        public unsafe void Populate(Chunk chunk, ChunkManager chunkManager)
         {
             VoxelOctree octree = chunk.Blocks;
             Vector3I location = new Vector3I(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE;
-
-            for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
+            
+            fixed(uint* rowPtr = tempRow)
             {
-                for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
+                for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
                 {
-                    int X = x + location.X;
-                    int Z = z + location.Z;
-                    BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
-
-                    foreach (IFeature feature in features)
+                    for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
                     {
-                        if (!feature.Inhabitable(biome)) continue;
+                        int X = x + location.X;
+                        int Z = z + location.Z;
+                        BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
 
-                        for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
+                        foreach (IFeature feature in features)
                         {
-                            feature.Process(chunk, chunkManager, x, y, z, biome, octree);
+                            if (!feature.Inhabitable(biome)) continue;
+
+                            GetRow(octree.Handle, (IntPtr)rowPtr, x, z);
+
+                            for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
+                            {
+                                feature.Process(chunk, chunkManager, x, y, z, biome, tempRow);
+                            }
                         }
                     }
                 }
@@ -213,7 +114,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                         chunk.State &= ~ChunkState.IsPopulated;
 
                         //stop population immediately, has overhead, but idc rn
-                        throw new Exception();
+                        throw new InvalidOperationException();
                     }
 
                     pos.X = MathUtil.Mod(pos.X, Chunk.CHUNK_SIZE);
