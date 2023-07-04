@@ -1,5 +1,6 @@
 ﻿using _3dTerrainGeneration.Engine.Audio.OpenAL;
 using _3dTerrainGeneration.Engine.Audio.Sources;
+using _3dTerrainGeneration.Engine.Util;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -83,7 +84,7 @@ namespace _3dTerrainGeneration.Engine.Audio
 
         private void RegisterSound(string name, AudioSourceConfig sourceConfig, string path)
         {
-            MP3Sharp.MP3Stream stream = new MP3Sharp.MP3Stream("Resources/sounds/" + path);
+            MP3Sharp.MP3Stream stream = new MP3Sharp.MP3Stream(ResourceManager.GetSoundPath(path));
 
             int sampleRate = stream.Frequency;
 

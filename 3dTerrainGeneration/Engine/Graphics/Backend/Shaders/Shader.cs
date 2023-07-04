@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL;
+﻿using _3dTerrainGeneration.Engine.Util;
+using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -45,16 +46,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 
         protected string LoadSource(string path)
         {
-            string basePath = System.Reflection.Assembly.GetAssembly(typeof(Shader)).Location;
-            string[] pathArr = basePath.Split("\\");
-            basePath = string.Join("\\", pathArr.Take(pathArr.Length - 1));
-
-            string source;
-            using (var sr = new StreamReader(basePath + "\\" + path, Encoding.UTF8))
-            {
-                source = sr.ReadToEnd();
-            }
-
+            string source = ResourceManager.GetShaderSource(path);
             List<string> lines = source.Split("\n").ToList();
             lines.Insert(1, flags);
 

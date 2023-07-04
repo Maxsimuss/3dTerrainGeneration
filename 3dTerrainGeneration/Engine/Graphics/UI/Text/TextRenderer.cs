@@ -1,5 +1,6 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics.Backend.Shaders;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
+using _3dTerrainGeneration.Engine.Util;
 using OpenTK.Graphics.OpenGL;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -38,10 +39,12 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
 
         private int VAO, VBO;
 
-        public TextRenderer(string FontFile = "Resources/fonts/PressStart2P-Regular.ttf")
+        private TextRenderer()
         {
+            string fontPath = ResourceManager.GetFontPath("PressStart2P-Regular.ttf");
+
             var collection = new PrivateFontCollection();
-            collection.AddFontFile(FontFile);
+            collection.AddFontFile(fontPath);
             Font font = new Font(collection.Families[0], 8);
             font = new Font(collection.Families[0], 8 * (8f / font.Height));
 
@@ -67,7 +70,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
                 texture = new Texture2D(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba8, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
                 bitmap.UnlockBits(data);
             }
-            TextShader = new FragmentShader("Shaders/post.vert", "Shaders/text.frag");
+            TextShader = new FragmentShader("2D/Textured.vert", "2D/Textured.frag");
             TextShader.Compile();
             TextShader.SetInt("colortex0", 0);
             texture.ActiveBind();

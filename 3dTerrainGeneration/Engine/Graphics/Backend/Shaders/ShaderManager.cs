@@ -4,12 +4,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
 {
     internal class ShaderManager
     {
-#if DEBUG
-        private static readonly string path = "../../../shaders/";
-#else
-        private static readonly string path = "shaders/";
-#endif
-
         private static ShaderManager instance;
         public static ShaderManager Instance
         {
@@ -33,7 +27,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
                 shaders[name].Dispose();
             }
 
-            FragmentShader shader = new FragmentShader(path + vertexPath, path + fragmentPath);
+            FragmentShader shader = new FragmentShader(vertexPath, fragmentPath);
             InsertShader(shader, name);
 
             return shader;
@@ -46,7 +40,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
                 shaders[name].Dispose();
             }
 
-            ComputeShader shader = new ComputeShader(path + fragmentPath);
+            ComputeShader shader = new ComputeShader(fragmentPath);
             InsertShader(shader, name);
 
             return shader;

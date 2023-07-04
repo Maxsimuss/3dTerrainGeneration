@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using _3dTerrainGeneration.Engine.Util;
+using System.Collections.Generic;
 using System.IO;
 using VoxReader;
 using VoxReader.Interfaces;
@@ -15,7 +16,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Models
             int w = -1;
             int h = -1;
 
-            foreach (string m in Directory.EnumerateFiles("Resources/models/" + name))
+            foreach (string m in Directory.EnumerateFiles(ResourceManager.GetEntityPath(name)))
             {
                 IVoxFile file = VoxReader.VoxReader.Read(m);
                 IModel voxModel = file.Models[0];

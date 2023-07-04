@@ -17,9 +17,9 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
 
             trees = new List<Structure>();
 
-            trees.Add(new ImportedStructure("trees/tree1.vox"));
-            trees.Add(new ImportedStructure("trees/tree2.vox"));
-            trees.Add(new ImportedStructure("trees/tree3.vox"));
+            trees.Add(new ImportedStructure("Natural/Oak/tree1.vox"));
+            trees.Add(new ImportedStructure("Natural/Oak/tree2.vox"));
+            trees.Add(new ImportedStructure("Natural/Oak/tree3.vox"));
         }
 
         public bool Inhabitable(BiomeInfo biome)

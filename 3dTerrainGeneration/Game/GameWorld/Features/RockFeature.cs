@@ -19,7 +19,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
 
             for (int i = 0; i < 4; i++)
             {
-                rocks.Add(new ImportedStructure(string.Format("trees/rock0/rock{0}.vox", i)));
+                rocks.Add(new ImportedStructure(string.Format("Natural/Rock/rock{0}.vox", i)));
             }
         }
 

@@ -16,10 +16,10 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
             this.terrainGenerator = terrainGenerator;
 
             trees = new List<Structure>();
-            trees.Add(new ImportedStructure("trees/pine0.vox"));
-            trees.Add(new ImportedStructure("trees/pine1.vox"));
-            trees.Add(new ImportedStructure("trees/pine2.vox"));
-            trees.Add(new ImportedStructure("trees/pine3.vox"));
+            trees.Add(new ImportedStructure("Natural/Pine/pine0.vox"));
+            trees.Add(new ImportedStructure("Natural/Pine/pine1.vox"));
+            trees.Add(new ImportedStructure("Natural/Pine/pine2.vox"));
+            trees.Add(new ImportedStructure("Natural/Pine/pine3.vox"));
         }
 
         public bool Inhabitable(BiomeInfo biome)

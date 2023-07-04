@@ -46,9 +46,9 @@ namespace _3dTerrainGeneration.Engine
 
             GraphicsEngine.Instance.Game = game;
             game.EntryPoint(this);
-#if DEBUG
+//#if DEBUG
             UIRenderer.Instance.OpenScreen(new DebugHud());
-#endif
+//#endif
 
             window.CursorState = CursorState.Grabbed;
 

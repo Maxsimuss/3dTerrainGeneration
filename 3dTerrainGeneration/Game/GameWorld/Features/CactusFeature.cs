@@ -16,7 +16,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
             this.terrainGenerator = terrainGenerator;
 
             cactuses = new List<Structure>();
-            cactuses.Add(new ImportedStructure("trees/cactus0/cactus0.vox"));
+            cactuses.Add(new ImportedStructure("Natural/Cactus/cactus0.vox"));
         }
 
         public bool Inhabitable(BiomeInfo biome)

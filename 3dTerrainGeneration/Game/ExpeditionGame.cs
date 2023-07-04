@@ -57,13 +57,13 @@ namespace _3dTerrainGeneration.Game
 
         private void RegisterSounds()
         {
-            AudioEngine.Instance.RegisterSound("Forest", "forest.mp3");
-            AudioEngine.Instance.RegisterSound("Walk", "step-grass-0.mp3", "step-grass-1.mp3", "step-grass-2.mp3", "step-grass-3.mp3", "step-grass-4.mp3");
-            AudioEngine.Instance.RegisterSound("Fire", "fire.mp3");
-            AudioEngine.Instance.RegisterSound("Explosion", "explosion.mp3");
-            AudioEngine.Instance.RegisterSound("ClickHigh", "click/high-0.mp3", "click/high-1.mp3", "click/high-2.mp3", "click/high-3.mp3");
-            AudioEngine.Instance.RegisterSound("ClickLow", "click/low-0.mp3", "click/low-1.mp3", "click/low-2.mp3", "click/low-3.mp3");
-            AudioEngine.Instance.RegisterSound("ClickConfirm", "click/confirm-0.mp3", "click/confirm-1.mp3", "click/confirm-2.mp3", "click/confirm-3.mp3");
+            AudioEngine.Instance.RegisterSound("Forest", "FX/Forest/forest.mp3");
+            AudioEngine.Instance.RegisterSound("Walk", "FX/Walking/step-grass-0.mp3", "FX/Walking/step-grass-1.mp3", "FX/Walking/step-grass-2.mp3", "FX/Walking/step-grass-3.mp3", "FX/Walking/step-grass-4.mp3");
+            AudioEngine.Instance.RegisterSound("Fire", "FX/Fire/fire.mp3");
+            AudioEngine.Instance.RegisterSound("Explosion", "FX/Fire/explosion.mp3");
+            AudioEngine.Instance.RegisterSound("ClickHigh", "Clicks/high-0.mp3", "Clicks/high-1.mp3", "Clicks/high-2.mp3", "Clicks/high-3.mp3");
+            AudioEngine.Instance.RegisterSound("ClickLow", "Clicks/low-0.mp3", "Clicks/low-1.mp3", "Clicks/low-2.mp3", "Clicks/low-3.mp3");
+            AudioEngine.Instance.RegisterSound("ClickConfirm", "Clicks/confirm-0.mp3", "Clicks/confirm-1.mp3", "Clicks/confirm-2.mp3", "Clicks/confirm-3.mp3");
         }
     }
 }

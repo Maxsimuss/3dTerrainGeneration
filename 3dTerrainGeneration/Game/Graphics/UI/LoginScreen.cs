@@ -22,7 +22,7 @@ namespace _3dTerrainGeneration.Game.Graphics.UI
             loginButton = new Button(textRenderer, 0, -.5f, usernameField.Width, .04f, new Vector4(114 / 255f, 243 / 255f, 112 / 255f, 1f), "Login");
             registerButton = new Button(textRenderer, 0, -.7f, usernameField.Width, .04f, new Vector4(248 / 255f, 101 / 255f, 101 / 255f, 1f), "Register");
 
-            shader = new FragmentShader("Shaders/post.vert", "Shaders/loginMenu.frag");
+            shader = new FragmentShader("post.vert", "loginMenu.frag");
             shader.SetInt("colortex0", 0);
             shader.SetInt("colortex1", 1);
 

@@ -16,9 +16,9 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
             this.terrainGenerator = terrainGenerator;
 
             trees = new List<Structure>();
-            trees.Add(new ImportedStructure("trees/deadtree0.vox"));
-            trees.Add(new ImportedStructure("trees/deadtree1.vox"));
-            trees.Add(new ImportedStructure("trees/deadtree2.vox"));
+            trees.Add(new ImportedStructure("Natural/DeadTree/deadtree0.vox"));
+            trees.Add(new ImportedStructure("Natural/DeadTree/deadtree1.vox"));
+            trees.Add(new ImportedStructure("Natural/DeadTree/deadtree2.vox"));
         }
 
         public bool Inhabitable(BiomeInfo biome)

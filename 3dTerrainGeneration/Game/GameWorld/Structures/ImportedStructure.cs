@@ -1,4 +1,5 @@
-﻿using VoxReader;
+﻿using _3dTerrainGeneration.Engine.Util;
+using VoxReader;
 using VoxReader.Interfaces;
 
 namespace _3dTerrainGeneration.Game.GameWorld.Structures
@@ -7,7 +8,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Structures
     {
         public ImportedStructure(string fileName)
         {
-            IVoxFile file = VoxReader.VoxReader.Read("Resources/models/" + fileName);
+            IVoxFile file = VoxReader.VoxReader.Read(ResourceManager.GetStructure(fileName));
 
             IModel voxModel = file.Models[0];
             for (int i = 0; i < voxModel.Voxels.Length; i++)

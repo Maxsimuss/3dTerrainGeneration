@@ -236,15 +236,15 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         private void InitShaders()
         {
-            ShaderManager.Instance.RegisterFragmentShader("GBuffer", "gbuffer.vert", "gbuffer.frag").Compile();
-            ShaderManager.Instance.RegisterFragmentShader("ShadowMap", "shadowmap.vert", "empty.frag").Compile();
+            ShaderManager.Instance.RegisterFragmentShader("GBuffer", "3D/GBuffer/GBuffer.vert", "3D/GBuffer/GBuffer.frag").Compile();
+            ShaderManager.Instance.RegisterFragmentShader("ShadowMap", "3D/GBuffer/ShadowMap.vert", "3D/GBuffer/Empty.frag").Compile();
 
-            ShaderManager.Instance.RegisterFragmentShader("ShadowFilter", "post.vert", "shadow.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("ShadowFilter", "3D/Deferred/Deferred.vert", "3D/Deferred/Shadow.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1)
                 .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
-            ShaderManager.Instance.RegisterFragmentShader("Lighting", "post.vert", "lighting.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Lighting", "3D/Deferred/Deferred.vert", "3D/Deferred/Lighting.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("colorTex", 1)
                 .SetInt("normalTex", 2)
@@ -256,7 +256,7 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 .SetInt("giTex", 8)
                 .SetInt("giNTex", 9);
 
-            ShaderManager.Instance.RegisterFragmentShader("RTGI", "post.vert", "rtgi.frag")
+            ShaderManager.Instance.RegisterFragmentShader("RTGI", "3D/Deferred/Deferred.vert", "3D/Deferred/RTGI.frag")
                 .Compile()
                 .SetInt("data", 0)
                 .SetInt("depthTex", 1)
@@ -267,67 +267,67 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
 
 
-            ShaderManager.Instance.RegisterFragmentShader("Occlusion", "post.vert", "occlusion.frag")
+            ShaderManager.Instance.RegisterFragmentShader("Occlusion", "3D/Deferred/Deferred.vert", "3D/Deferred/SSAO.frag")
                 .Define("SSAO_SAMPLES", (int)OptionManager.Instance["Graphics", "SSAO Quality"])
                 .Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1);
 
-            ShaderManager.Instance.RegisterFragmentShader("Volumetrics", "post.vert", "volumetrics.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Volumetrics", "3D/Deferred/Deferred.vert", "3D/Deferred/Volumetrics.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1)
                 .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
-            ShaderManager.Instance.RegisterFragmentShader("TAA", "post.vert", "post/taa.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("TAA", "3D/Deferred/Deferred.vert", "3D/Deferred/TAA.frag").Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("colorTex0", 1)
                 .SetInt("colorTex1", 2)
                 .SetInt("depthTex1", 3);
 
-            ShaderManager.Instance.RegisterFragmentShader("Bloom", "post.vert", "post/bloom.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Bloom", "3D/Deferred/Deferred.vert", "3D/Deferred/Bloom.frag").Compile()
                 .SetInt("colortex0", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("BlurDownsample", "post.vert", "post/downsample.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("BlurDownsample", "3D/Deferred/Deferred.vert", "3D/Deferred/BlurDownSample.frag").Compile()
                 .SetInt("colortex0", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("BlurUpsample", "post.vert", "post/upsample.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("BlurUpsample", "3D/Deferred/Deferred.vert", "3D/Deferred/BlurUpSample.frag").Compile()
                 .SetInt("colortex0", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("Final3D", "post.vert", "post/final3d.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Final3D", "3D/Deferred/Deferred.vert", "3D/Final3D.frag").Compile()
                 .SetInt("colortex0", 0)
                 .SetInt("colortex1", 1);
 
-            ShaderManager.Instance.RegisterFragmentShader("Final2D", "post.vert", "post/final2d.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Final2D", "3D/Deferred/Deferred.vert", "Final2D.frag").Compile()
                 .SetInt("colortex0", 0)
                 .SetInt("colortex1", 1);
 
-            ShaderManager.Instance.RegisterFragmentShader("MotionBlur", "post.vert", "post/motionblur.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("MotionBlur", "3D/Deferred/Deferred.vert", "3D/Deferred/MotionBlur.frag").Compile()
                 .SetInt("colortex0", 0)
                 .SetInt("colortex1", 1);
 
-            ShaderManager.Instance.RegisterFragmentShader("Tonemapping", "post.vert", "tonemapping.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Tonemapping", "3D/Deferred/Deferred.vert", "3D/Deferred/Tonemapper.frag").Compile()
                 .SetInt("colorTex", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("Sky", "post.vert", "sky.frag").Compile();
-            ShaderManager.Instance.RegisterFragmentShader("Stars", "post.vert", "stars.frag").Compile();
+            ShaderManager.Instance.RegisterFragmentShader("Sky", "3D/Deferred/Deferred.vert", "3D/Deferred/Sky.frag").Compile();
+            ShaderManager.Instance.RegisterFragmentShader("Stars", "3D/Deferred/Deferred.vert", "3D/Deferred/Stars.frag").Compile();
 
-            ShaderManager.Instance.RegisterFragmentShader("DOFBlur", "post.vert", "dofblur.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("DOFBlur", "3D/Deferred/Deferred.vert", "3D/Deferred/DOFBlur.frag").Compile()
                 .SetInt("weightTex", 0)
                 .SetInt("colorTex", 1)
                 .SetInt("depthTex", 2);
 
-            ShaderManager.Instance.RegisterFragmentShader("DOFWeight", "post.vert", "dofweight.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("DOFWeight", "3D/Deferred/Deferred.vert", "3D/Deferred/DOFWeight.frag").Compile()
                 .SetInt("depthTex", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("Sharpen", "post.vert", "sharpen.frag")
+            ShaderManager.Instance.RegisterFragmentShader("Sharpen", "3D/Deferred/Deferred.vert", "3D/Deferred/Sharpen.frag")
                 .Define("AMOUNT", (float)OptionManager.Instance["Graphics", "Sharpness"])
                 .Compile()
                 .SetInt("colorTex", 0);
 
-            ShaderManager.Instance.RegisterFragmentShader("UI", "rect.vert", "rect.frag").Compile();
+            ShaderManager.Instance.RegisterFragmentShader("UI", "2D/Passtrough.vert", "2D/Passtrough.frag").Compile();
 
-            ShaderManager.Instance.RegisterComputeShader("Luminance", "luminance.comp").Compile();
-            ShaderManager.Instance.RegisterComputeShader("LuminanceSmooth", "luminancesmooth.comp").Compile();
+            ShaderManager.Instance.RegisterComputeShader("Luminance", "3D/Deferred/Luminance.comp").Compile();
+            ShaderManager.Instance.RegisterComputeShader("LuminanceSmooth", "3D/Deferred/LuminanceSmooth.comp").Compile();
         }
 
         private void SetupPipeline()

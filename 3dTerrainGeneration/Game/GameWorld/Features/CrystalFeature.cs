@@ -20,7 +20,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Features
 
             for (int i = 0; i < 16; i++)
             {
-                crystals.Add(new ImportedStructure(string.Format("crystals/crystal{0}{1}.vox", i / 4, i % 4)));
+                crystals.Add(new ImportedStructure(string.Format("Natural/Crystal/crystal{0}{1}.vox", i / 4, i % 4)));
             }
         }
 
