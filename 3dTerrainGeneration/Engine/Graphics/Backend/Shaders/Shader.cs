@@ -21,9 +21,17 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Shaders
             Handle = GL.CreateProgram();
         }
 
+        public Shader Define(string name, bool isItForReal)
+        {
+            if(isItForReal)
+                flags += "#define " + name + "\n";
+
+            return this;
+        }
+
         public Shader Define(string name, float value)
         {
-            flags += "#define " + name + " " + value;
+            flags += "#define " + name + " " + value + "\n";
 
             return this;
         }

@@ -3,14 +3,10 @@
 #include "BiomeGenerator.h"
 #include "Noise.h"
 
-enum BlockMask {
-	Fertile = 1,
-	Structure = 1 << 1,
-	Road = 1 << 2,
-};
-
-extern "C" __declspec(dllexport) void GenerateTerrain(SparseVoxelOctree * svo, BiomeGenerator * biomeGenerator, int chunkSize, int locationX, int locationY, int locationZ)
+extern "C" __declspec(dllexport) int GenerateTerrain(HybridVoxelOctree * svo, BiomeGenerator * biomeGenerator, int chunkSize, int locationX, int locationY, int locationZ)
 {
+	int placedBlocks = 0;
+
 	for (int x = 0; x < chunkSize; x++)
 	{
 		int X = locationX + x;
@@ -119,13 +115,17 @@ extern "C" __declspec(dllexport) void GenerateTerrain(SparseVoxelOctree * svo, B
 					}
 
 
+					placedBlocks++;
 					svo->SetVoxel(x, y, z, block);
 				}
 				else
 				{
-					svo->SetVoxel(x, y, z, ToInt(100, 100, 100));
+					placedBlocks++;
+					svo->SetVoxel(x, y, z, biomeGenerator->GetStoneColor(biome));
 				}
 			}
 		}
 	}
+
+	return placedBlocks;
 }

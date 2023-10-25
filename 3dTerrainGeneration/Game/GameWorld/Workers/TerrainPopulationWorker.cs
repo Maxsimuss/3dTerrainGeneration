@@ -1,4 +1,5 @@
-﻿using _3dTerrainGeneration.Game.GameWorld.Generators;
+﻿using _3dTerrainGeneration.Engine.Graphics;
+using _3dTerrainGeneration.Game.GameWorld.Generators;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
@@ -39,6 +40,8 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
                         try
                         {
                             generator.Populate(chunk, chunkManager);
+
+                            //GraphicsEngine.rtgiGeometry.TryAdd(chunk.Position, chunk.Blocks);
                         }
                         catch (InvalidOperationException ex)
                         {
@@ -47,6 +50,12 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
 
                         chunk.State &= ~ChunkState.AwaitingTerrainPopulation;
                     }
+                }
+            }).ContinueWith((state) =>
+            {
+                if(state.Exception != null)
+                {
+                    throw state.Exception;
                 }
             });
         }

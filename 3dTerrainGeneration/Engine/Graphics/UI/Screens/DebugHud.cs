@@ -12,21 +12,21 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
 
         public override void Render()
         {
-            textRenderer.DrawTextWithShadowCentered(0, .9f, .05f, string.Format("TEXURE VRAM {0}MB", Texture.TotalBytesAllocated / 1024 / 1024));
-            textRenderer.DrawTextWithShadowCentered(0, .8f, .05f, string.Format("GEOMETRY VRAM {0} / {1}MB", SceneRenderer.Instance.VramUsage / 1024 / 1024, SceneRenderer.Instance.VramAllocated / 1024 / 1024));
-            textRenderer.DrawTextWithShadowCentered(0, .7f, .05f, string.Format("FRAME TIME AVG {0:0.00}MS", GraphicsEngine.Instance.FrameTimeAvg));
+            textRenderer.DrawTextWithShadowCentered(Width / 2, 5, 2.5f, string.Format("TEXURE VRAM {0}MB", Texture.TotalBytesAllocated / 1024 / 1024));
+            textRenderer.DrawTextWithShadowCentered(Width / 2, 10, 2.5f, string.Format("GEOMETRY VRAM {0} / {1}MB", SceneRenderer.Instance.VramUsage / 1024 / 1024, SceneRenderer.Instance.VramAllocated / 1024 / 1024));
+            textRenderer.DrawTextWithShadowCentered(Width / 2, 15, 2.5f, string.Format("FRAME TIME AVG {0:0.00}MS", GraphicsEngine.Instance.FrameTimeAvg));
 
-            textRenderer.DrawTextWithShadow(-1, .5f, .0125f, "Frame summary:");
+            textRenderer.DrawTextWithShadow(0, 25, 1.25f, "Frame summary:");
             List<string> times = GPUProfilter.Instance.GetTimes();
             for (int i = 0; i < times.Count; i++)
             {
-                textRenderer.DrawTextWithShadow(-1, .5f - (i + 1) * .025f, .0125f, times[i]);
+                textRenderer.DrawTextWithShadow(0, 30 + i * 2f, 1.25f, times[i]);
             }
 
             int line = 0;
             foreach (var item in DebugInfo)
             {
-                textRenderer.DrawTextWithShadow(.7f, .5f - (line + 1) * .025f, .0125f, item.Key + ": " + item.Value);
+                textRenderer.DrawTextWithShadow(Width * .8f, 30 + line * 2f, 1.25f, item.Key + ": " + item.Value);
                 line++;
             }
         }

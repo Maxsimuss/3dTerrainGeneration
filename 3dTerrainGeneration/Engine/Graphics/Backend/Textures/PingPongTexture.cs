@@ -30,5 +30,11 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
 
             return this;
         }
+
+        public override void UploadData<T>(T[] data, PixelFormat pixelFormat, PixelType pixelType = PixelType.UnsignedByte)
+        {
+            Texture0.UploadData(data, pixelFormat, pixelType);
+            Texture1.UploadData(data, pixelFormat, pixelType);
+        }
     }
 }

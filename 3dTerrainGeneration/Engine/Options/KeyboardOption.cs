@@ -14,7 +14,11 @@ namespace _3dTerrainGeneration.Engine.Options
         public override object Value
         {
             get => value;
-            set => this.value = (Keys)value;
+            set
+            {
+                this.value = (Keys)value;
+                OnChanged();
+            }
         }
     }
 

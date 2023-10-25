@@ -1,8 +1,5 @@
 ﻿#version 430 core
 out vec4 FragColor;
-  
-
-// #define RAYTRACE
 
 in vec2 TexCoords;
 
@@ -65,10 +62,19 @@ void main() {
     vec3 normal = texture(normalTex, TexCoords).rgb * 2. - 1.;
     vec3 sky = texture(skyTex, TexCoords).rgb * 2;
 
-    // iterate over the sample kernel and calculate occlusion factor
-    float occlusion = texture(occlusionTex, TexCoords).r;
 
+#ifdef SHADOWS_ENABLED
     float shadow = clamp(texture(shadowTex, TexCoords).r, 0., 1.);
+#else
+    float shadow = 1;
+#endif
+
+#ifdef SSAO_ENABLED
+    float occlusion = texture(occlusionTex, TexCoords).r;
+#else
+    float occlusion = 1;
+#endif
+
     vec3 sunLight = max(dot(normal.rgb, sun.position), 0.0) * shadow * sun.color * .7;
 
     // vec3 diffuse = ambient * skyLight * clamp(occlusion, 0., .5) / 2. * albedo.rgb + sunLight * albedo.rgb * sh * .8;
@@ -113,18 +119,17 @@ void main() {
         diffuse += (max(dot(normal.rgb, lightDir), 0.0)/* + normal.a / 4.*/) * (clamp(occlusion, 0., .5) / 2. + .5) * lightColor * occlusion;
     }
 
-    
-    float len = linearize_depth(depth) / 500;
-    // float fogAmt = len / (len + 1) * texture(fogTex, TexCoords).r;
-
-    // vec3 fog = 20 * sky;
-    vec4 fogSample = texture(fogTex, TexCoords);
+    // vec4 fogSample = texture(fogTex, TexCoords);
 
     vec3 skyColor = texture(skyTex, TexCoords).rgb * 30;
     diffuse = mix(skyColor, diffuse, albedo.aaa);
 
 
-    vec3 color = mix(diffuse, fogSample.rgb * skyColor, fogSample.aaa) + texture(starTex, TexCoords).rgb * (1. - albedo.a);
+    // vec3 color = mix(diffuse, fogSample.rgb * skyColor, fogSample.aaa) + texture(starTex, TexCoords).rgb * (1. - albedo.a);
+    vec3 color = mix(diffuse, skyColor, pow(clamp(length(position - viewPos) / 1024 / 1.5, 0., 1.), 20.0).rrr) + texture(starTex, TexCoords).rgb * (1. - albedo.a);
 
     FragColor = vec4(color / 2, 1);
+    // if(TexCoords.x > .5) {
+    //     FragColor = vec4(texture(giTex, TexCoords).rgb, 1);
+    // }
 }

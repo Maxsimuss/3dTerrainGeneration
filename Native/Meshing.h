@@ -1,5 +1,6 @@
 #include <vector>
 #include "Octree.h"
+#include "BlockMask.h"
 
 struct VertexData
 {
@@ -26,69 +27,6 @@ public:
 	VertexData** vertecies;
 	int* lengths;
 };
-
-void Face(int x, int y, int z, int face, int r, int g, int b, int scale, std::vector<VertexData>** quadVectors)
-{
-	std::vector<VertexData>* faceVector = quadVectors[face];
-
-	auto addPoint = [&](int x, int y, int z) {
-		faceVector->push_back({ x * scale, y, z * scale, face, r, g, b });
-	};
-
-	switch (face)
-	{
-	case 0:
-		addPoint(x, y, z);
-		addPoint(x, y + 1, z);
-		addPoint(x, y + 1, z + 1);
-		addPoint(x, y + 1, z + 1);
-		addPoint(x, y, z + 1);
-		addPoint(x, y, z);
-
-		break;
-	case 1:
-		addPoint(x + 1, y, z + 1);
-		addPoint(x + 1, y, z);
-		addPoint(x, y, z);
-		addPoint(x, y, z);
-		addPoint(x, y, z + 1);
-		addPoint(x + 1, y, z + 1);
-		break;
-	case 2:
-		addPoint(x, y, z);
-		addPoint(x + 1, y, z);
-		addPoint(x + 1, y + 1, z);
-		addPoint(x + 1, y + 1, z);
-		addPoint(x, y + 1, z);
-		addPoint(x, y, z);
-		break;
-	case 3:
-		addPoint(x, y + 1, z + 1);
-		addPoint(x, y + 1, z);
-		addPoint(x, y, z);
-		addPoint(x, y, z);
-		addPoint(x, y, z + 1);
-		addPoint(x, y + 1, z + 1);
-
-		break;
-	case 4:
-		addPoint(x, y, z);
-		addPoint(x + 1, y, z);
-		addPoint(x + 1, y, z + 1);
-		addPoint(x + 1, y, z + 1);
-		addPoint(x, y, z + 1);
-		addPoint(x, y, z);
-		break;
-	case 5:
-		addPoint(x + 1, y + 1, z);
-		addPoint(x + 1, y, z);
-		addPoint(x, y, z);
-		addPoint(x, y, z);
-		addPoint(x, y + 1, z);
-		addPoint(x + 1, y + 1, z);
-		break;
-	}
-}
 
 struct vec3 {
 	int x, y, z;
@@ -281,83 +219,54 @@ extern "C" __declspec(dllexport) MeshData __stdcall GreedyMesh(uint32_t * blocks
 	return { vertecies, sizes };
 }
 
-extern "C" __declspec(dllexport) MeshData __stdcall QuickMesh(uint32_t * blocks, int width, int height, short scale, char emission)
-{
-	auto getBlock = [&](int x, int y, int z) {
-		if (x >= width || z >= width || y >= height || x < 0 || z < 0 || y < 0)
-		{
-			return (uint32_t)0;
-		}
 
-		return blocks[(x * width + z) * height + y];
-	};
+extern "C" __declspec(dllexport) MeshData * MeshLODs(HybridVoxelOctree * svo, int chunkSize, int lodCount) {
+	//for (int i = 0; i < lodCount; i++)
+	//{
+	//	short lod = (short)pow(2, i);
+	//	int wl = chunkSize / lod;
 
-	std::vector<VertexData>* quadVectors[6];
-	for (size_t i = 0; i < 6; i++)
-	{
-		quadVectors[i] = new std::vector<VertexData>();
-	}
+	//	memset(tempBlocks, 0, wl * wl * wl);
 
-	for (int x = 0; x < width; x++)
-	{
-		for (int z = 0; z < width; z++)
-		{
-			for (int y = 0; y < height; y++)
-			{
-				uint32_t id = getBlock(x, y, z);
-				if (id != 0)
-				{
-					char r = (char)(id >> 24 & 0xFF);
-					char g = (char)(id >> 16 & 0xFF);
-					char b = (char)(id >> 8 & 0xFF);
+	//	for (size_t x = 0; x < chunkSize; x++)
+	//	{
+	//		for (size_t z = 0; z < chunkSize; z++)
+	//		{
+	//			for (size_t y = 0; y < chunkSize; y++)
+	//			{
+	//				uint32_t bl = svo->GetValue(x * lod, y * lod, z * lod);
 
-					if ((y + 1 == height || getBlock(x, y + 1, z) == 0))
-					{
-						Face(x, y + 1, z, 1, r, g, b, scale, quadVectors);
-					}
-					if ((x + 1 == width || getBlock(x + 1, y, z) == 0))
-					{
-						Face(x + 1, y, z, 0, r, g, b, scale, quadVectors);
-					}
-					if ((z + 1 == width || getBlock(x, y, z + 1) == 0))
-					{
-						Face(x, y, z + 1, 2, r, g, b, scale, quadVectors);
-					}
+	//				if (bl != 0) {
+	//					int _x = x / lod;
+	//					int _y = y / lod;
+	//					int _z = z / lod;
 
-					if ((y == 0 || getBlock(x, y - 1, z) == 0))
-					{
-						Face(x, y, z, 4, r, g, b, scale, quadVectors);
-					}
-					if ((x == 0 || getBlock(x - 1, y, z) == 0))
-					{
-						Face(x, y, z, 3, r, g, b, scale, quadVectors);
-					}
-					if ((z == 0 || getBlock(x, y, z - 1) == 0))
-					{
-						Face(x, y, z, 5, r, g, b, scale, quadVectors);
-					}
-				}
-			}
-		}
-	}
+	//					//uint32_t curr = tempBlocks[(_x * wl + _z) * wl + _y];
+	//					//if (curr & BlockMask::Important) {
+	//					//	continue;
+	//					//}
 
-	VertexData** vertecies = new VertexData * [6];
-	int* sizes = new int[6];
+	//					//if (curr == 0 || bl & BlockMask::Important) {
+	//						tempBlocks[(_z * wl + _x) * wl + _y] = bl;
+	//					//	continue;
+	//					//}
 
-	for (size_t i = 0; i < 6; i++)
-	{
-		vertecies[i] = new VertexData[quadVectors[i]->size()];
-		sizes[i] = quadVectors[i]->size();
+	//					//int mask = (curr & 0xFF) | (bl & 0xFF);
+	//					//int r = ((curr >> 24) & 0xFF) + ((bl >> 24) & 0xFF);
+	//					//int g = ((curr >> 16) & 0xFF) + ((bl >> 16) & 0xFF);
+	//					//int b = ((curr >> 8) & 0xFF) + ((bl >> 8) & 0xFF);
 
-		copy(quadVectors[i]->begin(), quadVectors[i]->end(), vertecies[i]);
+	//					//tempBlocks[(_x * wl + _z) * wl + _y] = (r / 2) << 24 | (g / 2) << 16 | (b / 2) << 8 | mask;
+	//				}
+	//			}
+	//		}
+	//	}
 
-		delete quadVectors[i];
-	}
+	//	meshData[i] = GreedyMesh(tempBlocks, wl, wl, lod, 0);
+	//}
+	
+	//return meshData;
 
-	return { vertecies, sizes };
-}
-
-extern "C" __declspec(dllexport) MeshData * MeshLODs(SparseVoxelOctree * svo, int chunkSize, int lodCount) {
 	for (int i = 0; i < lodCount; i++)
 	{
 		short lod = (short)pow(2, i);
@@ -377,7 +286,7 @@ extern "C" __declspec(dllexport) MeshData * MeshLODs(SparseVoxelOctree * svo, in
 
 		meshData[i] = GreedyMesh(tempBlocks, wl, chunkSize, lod, 0);
 	}
-
+	
 	return meshData;
 }
 

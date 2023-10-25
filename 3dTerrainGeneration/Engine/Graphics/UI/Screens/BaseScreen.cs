@@ -9,6 +9,10 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Screens
         protected TextRenderer textRenderer = TextRenderer.Instance;
         protected List<BaseComponent> children = new List<BaseComponent>();
 
+        protected float Width => 100 * GraphicsEngine.Instance.AspectRatio;
+
+        public virtual bool FreeCursor => false;
+
         public virtual void Render()
         {
             foreach (var component in children)

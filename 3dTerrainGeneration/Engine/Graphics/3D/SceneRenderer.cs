@@ -6,6 +6,7 @@ using OpenTK.Graphics.OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace _3dTerrainGeneration.Engine.Graphics._3D
 {
@@ -25,7 +26,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
         public VertexData[] mesh;
     }
 
-    internal class SceneRenderer
+    internal unsafe class SceneRenderer
     {
         private static SceneRenderer instance = null;
         public static SceneRenderer Instance
@@ -50,7 +51,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
         private Queue<MeshSubmit> submitQueue = new Queue<MeshSubmit>();
 
         public int VramUsage = 0;
-        public readonly int VramAllocated = 1048576 * 512; // 512MB
+        public readonly int VramAllocated = 1048576 * 384; // 384MB
 
         private SceneRenderer()
         {
@@ -61,7 +62,8 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
 
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, MeshVBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, VramAllocated, IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, VramAllocated, IntPtr.Zero, BufferUsageHint.StreamDraw);
+
             GL.EnableVertexAttribArray(0);
             GL.EnableVertexAttribArray(1);
             GL.EnableVertexAttribArray(2);
@@ -73,7 +75,7 @@ namespace _3dTerrainGeneration.Engine.Graphics._3D
             GL.VertexAttribDivisor(2, 0);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, MatrixVBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrixCount, IntPtr.Zero, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, 64 * matrixCount, IntPtr.Zero, BufferUsageHint.StreamDraw);
 
             GL.EnableVertexAttribArray(3);
             GL.EnableVertexAttribArray(4);

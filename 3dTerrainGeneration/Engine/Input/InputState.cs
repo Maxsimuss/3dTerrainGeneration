@@ -6,5 +6,6 @@ namespace _3dTerrainGeneration.Engine.Input
     {
         public Vector3 Movement;
         public float Yaw, Pitch;
+        public bool Left, Right;
     }
 }

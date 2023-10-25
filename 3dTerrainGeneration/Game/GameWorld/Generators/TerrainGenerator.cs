@@ -2,6 +2,7 @@
 using _3dTerrainGeneration.Game.GameWorld.Features;
 using _3dTerrainGeneration.Game.GameWorld.Structures;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -13,6 +14,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
         Fertile = 1,
         Structure = 1 << 1,
         Road = 1 << 2,
+        Important = 1 << 3,
     }
 
     internal class TerrainGenerator
@@ -21,7 +23,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
         private List<IFeature> features;
 
         [ThreadStatic]
-        private static uint[] tempRow = new uint[128];
+        private static uint[] tempRow = new uint[Chunk.CHUNK_SIZE];
 
         public TerrainGenerator()
         {
@@ -36,58 +38,68 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
                 new PineFeature(this),
                 new DeadTreeFeature(this),
                 new CrystalFeature(this),
+                new DeadBushFeature(this),
             };
         }
 
 
 
         [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
-        private extern static void GenerateTerrain(IntPtr svo, IntPtr biomeGenerator, int chunkSize, int locationX, int locationY, int locationZ);
+        private extern static int GenerateTerrain(IntPtr svo, IntPtr biomeGenerator, int chunkSize, int locationX, int locationY, int locationZ);
 
         public void GenerateTerrain(Chunk chunk)
         {
             Vector3I location = new Vector3I(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE;
 
-            GenerateTerrain(chunk.Blocks.Handle, BiomeGenerator.Handle, Chunk.CHUNK_SIZE, location.X, location.Y, location.Z);
-
+            int placedBlocks = GenerateTerrain(chunk.Blocks.Handle, BiomeGenerator.Handle, Chunk.CHUNK_SIZE, location.X, location.Y, location.Z);
             chunk.State |= ChunkState.HasTerrain;
+
+            if (placedBlocks == 0)
+            {
+                chunk.State |= ChunkState.IsPopulated;
+                chunk.Blocks.CompressEmpty();
+            }
+
+            if (placedBlocks == Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE)
+            {
+                chunk.State |= ChunkState.IsPopulated;
+                //chunk.State |= ChunkState.NeedsRemeshing;
+                chunk.Blocks.CompressEmpty();
+                //chunk.Blocks.Compress();
+            }
         }
 
-        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
-        private extern static void GetRow(IntPtr svo, IntPtr data, int x, int z);
-
-        public unsafe void Populate(Chunk chunk, ChunkManager chunkManager)
+        public void Populate(Chunk chunk, ChunkManager chunkManager)
         {
-            VoxelOctree octree = chunk.Blocks;
             Vector3I location = new Vector3I(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE;
 
-            fixed (uint* rowPtr = tempRow)
+            Stopwatch sw = Stopwatch.StartNew();
+            for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
             {
-                for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
+                for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
                 {
-                    for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
+                    int X = x + location.X;
+                    int Z = z + location.Z;
+                    BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
+
+                    chunk.Blocks.GetRow(x, z, Chunk.CHUNK_SIZE, tempRow);
+                    foreach (IFeature feature in features)
                     {
-                        int X = x + location.X;
-                        int Z = z + location.Z;
-                        BiomeInfo biome = BiomeGenerator.GetBiomeInfo(X, Z);
+                        if (!feature.Inhabitable(biome)) continue;
 
-                        GetRow(octree.Handle, (IntPtr)rowPtr, x, z);
-                        foreach (IFeature feature in features)
+
+                        for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
                         {
-                            if (!feature.Inhabitable(biome)) continue;
-
-
-                            for (int y = 0; y < Chunk.CHUNK_SIZE; y++)
-                            {
-                                feature.Process(chunk, chunkManager, x, y, z, biome, tempRow);
-                            }
+                            feature.Process(chunk, chunkManager, x, y, z, biome, tempRow);
                         }
                     }
                 }
             }
+            Console.WriteLine(sw.ElapsedMilliseconds);
 
             chunk.State |= ChunkState.IsPopulated;
             chunk.State |= ChunkState.NeedsRemeshing;
+            //ChunkIO.Save(chunk);
         }
 
         public float Random(Vector3I pos)

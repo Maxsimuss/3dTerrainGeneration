@@ -1,55 +1,78 @@
-﻿using _3dTerrainGeneration.Engine.World;
-using System;
-using System.Numerics;
+﻿using System.Numerics;
 
 namespace _3dTerrainGeneration.Engine.Physics
 {
     internal class AxisAlignedBB
     {
-        public float width, height;
+        public Vector3 Position { get; private set; }
+        public Vector3 Size { get; private set; }
 
-        public AxisAlignedBB(float width, float height)
+        public AxisAlignedBB(AxisAlignedBBPrototype prototype)
         {
-            this.width = width;
-            this.height = height;
+            Size = new Vector3(prototype.width, prototype.height, prototype.width);
         }
 
-        public bool isInBounds(float x, float y, float z)
+        public AxisAlignedBB(Vector3 position, Vector3 size)
         {
-            return Math.Abs(x) < width && Math.Abs(z) < width && y < height && y >= 0;
+            Position = position;
+            Size = size;
         }
 
-        public bool isColliding(float x, float y, float z, AxisAlignedBB box)
+        public void SetPositionCenteredXZ(Vector3 position)
         {
-            return isInBounds(x + box.width, y + box.height, z + box.width) ||
-                isInBounds(x + box.width, y + box.height, z - box.width) ||
-                isInBounds(x - box.width, y + box.height, z + box.width) ||
-                isInBounds(x - box.width, y + box.height, z - box.width) ||
-                isInBounds(x + box.width, y, z + box.width) ||
-                isInBounds(x + box.width, y, z - box.width) ||
-                isInBounds(x - box.width, y, z + box.width) ||
-                isInBounds(x - box.width, y, z - box.width);
+            Position = position - new Vector3(Size.X, 0, Size.Z) / 2;
         }
 
-        public bool isColliding(float x, float y, float z, IWorld world)
+        //            if (boxCopy1.CheckCollision(boxCopy2, velocity* dir, out float collisionTime, out Vector2D collisionNormal))
+        //    {
+        //        box1.Position += velocity* collisionTime * .95f;
+        //velocity *= collisionNormal;
+        //    }
+        //    else
+        //    {
+        //        box1.Position += velocity;
+        //    }
+        public static bool Check(AxisAlignedBB a, AxisAlignedBB b, Vector3 velocity, out float collisionTime, out Vector3 collisionNormal)
         {
-            return isColliding(new Vector3(x, y, z), world);
+            return a.CheckCollision(b, velocity, out collisionTime, out collisionNormal);
         }
 
-        public bool isColliding(Vector3 position, IWorld world)
+        private bool CheckCollision(AxisAlignedBB other, Vector3 velocity, out float collisionTime, out Vector3 collisionNormal)
         {
-            for (int x = -1; x < 2; x++)
-            {
-                for (int z = -1; z < 2; z++)
-                {
-                    if (world.GetBlockAt(position.X + width * x, position.Y, position.Z + width * z) != 0 ||
-                    world.GetBlockAt(position.X + width * x, position.Y + height, position.Z + width * z) != 0)
-                    {
-                        return true;
-                    }
-                }
-            }
+
+
+
+
+            collisionTime = 1.0f;
+            collisionNormal = new Vector3(0, 0, 0);
             return false;
+
+
+            //float entryTime = Math.Max(entryTimeX, entryTimeZ);
+            //float exitTime = Math.Min(exitTimeX, exitTimeZ);
+
+            //if (entryTime > exitTime || entryTime < 0.0f || entryTime > 1.0f)
+            //{
+            //    collisionTime = 1.0f;
+            //    collisionNormal = new Vector3(0, 0, 0);
+            //    return false;
+            //}
+
+            //collisionTime = entryTime;
+
+            //if (entryTimeX > entryTimeZ)
+            //    collisionNormal = new Vector3(0, 1, 1);
+            //else
+            //    collisionNormal = new Vector3(1, 1, 0);
+
+            ////if (entryTimeX > entryTimeY && entryTimeX > entryTimeZ)
+            ////    collisionNormal = new Vector3(0, 1, 1);
+            ////else if (entryTimeY > entryTimeZ)
+            ////    collisionNormal = new Vector3(1, 0, 1);
+            ////else
+            ////    collisionNormal = new Vector3(1, 1, 0);
+
+            //return true;
         }
     }
 }

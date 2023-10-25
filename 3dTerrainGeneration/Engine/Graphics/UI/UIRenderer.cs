@@ -39,7 +39,6 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
         private IntPtr sync = IntPtr.Zero;
 
         private List<BaseScreen> openScreens = new List<BaseScreen>();
-        Vector2 cursor;
 
         private UIRenderer()
         {
@@ -58,8 +57,20 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
             GL.VertexAttribPointer(1, 4, VertexAttribPointerType.Float, false, 6 * sizeof(float), 2 * sizeof(float));
         }
 
-        public void DrawRect(float x, float y, float x2, float y2, Vector4 color, bool flush = true)
+        public void DrawRect(float x, float y, float w, float h, Vector4 color, bool flush = true)
         {
+            //scale x [0, >100] -> [<-1, >1]
+            //scale y [0, 100] -> [-1, 1]
+
+            y /= 50;
+            y -= 1;
+            y *= -1;
+            x /= 50 * GraphicsEngine.Instance.AspectRatio;
+            x -= 1;
+
+            float x2 = x + w / 50 / GraphicsEngine.Instance.AspectRatio;
+            float y2 = y - h / 50;
+
             if (index >= BUFFER_SIZE / 6)
             {
                 Flush(ShaderManager.Instance["UI"]);
@@ -128,6 +139,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
                 ShaderManager.Instance["UI"].Use();
 
             GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
             GL.DrawArrays(PrimitiveType.Triangles, prev / 6, (index - prev) / 6);
 
             if (index >= BUFFER_SIZE / 4)
@@ -160,10 +172,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
 
         public bool HandleInput(KeyboardState keyboardState, MouseState mouseState)
         {
-            float sens = (float)OptionManager.Instance["Controls", "Mouse Sensitivity"];
-            cursor += new Vector2(mouseState.Delta.X * sens / 200, -mouseState.Delta.Y * sens / 200 * GraphicsEngine.Instance.AspectRatio);
-            cursor.X = Math.Clamp(cursor.X, -1, 1);
-            cursor.Y = Math.Clamp(cursor.Y, -1, 1);
+            Vector2 cursor = new Vector2(mouseState.Position.X / GraphicsEngine.Instance.Height * 100, mouseState.Position.Y / GraphicsEngine.Instance.Height * 100);
 
             for (int i = openScreens.Count - 1; i >= 0; i--)
             {
@@ -175,6 +184,19 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI
             }
 
             return false;
+        }
+
+        public bool IsCursorGrabbed()
+        {
+            foreach (BaseScreen screen in openScreens)
+            {
+                if (screen.FreeCursor)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

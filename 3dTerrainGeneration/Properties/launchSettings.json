@@ -2,6 +2,7 @@
   "profiles": {
     "3dTerrainGeneration": {
       "commandName": "Project",
+      "workingDirectory": "C:\\Users\\Maxsimus\\source\\repos\\3dTerrainGeneration\\3dTerrainGeneration",
       "nativeDebugging": false,
       "remoteDebugEnabled": false
     }

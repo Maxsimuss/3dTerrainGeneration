@@ -13,7 +13,7 @@ uniform sampler2D colorTex;
 
 void main() {
     // vec3 color = texture(colorTex, TexCoords).rgb / lumaSmooth;
-    vec3 color = texture(colorTex, TexCoords).rgb / 3;
+    vec3 color = texture(colorTex, TexCoords).rgb / 3.5;
 
     FragColor = color;
 }

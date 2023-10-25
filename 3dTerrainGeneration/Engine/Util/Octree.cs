@@ -1,9 +1,28 @@
-﻿using System;
+﻿using CSCore.XAudio2;
+using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 
 namespace _3dTerrainGeneration.Engine.Util
 {
+    public unsafe struct NativeHybridOctree
+    {
+        public bool isCompressed;
+        public int size;
+        public NativeOctreeNode node;
+        public uint* uncomressedData;
+    }
+
+    public unsafe struct NativeOctreeNode
+    {
+        public bool isLeaf;
+        public uint value;
+        public NativeOctreeNode* children;
+
+        public byte centerX, centerY, centerZ;
+        public byte depth;
+    }
+
     public class VoxelOctree
     {
         [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
@@ -13,10 +32,23 @@ namespace _3dTerrainGeneration.Engine.Util
         private static extern void DeleteSVO(IntPtr svo);
 
         [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void SetVoxel(IntPtr svo, int x, int y, int z, uint value);
+        private extern static void GetRow(IntPtr svo, IntPtr data, int x, int z, int size);
 
         [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint GetValue(IntPtr svo, int x, int y, int z);
+
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void SetVoxel(IntPtr svo, int x, int y, int z, uint value);
+
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void FillArea(IntPtr svo, uint[] data, int x, int y, int z, int w, int h, int d);
+
+
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void Compress(IntPtr svo);
+
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void CompressEmpty(IntPtr svo);
 
         public IntPtr Handle { get; private set; }
         public VoxelOctree(int depth)
@@ -29,14 +61,80 @@ namespace _3dTerrainGeneration.Engine.Util
             DeleteSVO(Handle);
         }
 
-        public void SetVoxel(int x, int y, int z, uint value)
+        public unsafe void SetVoxel(int x, int y, int z, uint value)
         {
-            SetVoxel(Handle, x, y, z, value);
+            NativeHybridOctree octree = *((NativeHybridOctree*)Handle);
+            if (octree.isCompressed)
+            {
+                SetVoxel(Handle, x, y, z, value);
+            }
+            else
+            {
+                octree.uncomressedData[(x * octree.size + z) * octree.size + y] = value;
+            }
         }
 
-        public uint GetValue(int x, int y, int z)
+        public void FillArea(uint[] data, int x, int y, int z, int w, int h, int d)
         {
-            return GetValue(Handle, x, y, z);
+            FillArea(Handle, data, x, y, z, w, h, d);
+        }
+
+        public unsafe uint GetValue(int x, int y, int z)
+        {
+            //either pinvoke overhead or clr overhead... :(
+
+            //return GetValue(Handle, x, y, z);
+
+            NativeHybridOctree* octree = ((NativeHybridOctree*)Handle);
+            if (octree->isCompressed)
+            {
+                return GetValueCompressed(x, y, z, octree->node);
+            }
+            else
+            {
+                return GetValueUncompressed(x, y, z);
+            }
+        }
+
+        private unsafe uint GetValueUncompressed(int x, int y, int z)
+        {
+            NativeHybridOctree* octree = ((NativeHybridOctree*)Handle);
+            return octree->uncomressedData[(x * octree->size + z) * octree->size + y];
+        }
+
+        private unsafe uint GetValueCompressed(int x, int y, int z, NativeOctreeNode node)
+        {
+            if (node.isLeaf)
+            {
+                return node.value;
+            }
+            else
+            {
+                int childIndex = 0;
+                if (x >= node.centerX) childIndex |= 1;
+                if (y >= node.centerY) childIndex |= 2;
+                if (z >= node.centerZ) childIndex |= 4;
+
+                return GetValueCompressed(x, y, z, node.children[childIndex]);
+            }
+        }
+
+        public unsafe void GetRow(int x, int z, int size, uint[] data)
+        {
+            fixed (uint* _data = data)
+            {
+                GetRow(Handle, (IntPtr)_data, x, z, size);
+            }
+        }
+
+        public void Compress()
+        {
+            Compress(Handle);
+        }
+
+        public void CompressEmpty()
+        {
+            CompressEmpty(Handle);
         }
 
         //private OctreeNode root;

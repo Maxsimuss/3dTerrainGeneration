@@ -1,6 +1,7 @@
 ﻿using _3dTerrainGeneration.Engine.Graphics._3D;
 using _3dTerrainGeneration.Engine.Graphics.Backend.Models;
 using _3dTerrainGeneration.Engine.Util;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 using System.Numerics;
 
@@ -21,7 +22,7 @@ namespace _3dTerrainGeneration.Game.GameWorld
     internal class Chunk
     {
         public static readonly int CHUNK_SIZE = 128;
-        public static readonly int LOD_COUNT = 5;
+        public static readonly int LOD_COUNT = 4;
 
         public readonly int X, Y, Z;
         public Vector3I Position => new Vector3I(X, Y, Z);
@@ -29,9 +30,9 @@ namespace _3dTerrainGeneration.Game.GameWorld
         public VoxelOctree Blocks = new VoxelOctree((int)Math.Log2(CHUNK_SIZE));
 
         public ChunkState State;
-        private int currentLod;
+        private int neededLod = LOD_COUNT - 1, loadedLod;
         private readonly Matrix4x4 modelMatrix;
-        private InderectDraw[] drawCalls = new InderectDraw[LOD_COUNT * 6];
+        private InderectDraw[] drawCalls = new InderectDraw[6];
         private VertexData[][][] meshData = new VertexData[LOD_COUNT][][];
 
         public Chunk(World world, int X, int Y, int Z)
@@ -42,17 +43,18 @@ namespace _3dTerrainGeneration.Game.GameWorld
             this.Z = Z;
 
             modelMatrix = Matrix4x4.CreateTranslation(X * CHUNK_SIZE, Y * CHUNK_SIZE, Z * CHUNK_SIZE);
-
-            if (ChunkIO.Load(this)) return;
-
-            ChunkIO.Save(this);
         }
 
         public void Mesh()
         {
             State &= ~ChunkState.NeedsRemeshing;
 
-            meshData = MeshGenerator.MeshLODs(this);
+            VertexData[][][] tempMesh = MeshGenerator.MeshLODs(this);
+
+            lock (meshData)
+            {
+                meshData = tempMesh;
+            }
 
             State |= ChunkState.NeedsUploading;
         }
@@ -64,14 +66,13 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public void Unload()
         {
-            for (int i = 0; i < LOD_COUNT; i++)
+            return;
+
+            for (int j = 0; j < 6; j++)
             {
-                for (int j = 0; j < 6; j++)
+                if (drawCalls[j] != null)
                 {
-                    if (drawCalls[i * 6 + j] != null)
-                    {
-                        SceneRenderer.Instance.FreeMemory(drawCalls[i * 6 + j]);
-                    }
+                    SceneRenderer.Instance.FreeMemory(drawCalls[j]);
                 }
             }
 
@@ -80,24 +81,28 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public void SetLOD(int lod)
         {
-            currentLod = lod;
+            if(lod < 0 || lod >= LOD_COUNT)
+            {
+                throw new ArgumentException("LOD is out of range!");
+            }
+
+            neededLod = lod;
         }
 
         public void Render(bool ortho, Vector3 viewDirection)
         {
-            if ((State & ChunkState.NeedsUploading) != 0)
+            lock (meshData)
             {
-                State &= ~ChunkState.NeedsUploading;
-
-                for (int i = 0; i < LOD_COUNT; i++)
+                if (meshData[neededLod] != null && ((State & ChunkState.NeedsUploading) != 0 || loadedLod != neededLod))
                 {
+                    State &= ~ChunkState.NeedsUploading;
+
                     for (int j = 0; j < 6; j++)
                     {
-                        lock (meshData)
-                        {
-                            drawCalls[i * 6 + j] = SceneRenderer.Instance.SubmitMesh(meshData[i][j], drawCalls[i * 6 + j]);
-                        }
+                        drawCalls[j] = SceneRenderer.Instance.SubmitMesh(meshData[neededLod][j], drawCalls[j]);
                     }
+
+                    loadedLod = neededLod;
                 }
             }
 
@@ -110,39 +115,39 @@ namespace _3dTerrainGeneration.Game.GameWorld
             {
                 if (Vector3.Dot(viewDirection, new Vector3(0, 0, 1)) < 0)
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 5], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[5], modelMatrix);
                 }
                 else
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 2], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[2], modelMatrix);
                 }
 
                 if (Vector3.Dot(viewDirection, new Vector3(0, 1, 0)) < 0)
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 4], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[4], modelMatrix);
                 }
                 else
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 1], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[1], modelMatrix);
                 }
 
                 if (Vector3.Dot(viewDirection, new Vector3(1, 0, 0)) < 0)
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 3], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[3], modelMatrix);
                 }
                 else
                 {
-                    SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 0], modelMatrix);
+                    SceneRenderer.Instance.QueueRender(drawCalls[0], modelMatrix);
                 }
             }
             else
             {
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 0], modelMatrix);
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 1], modelMatrix);
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 2], modelMatrix);
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 3], modelMatrix);
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 4], modelMatrix);
-                SceneRenderer.Instance.QueueRender(drawCalls[currentLod * 6 + 5], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[0], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[1], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[2], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[3], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[4], modelMatrix);
+                SceneRenderer.Instance.QueueRender(drawCalls[5], modelMatrix);
             }
         }
     }

@@ -6,7 +6,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Components
     {
         protected TextRenderer renderer;
         public float X, Y;
-        public float Width, Weight;
+        public float Width, Height;
 
         public abstract void Render();
     }

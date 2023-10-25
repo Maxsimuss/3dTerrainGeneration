@@ -130,5 +130,7 @@ void main() {
     
     // FragColor = vec3(mixAmt);
     FragColor = mix(clamp(n.rgb, _min, _max), curr, mixAmt);
+    // FragColor = mix(n.rgb, curr, mixAmt);
+    // FragColor = curr;
     MemoryDepth = depth;
 }

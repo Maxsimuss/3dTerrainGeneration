@@ -7,6 +7,7 @@ namespace _3dTerrainGeneration.Engine.World.Entity
         public int EntityId { get; private set; } = 0;
 
         public float Yaw, Pitch;
+        public float LastYaw, LastPitch;
         public Vector3 Position, LastPosition;
         public Vector3 Velocity;
 
@@ -18,6 +19,11 @@ namespace _3dTerrainGeneration.Engine.World.Entity
             this.EntityId = id;
         }
 
-        public abstract void Tick();
+        public virtual void Tick()
+        {
+            LastPosition = Position;
+            LastPitch = Pitch;
+            LastYaw = Yaw;
+        }
     }
 }

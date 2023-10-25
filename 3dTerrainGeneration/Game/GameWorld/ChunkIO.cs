@@ -1,23 +1,19 @@
-﻿#define NO_SAVE
-
+﻿using _3dTerrainGeneration.Engine.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-
+using System.Threading;
 
 namespace _3dTerrainGeneration.Game.GameWorld
 {
     internal class ChunkIO
     {
-#if !NO_SAVE
-        private static int version = 5;
-#endif
-
+        private static int version = 1;
 
         private static string GetChunkDir()
         {
-            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/3dterrain/maps/";
+            return ResourceManager.GetUserDataPath() + "/maps/";
         }
 
         private static string GetChunkFile(int X, int Y, int Z)
@@ -27,40 +23,32 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public static void Save(Chunk chunk)
         {
-#if !NO_SAVE
-
             Directory.CreateDirectory(GetChunkDir());
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
             WriteStream stream = new WriteStream();
 
             stream.WriteInt(version);
-            stream.WriteBool(chunk.empty);
-            stream.WriteBool(chunk.full);
+            stream.WriteInt((int)chunk.State);
 
-            if (!chunk.empty)
+            uint[] blocks = new uint[Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE * Chunk.CHUNK_SIZE];
+            for (int x = 0; x < Chunk.CHUNK_SIZE; x++)
             {
-                for (int i = 0; i < Chunk.lodCount; i++)
+                for (int z = 0; z < Chunk.CHUNK_SIZE; z++)
                 {
-                    for (int j = 0; j < 6; j++)
-                    {
-                        stream.WriteArray(chunk.mesh[i][j]);
-                    }
+                    uint[] row = new uint[Chunk.CHUNK_SIZE];
+                    chunk.Blocks.GetRow(x, z, Chunk.CHUNK_SIZE, row);
+
+                    Array.Copy(row, 0, blocks, (x * Chunk.CHUNK_SIZE + z) * Chunk.CHUNK_SIZE, Chunk.CHUNK_SIZE);
                 }
-                stream.WriteArray(chunk.blocks);
-                stream.WriteArray(chunk.sounds.ToArray());
-                stream.WriteArray(chunk.particles.ToArray());
             }
 
-            stream.Save(file);
+            stream.WriteArray(blocks);
 
-#endif
+            stream.Save(file);
         }
 
         public static bool Load(Chunk chunk)
         {
-#if NO_SAVE
-            return false;
-#else
             ReadStream stream = new ReadStream();
             string file = GetChunkFile(chunk.X, chunk.Y, chunk.Z);
 
@@ -73,55 +61,24 @@ namespace _3dTerrainGeneration.Game.GameWorld
                     return false;
                 }
 
-                chunk.empty = stream.ReadBool();
-                chunk.full = stream.ReadBool();
-                if (chunk.empty)
+                chunk.State = (ChunkState)stream.ReadInt() | ChunkState.NeedsRemeshing;
+
+                uint[] blocks = stream.ReadUIntArray();
+
+                for (int i = 0; i < blocks.Length; i++)
                 {
-                    return true;
+                    int x = i / Chunk.CHUNK_SIZE / Chunk.CHUNK_SIZE;
+                    int z = i / Chunk.CHUNK_SIZE % Chunk.CHUNK_SIZE;
+                    int y = i % Chunk.CHUNK_SIZE;
+
+                    chunk.Blocks.SetVoxel(x, y, z, blocks[i]);
                 }
 
-
-                uint[][][] mesh = new uint[Chunk.lodCount][][];
-                for (int lod = 0; lod < Chunk.lodCount; lod++)
-                {
-                    mesh[lod] = new uint[6][];
-                    for (int j = 0; j < 6; j++)
-                    {
-                        mesh[lod][j] = stream.ReadUIntArray();
-                    }
-                }
-                chunk.mesh = mesh;
-                chunk.blocks = stream.ReadByteArray();
-
-                int soundCount = stream.ReadInt();
-                for (int i = 0; i < soundCount; i += 4)
-                {
-                    Window.Instance.SoundManager.PlaySound(
-                        (SoundType)stream.ReadByte(),
-                        new Vector3(
-                            stream.ReadByte() + chunk.X * Chunk.Size,
-                            stream.ReadByte() + chunk.Y * Chunk.Size,
-                            stream.ReadByte() + chunk.Z * Chunk.Size
-                        ),
-                        true
-                    );
-                }
-
-                int particleCount = stream.ReadInt();
-                for (int i = 0; i < particleCount; i += 4)
-                {
-                    Window.Instance.ParticleSystem.Emit(
-                        stream.ReadByte() + chunk.X * Chunk.Size,
-                        stream.ReadByte() + chunk.Y * Chunk.Size,
-                        stream.ReadByte() + chunk.Z * Chunk.Size,
-                        stream.ReadByte());
-                }
 
                 return true;
             }
 
             return false;
-#endif
         }
     }
 

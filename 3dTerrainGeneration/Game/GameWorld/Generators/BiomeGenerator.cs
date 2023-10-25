@@ -35,6 +35,9 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
         [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
         private extern static void DeleteBiomeGenerator(IntPtr biomeGen);
 
+        [DllImport("Resources/libs/Native.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.Cdecl)]
+        public extern static BiomeInfo GetBiomeInfo(int x, int z);
+
         public IntPtr Handle { get; private set; }
 
         public BiomeGenerator()
@@ -45,15 +48,6 @@ namespace _3dTerrainGeneration.Game.GameWorld.Generators
         ~BiomeGenerator()
         {
             DeleteBiomeGenerator(Handle);
-        }
-
-        public BiomeInfo GetBiomeInfo(int X, int Z)
-        {
-            float Temperature = NoiseUtil.GetPerlin(X - 32898, Z + 29899, 10000) * 40 + 10; // -30 to 50 deg
-            float Humidity = Math.Clamp(NoiseUtil.GetPerlin(X + 21389, Z - 8937, 10000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
-            float Fertility = Math.Clamp(NoiseUtil.GetPerlin(X - 3874, Z + 3298, 10000) * .5f + .5f, 0, 1) * 100; // 0 to 100 %
-
-            return new BiomeInfo(Temperature, Humidity, Fertility);
         }
 
         public uint GetGrassColor(BiomeInfo biomeInfo)

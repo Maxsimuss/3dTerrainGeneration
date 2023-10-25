@@ -35,8 +35,7 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
                     if (queue.TryDequeue(out Chunk chunk))
                     {
                         generator.GenerateTerrain(chunk);
-                        chunk.State |= ChunkState.NeedsRemeshing;
-
+                        
                         chunk.State &= ~ChunkState.AwaitingTerrainGeneration;
 
                         callback(chunk);

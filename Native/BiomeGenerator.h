@@ -41,7 +41,7 @@ class BiomeGenerator
 public:
 	BiomeGenerator()
 	{
-		colors[{ 50, 0, 0 }] = { 36, 242, 91 };       // desert
+		colors[{ 50, 0, 0 }] = { 255, 232, 84 };       // desert
 		colors[{ 50, 100, 100 }] = { 111, 212, 23 };  // jungle
 		colors[{ 20, 50, 50 }] = { 102, 252, 78 };    // normal??
 		colors[{ -10, 0, 50 }] = { 72, 224, 214 };    // cold
@@ -50,9 +50,9 @@ public:
 
 	static BiomeInfo GetBiomeInfo(int X, int Z)
 	{
-		float Temperature = Simplex2D(X - 32898, Z + 29899, 10000) * 40 + 10; // -30 to 50 deg
-		float Humidity = std::clamp(Simplex2D(X + 21389, Z - 8937, 10000) * .5f + .5f, 0.0f, 1.0f) * 100; // 0 to 100 %
-		float Fertility = std::clamp(Simplex2D(X - 3874, Z + 3298, 10000) * .5f + .5f, 0.0f, 1.0f) * 100; // 0 to 100 %
+		float Temperature = Simplex2D(X - 32898, Z + 29899, 1000) * 40 + 10; // -30 to 50 deg
+		float Humidity = std::clamp(Simplex2D(X + 21389, Z - 8937, 1000) * .5f + .5f, 0.0f, 1.0f) * 100; // 0 to 100 %
+		float Fertility = std::clamp(Simplex2D(X - 3874, Z + 3298, 1000) * .5f + .5f, 0.0f, 1.0f) * 100; // 0 to 100 %
 
 		return { Temperature, Humidity, Fertility };
 	}
@@ -82,6 +82,10 @@ public:
 		return ToInt(color.x, color.y, color.z);
 	}
 
+	uint32_t GetStoneColor(BiomeInfo biomeInfo) {
+		return biomeInfo.Temperature > 35 ? ToInt(145, 126, 58) : ToInt(100, 100, 100);
+	}
+
 private:
 	std::map<BiomeInfo, Vector3> colors;
 };
@@ -92,4 +96,9 @@ extern "C" __declspec(dllexport) BiomeGenerator * CreateBiomeGenerator() {
 
 extern "C" __declspec(dllexport) void DeleteBiomeGenerator(BiomeGenerator * biomeGen) {
 	delete biomeGen;
+}
+
+// idc
+extern "C" __declspec(dllexport) BiomeInfo GetBiomeInfo(int x, int z) {
+	return BiomeGenerator::GetBiomeInfo(x, z);
 }

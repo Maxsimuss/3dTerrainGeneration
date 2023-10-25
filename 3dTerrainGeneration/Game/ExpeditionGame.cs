@@ -52,7 +52,7 @@ namespace _3dTerrainGeneration.Game
 
         private void RegisterOptions()
         {
-            OptionManager.Instance.RegisterOption("Audio", "Volume", new DoubleOption(0, 10, 5));
+            OptionManager.Instance.RegisterOption("Audio", "Volume", 0, 10, 5);
         }
 
         private void RegisterSounds()

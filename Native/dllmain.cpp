@@ -1,11 +1,9 @@
-// 
-// 
-// Native meshing??
-// 
-// 
-// 
+#define NOMINMAX 
+#include <Windows.h>
+#include "Meshing.h"
+#include "TerrainGen.h"
+#include "Octree.h"
 
-#include "pch.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule,
 	DWORD  ul_reason_for_call,

@@ -5,6 +5,15 @@ namespace _3dTerrainGeneration.Engine.Util
 {
     class Color
     {
+        public static byte To7Bit(uint block)
+        {
+            int r = (int)(block >> 24) & 0xFF;
+            int g = (int)(block >> 16) & 0xFF;
+            int b = (int)(block >> 8) & 0xFF;
+
+            return (byte)(r / 85 << 6 | g / 36 << 3 | b / 85 << 1);
+        }
+
         public static byte To7Bit(byte r, byte g, byte b)
         {
             return (byte)(r / 85 << 6 | g / 36 << 3 | b / 85 << 1);

@@ -12,7 +12,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
         {
             Width = width;
             GL.TextureStorage1D(Handle, 1, (SizedInternalFormat)pixelInternalFormat, Width);
-            GL.TextureSubImage1D(Handle, 0, 0, width, pixelFormat, pixelType, data);
+
             SizeInBytes = Width * GetFormatBytesPerPixel(pixelInternalFormat);
             TotalBytesAllocated += SizeInBytes;
 
@@ -26,6 +26,12 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
         {
             GL.TextureParameter(Handle, TextureParameterName.TextureWrapS, (int)wrapMode);
             return this;
+        }
+
+        public override void UploadData<T>(T[] data, PixelFormat pixelFormat, PixelType pixelType = PixelType.UnsignedByte)
+        {
+            GL.TextureSubImage1D(Handle, 0, 0, Width, pixelFormat, pixelType, data);
+            throw new NotImplementedException();
         }
     }
 }

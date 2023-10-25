@@ -71,17 +71,17 @@ namespace _3dTerrainGeneration.Game.GameWorld
             Vector3I originCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z);
             Vector3I originChunkCoord = originCoord / Chunk.CHUNK_SIZE;
 
-            try
-            {
-                Vector3I position = PickSpawnLocation(originCoord, b => b != 0);
-                Frog entity = new Frog(this, EntityManager.Instance.GetNextEntityId());
-                entity.Position = new Vector3(position.X, position.Y, position.Z);
-                EntityManager.Instance.AddEntity(entity);
-            }
-            catch (InvalidOperationException e)
-            {
+            //try
+            //{
+            //    Vector3I position = PickSpawnLocation(originCoord, b => b != 0);
+            //    Frog entity = new Frog(this, EntityManager.Instance.GetNextEntityId());
+            //    entity.Position = new Vector3(position.X, position.Y, position.Z);
+            //    EntityManager.Instance.AddEntity(entity);
+            //}
+            //catch (InvalidOperationException e)
+            //{
 
-            }
+            //}
         }
 
         public uint GetBlockAt(double x, double y, double z)

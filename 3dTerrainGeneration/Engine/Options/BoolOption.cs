@@ -12,7 +12,11 @@
         public override object Value
         {
             get => value;
-            set => this.value = (bool)value;
+            set
+            {
+                this.value = (bool)value;
+                OnChanged();
+            }
         }
     }
 

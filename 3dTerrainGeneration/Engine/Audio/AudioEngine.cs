@@ -23,6 +23,22 @@ namespace _3dTerrainGeneration.Engine.Audio
             }
         }
 
+        private float volume = 1;
+
+        public float Volume
+        {
+            get
+            {
+                return volume;
+            }
+            set
+            {
+                AL10.alListenerf(AL10.AL_GAIN, value);
+                volume = value;
+            }
+        }
+
+
         private Random random = new Random();
         private Dictionary<string, List<AudioBuffer>> buffers = new Dictionary<string, List<AudioBuffer>>();
         private List<ISoundSource> soundSources = new List<ISoundSource>();

@@ -21,33 +21,32 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Components
             X = x;
             Y = y;
             Width = width;
-            Weight = height;
+            Height = height;
             this.color = color;
             this.text = text;
         }
 
         public override void Render()
         {
-            UIRenderer.Instance.DrawRect(X - Width, Y - Weight * GraphicsEngine.Instance.AspectRatio, X + Width, Y + Weight * GraphicsEngine.Instance.AspectRatio, color);
-            renderer.DrawTextWithShadowCentered(X, Y, .0375f, text);
+            UIRenderer.Instance.DrawRect(X, Y, Width, Height, color);
+            renderer.DrawTextWithShadowCentered(X + Width / 2, Y + Height / 2, Height / 2, text);
+        }
+
+        private bool MouseOver(float x, float y)
+        {
+            return x > X && y > Y && x < X + Width && y < Y + Height;
         }
 
         public bool HandleInput(KeyboardState keyboardState, MouseState mouseState, Vector2 cursor)
         {
-            float x = cursor.X;
-            float y = cursor.Y;
-
             if (!mouseState.IsButtonPressed(MouseButton.Left)) return false;
 
-            if (x > X - Width && x < X + Width && y > Y - Weight * GraphicsEngine.Instance.AspectRatio && y < Y + Weight * GraphicsEngine.Instance.AspectRatio)
-            {
-                AudioEngine.Instance.PlaySound("ClickConfirm");
-                Clicked();
+            if (!MouseOver(cursor.X, cursor.Y)) return false;
+         
+            AudioEngine.Instance.PlaySound("ClickConfirm");
+            Clicked();
 
-                return true;
-            }
-
-            return false;
+            return true;
         }
     }
 }

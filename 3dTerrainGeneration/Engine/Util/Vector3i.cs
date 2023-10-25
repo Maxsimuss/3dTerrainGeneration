@@ -38,6 +38,12 @@ namespace _3dTerrainGeneration.Engine.Util
         }
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static Vector3I operator -(Vector3I right)
+        {
+            return new Vector3I(right.X, right.Y, right.Z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public static Vector3I operator /(Vector3I left, int right)
         {
             return new Vector3I(left.X / right, left.Y / right, left.Z / right);

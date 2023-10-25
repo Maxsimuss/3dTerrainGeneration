@@ -29,8 +29,14 @@ namespace _3dTerrainGeneration.Game.GameWorld.Workers
                     {
                         chunk.Mesh();
                         chunk.State &= ~ChunkState.AwaitingMeshGeneration;
+
+                        //chunk.Blocks.Compress();
                     }
                 }
+            }).ContinueWith(state =>
+            {
+                if(state.Exception != null)
+                    throw state.Exception;
             });
         }
 

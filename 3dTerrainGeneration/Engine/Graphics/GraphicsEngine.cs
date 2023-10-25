@@ -8,8 +8,10 @@ using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
 using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Options;
 using _3dTerrainGeneration.Engine.Util;
+using _3dTerrainGeneration.Game.GameWorld.Generators;
 using OpenTK.Graphics.OpenGL;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -80,6 +82,17 @@ namespace _3dTerrainGeneration.Engine.Graphics
         public float AspectRatio { get => Camera.AspectRatio; set => Camera.AspectRatio = value; }
 
         public float TickFraction = 0;
+
+        public Vector3 Lerp(Vector3 from, Vector3 to)
+        {
+            return from * (1 - TickFraction) + to * TickFraction;
+        }
+
+        public float Lerp(float from, float to)
+        {
+            return from * (1 - TickFraction) + to * TickFraction;
+        }
+
         public int FrameIndex = 0;
         public double FrameTimeMillis = 0;
         public double FrameTimeAvg = 0;
@@ -95,14 +108,6 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
         private GraphicsEngine()
         {
-            OptionManager.Instance.RegisterOption("Graphics", "3D Resolution Scale", new DoubleOption(.125, 2, 1));
-            OptionManager.Instance.RegisterOption("Graphics", "Sharpness", new DoubleOption(0, 1, .25));
-            OptionManager.Instance.RegisterOption("Graphics", "Shadow Resolution", new DoubleOption(512, 8192, 4096));
-            OptionManager.Instance.RegisterOption("Graphics", "SSAO Quality", new DoubleOption(1, 16, 4));
-            OptionManager.Instance.RegisterOption("Graphics", "RTGI Enabled", new BoolOption(false));
-            OptionManager.Instance.RegisterOption("Graphics", "RTGI Resolution", new DoubleOption(1, 16, 1));
-            OptionManager.Instance.RegisterOption("Graphics", "RTGI Quality", new DoubleOption(1, 16, 1));
-
             Console.WriteLine("OGL Version: {0}", GL.GetString(StringName.Version));
             Console.WriteLine("OGL Vendor: {0}", GL.GetString(StringName.Vendor));
             Console.WriteLine("OGL SL Version: {0}", GL.GetString(StringName.ShadingLanguageVersion));
@@ -113,9 +118,41 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
             GL.DebugMessageCallback(_debugProcCallback, IntPtr.Zero);
             GL.Enable(EnableCap.DebugOutput);
-            //GL.Enable(EnableCap.DebugOutputSynchronous);
+
+            OptionManager.Instance.RegisterOption("Graphics", "3D Resolution Scale", .125, 2, 1, .25);
+            OptionManager.Instance.RegisterOption("Graphics", "Sharpness", 0, 1, .25, .1);
+            OptionManager.Instance.RegisterOption("Graphics", "Shadows Enabled", true);
+            OptionManager.Instance.RegisterOption("Graphics", "Shadow Resolution", 512, 8192, 4096, 1024);
+            OptionManager.Instance.RegisterOption("Graphics", "SSAO Enabled", true);
+            OptionManager.Instance.RegisterOption("Graphics", "SSAO Quality", 1, 16, 4);
+            OptionManager.Instance.RegisterOption("Graphics", "RTGI Enabled", false);
+            OptionManager.Instance.RegisterOption("Graphics", "RTGI Resolution", 1, 16, 1);
+            OptionManager.Instance.RegisterOption("Graphics", "RTGI Quality", 1, 16, 1);
+
+            OptionManager.Instance.OnOptionsChanged += OnOptionsChanged;
 
             Reload();
+        }
+
+        private void OnOptionsChanged(string category, string name)
+        {
+            if (category != "Graphics")
+            {
+                return;
+            }
+
+            switch (name)
+            {
+                case "Sharpness":
+                case "SSAO Quality":
+                    InitShaders();
+                    SetupPipeline();
+                    break;
+
+                default:
+                    Reload();
+                    break;
+            }
         }
 
         private static void DebugCallback(DebugSource source, DebugType type, int id, DebugSeverity severity, int length, IntPtr message, IntPtr userParam)
@@ -152,25 +189,36 @@ namespace _3dTerrainGeneration.Engine.Graphics
 
             if (GBuffer != null) GBuffer.Dispose();
             GBuffer = new DepthAttachedFramebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
-                new Texture2D(w, h, PixelInternalFormat.DepthComponent32f, PixelFormat.DepthComponent),
-                new Texture2D(w, h, PixelInternalFormat.Rgba8, PixelFormat.Rgba),
-                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565, PixelFormat.Rgb));
+                new Texture2D(w, h, PixelInternalFormat.DepthComponent32f),
+                new Texture2D(w, h, PixelInternalFormat.Rgba8),
+                new Texture2D(w, h, (PixelInternalFormat)All.Rgb565));
 
             if (OptionManager.Instance["Graphics", "RTGI Enabled"])
             {
-                int giW = (int)OptionManager.Instance["Graphics", "RTGI Resolution"];
-                int giH = (int)OptionManager.Instance["Graphics", "RTGI Resolution"];
+                int giW = w / (int)OptionManager.Instance["Graphics", "RTGI Resolution"];
+                int giH = h / (int)OptionManager.Instance["Graphics", "RTGI Resolution"];
                 if (GIBuffer0 != null) GIBuffer0.Dispose();
                 GIBuffer0 = new Framebuffer(giW, giH, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f, PixelFormat.Rgba),
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba16f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest),
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f),
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba16f).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest),
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
 
                 if (GIBuffer1 != null) GIBuffer1.Dispose();
                 GIBuffer1 = new Framebuffer(giW, giH, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 },
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f, PixelFormat.Rgba),
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba16f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest),
-                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f, PixelFormat.Rgba).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f),
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba16f).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest),
+                    new Texture2D(giW, giH, PixelInternalFormat.Rgba32f).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest));
+
+                //if (rtgiData != null) rtgiData.Delete();
+                //rtgiData = new Texture3D(512, 512, 512, PixelInternalFormat.R8ui);
+            }
+            else
+            {
+                //if (rtgiData != null)
+                //{
+                //    rtgiData.Delete();
+                //    rtgiData = null;
+                //}
             }
 
             int shadowResoluion = (int)OptionManager.Instance["Graphics", "Shadow Resolution"];
@@ -185,53 +233,53 @@ namespace _3dTerrainGeneration.Engine.Graphics
             for (int i = 0; i < SHADOW_CASCADES; i++)
             {
                 ShadowBuffers[i] = new DepthAttachedFramebuffer(shadowResoluion, shadowResoluion, new DrawBuffersEnum[0],
-                    new Texture2D(shadowResoluion, shadowResoluion, PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent).SetWrap(TextureWrapMode.ClampToBorder).SetBorderColor<Texture2D>(1, 1, 1, 1));
+                    new Texture2D(shadowResoluion, shadowResoluion, PixelInternalFormat.DepthComponent24).SetWrap(TextureWrapMode.ClampToBorder).SetBorderColor<Texture2D>(1, 1, 1, 1));
             }
 
             if (RGB11BitBuffer0 != null) RGB11BitBuffer0.Dispose();
-            RGB11BitBuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            RGB11BitBuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f));
 
             if (RGB11BitBuffer1 != null) RGB11BitBuffer1.Dispose();
-            RGB11BitBuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            RGB11BitBuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f));
 
             if (VolumetricBuffer != null) VolumetricBuffer.Dispose();
-            VolumetricBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 2, h / 2, PixelInternalFormat.Rgba16f, PixelFormat.Rgba));
+            VolumetricBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 2, h / 2, PixelInternalFormat.Rgba16f));
 
             if (ShadowBuffer != null) ShadowBuffer.Dispose();
-            ShadowBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8, PixelFormat.Red));
+            ShadowBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8));
 
             if (RGB8BtBuffer != null) RGB8BtBuffer.Dispose();
-            RGB8BtBuffer = new Framebuffer(Width, Height, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(Width, Height, PixelInternalFormat.Rgb8, PixelFormat.Rgb));
+            RGB8BtBuffer = new Framebuffer(Width, Height, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(Width, Height, PixelInternalFormat.Rgb8));
 
             if (BloomBuffer0 != null) BloomBuffer0.Dispose();
-            BloomBuffer0 = new Framebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 4, h / 4, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            BloomBuffer0 = new Framebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 4, h / 4, PixelInternalFormat.R11fG11fB10f));
 
             if (BloomBuffer1 != null) BloomBuffer1.Dispose();
-            BloomBuffer1 = new Framebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 4, h / 4, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            BloomBuffer1 = new Framebuffer(w / 4, h / 4, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 4, h / 4, PixelInternalFormat.R11fG11fB10f));
 
             if (SkyBuffer != null) SkyBuffer.Dispose();
-            SkyBuffer = new Framebuffer(w / 16, h / 16, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 16, h / 16, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            SkyBuffer = new Framebuffer(w / 16, h / 16, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 16, h / 16, PixelInternalFormat.R11fG11fB10f));
 
             if (StarBuffer != null) StarBuffer.Dispose();
-            StarBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb));
+            StarBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f));
 
             if (HUDBuffer != null) HUDBuffer.Dispose();
-            HUDBuffer = new Framebuffer(Width, Height, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(Width, Height, PixelInternalFormat.Rgba8, PixelFormat.Rgba));
+            HUDBuffer = new Framebuffer(Width, Height, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(Width, Height, PixelInternalFormat.Rgba8));
 
             if (OcclusionBuffer != null) OcclusionBuffer.Dispose();
-            OcclusionBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8, PixelFormat.Red));
+            OcclusionBuffer = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w, h, PixelInternalFormat.R8));
 
             if (TAABuffer0 != null) TAABuffer0.Dispose();
             TAABuffer0 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
-                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
-                new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
+                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
+                new Texture2D(w, h, PixelInternalFormat.R32f).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
             if (TAABuffer1 != null) TAABuffer1.Dispose();
             TAABuffer1 = new Framebuffer(w, h, new[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1 },
-                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f, PixelFormat.Rgb).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
-                new Texture2D(w, h, PixelInternalFormat.R32f, PixelFormat.Red).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
+                new Texture2D(w, h, PixelInternalFormat.R11fG11fB10f).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear),
+                new Texture2D(w, h, PixelInternalFormat.R32f).SetFilter<Texture2D>(TextureMinFilter.Linear, TextureMagFilter.Linear));
 
             if (DOFWeightBuffer != null) DOFWeightBuffer.Dispose();
-            DOFWeightBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 2, h / 2, PixelInternalFormat.R16f, PixelFormat.Red));
+            DOFWeightBuffer = new Framebuffer(w / 2, h / 2, new[] { DrawBuffersEnum.ColorAttachment0 }, new Texture2D(w / 2, h / 2, PixelInternalFormat.R16f));
         }
 
         private void InitShaders()
@@ -244,7 +292,11 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 .SetInt("normalTex", 1)
                 .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
-            ShaderManager.Instance.RegisterFragmentShader("Lighting", "3D/Deferred/Deferred.vert", "3D/Deferred/Lighting.frag").Compile()
+            ShaderManager.Instance.RegisterFragmentShader("Lighting", "3D/Deferred/Deferred.vert", "3D/Deferred/Lighting.frag")
+                .Define("RAYTRACE", (bool)OptionManager.Instance["Graphics", "RTGI Enabled"])
+                .Define("SSAO_ENABLED", (bool)OptionManager.Instance["Graphics", "SSAO Enabled"])
+                .Define("SHADOWS_ENABLED", (bool)OptionManager.Instance["Graphics", "Shadows Enabled"])
+                .Compile()
                 .SetInt("depthTex", 0)
                 .SetInt("colorTex", 1)
                 .SetInt("normalTex", 2)
@@ -261,11 +313,8 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 .SetInt("data", 0)
                 .SetInt("depthTex", 1)
                 .SetInt("normalTex", 2)
-                .SetInt("SIZE", 512)
                 .SetInt("memoryTex", 3)
-                .SetInt("positionTex", 4);
-
-
+                .SetInt("SIZE", 512);
 
             ShaderManager.Instance.RegisterFragmentShader("Occlusion", "3D/Deferred/Deferred.vert", "3D/Deferred/SSAO.frag")
                 .Define("SSAO_SAMPLES", (int)OptionManager.Instance["Graphics", "SSAO Quality"])
@@ -273,10 +322,10 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 .SetInt("depthTex", 0)
                 .SetInt("normalTex", 1);
 
-            ShaderManager.Instance.RegisterFragmentShader("Volumetrics", "3D/Deferred/Deferred.vert", "3D/Deferred/Volumetrics.frag").Compile()
-                .SetInt("depthTex", 0)
-                .SetInt("normalTex", 1)
-                .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
+            //ShaderManager.Instance.RegisterFragmentShader("Volumetrics", "3D/Deferred/Deferred.vert", "3D/Deferred/Volumetrics.frag").Compile()
+            //    .SetInt("depthTex", 0)
+            //    .SetInt("normalTex", 1)
+            //    .SetIntArr("shadowTex[0]", Enumerable.Range(2, 2 + SHADOW_CASCADES).ToArray());
 
             ShaderManager.Instance.RegisterFragmentShader("TAA", "3D/Deferred/Deferred.vert", "3D/Deferred/TAA.frag").Compile()
                 .SetInt("depthTex", 0)
@@ -330,41 +379,89 @@ namespace _3dTerrainGeneration.Engine.Graphics
             ShaderManager.Instance.RegisterComputeShader("LuminanceSmooth", "3D/Deferred/LuminanceSmooth.comp").Compile();
         }
 
+        //public static ConcurrentDictionary<Vector3I, VoxelOctree> rtgiGeometry = new ConcurrentDictionary<Vector3I, VoxelOctree>();
+        //Texture3D rtgiData;
+
         private void SetupPipeline()
         {
             renderActions.Clear();
 
-            Texture[] depthColorShadowTex = new Texture[SHADOW_CASCADES + 2];
-            depthColorShadowTex[0] = GBuffer.depthTex0;
-            depthColorShadowTex[1] = GBuffer.colorTex[1];
-            for (int i = 0; i < SHADOW_CASCADES; i++)
+            if (OptionManager.Instance["Graphics", "Shadows Enabled"])
             {
-                depthColorShadowTex[i + 2] = ShadowBuffers[i].depthTex0;
+                Texture[] depthColorShadowTex = new Texture[SHADOW_CASCADES + 2];
+                depthColorShadowTex[0] = GBuffer.depthTex0;
+                depthColorShadowTex[1] = GBuffer.colorTex[1];
+                for (int i = 0; i < SHADOW_CASCADES; i++)
+                {
+                    depthColorShadowTex[i + 2] = ShadowBuffers[i].depthTex0;
+                }
+
+                renderActions.Add(new StartProfilerSectionAction("Shadow Filter"));
+                renderActions.Add(new ShaderPass(ShaderManager.Instance["ShadowFilter"], ShadowBuffer, depthColorShadowTex));
             }
 
-            renderActions.Add(new StartProfilerSectionAction("Shadow Filter"));
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["ShadowFilter"], ShadowBuffer, depthColorShadowTex));
             renderActions.Add(new StartProfilerSectionAction("Sky"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Sky"], SkyBuffer));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["Stars"], StarBuffer));
-            renderActions.Add(new StartProfilerSectionAction("Volumetrics"));
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["Volumetrics"], VolumetricBuffer, depthColorShadowTex));
-            renderActions.Add(new StartProfilerSectionAction("Occlusion"));
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["Occlusion"], OcclusionBuffer, GBuffer.depthTex0, GBuffer.colorTex[1]));
+            //renderActions.Add(new StartProfilerSectionAction("Volumetrics"));
+            //renderActions.Add(new ShaderPass(ShaderManager.Instance["Volumetrics"], VolumetricBuffer, depthColorShadowTex));
 
-            renderActions.Add(new StartProfilerSectionAction("Lighting"));
+            if (OptionManager.Instance["Graphics", "SSAO Enabled"])
+            {
+                renderActions.Add(new StartProfilerSectionAction("Occlusion"));
+                renderActions.Add(new ShaderPass(ShaderManager.Instance["Occlusion"], OcclusionBuffer, GBuffer.depthTex0, GBuffer.colorTex[1]));
+            }
+
             if (OptionManager.Instance["Graphics", "RTGI Enabled"])
             {
-                renderActions.Add(new ShaderPass(ShaderManager.Instance["Lighting"], RGB11BitBuffer0,
-                  GBuffer.depthTex0, GBuffer.colorTex[0], GBuffer.colorTex[1],
-                  ShadowBuffer.colorTex[0],
-                  SkyBuffer.colorTex[0],
-                  StarBuffer.colorTex[0],
-                  VolumetricBuffer.colorTex[0],
-                  OcclusionBuffer.colorTex[0],
-                  GIBuffer0.colorTex[0],
-                  GIBuffer0.colorTex[1])
-              );
+                //byte[] data = new byte[512 * 512 * 512];
+                //uint[] temp = new uint[128];
+                //for (int chx = 0; chx < 4; chx++)
+                //{
+                //    for (int chz = 0; chz < 4; chz++)
+                //    {
+                //        for (int chy = 0; chy < 4; chy++)
+                //        {
+                //            if (rtgiGeometry.ContainsKey(new(chx, chy, chz)))
+                //            {
+                //                VoxelOctree octree = rtgiGeometry[new(chx, chy, chz)];
+                //                for (int x = 0; x < 128; x++)
+                //                {
+                //                    for (int z = 0; z < 128; z++)
+                //                    {
+                //                        octree.GetRow(x, z, 128, temp);
+
+                //                        for (int y = 0; y < 128; y++)
+                //                        {
+                //                            data[((x + chx * 128) * 512 + (z + chz * 128)) * 512 + y + chy * 128] = (byte)(temp[y] != 0 ? Color.To7Bit(temp[y]) | 0x01 : 0);
+                //                        }
+                //                    }
+                //                }
+                //            }
+                //        }
+                //    }
+                //}
+                //rtgiData.UploadData(data, PixelFormat.RedInteger, PixelType.UnsignedByte);
+
+                //renderActions.Add(new StartProfilerSectionAction("RTGI"));
+                //renderActions.Add(new ShaderPass(ShaderManager.Instance["RTGI"], GIBuffer0,
+                //    rtgiData,
+                //    GBuffer.depthTex0,
+                //    GBuffer.colorTex[1],
+                //    GIBuffer0.colorTex[1])
+                //);
+
+                //renderActions.Add(new StartProfilerSectionAction("Lighting"));
+                //renderActions.Add(new ShaderPass(ShaderManager.Instance["Lighting"], RGB11BitBuffer0,
+                //    GBuffer.depthTex0, GBuffer.colorTex[0], GBuffer.colorTex[1],
+                //    ShadowBuffer.colorTex[0],
+                //    SkyBuffer.colorTex[0],
+                //    StarBuffer.colorTex[0],
+                //    VolumetricBuffer.colorTex[0],
+                //    OcclusionBuffer.colorTex[0],
+                //    GIBuffer0.colorTex[0],
+                //    GIBuffer0.colorTex[1])
+                //);
             }
             else
             {
@@ -379,16 +476,16 @@ namespace _3dTerrainGeneration.Engine.Graphics
             }
 
 
-            PingPongFramebuffer pingPongFramebuffer = new PingPongFramebuffer(TAABuffer0, TAABuffer1);
-            PingPongTexture pingPongTexture = new PingPongTexture(TAABuffer1.colorTex[0], TAABuffer0.colorTex[0]);
-            PingPongTexture pingPongTextureD = new PingPongTexture(TAABuffer1.colorTex[1], TAABuffer0.colorTex[1]);
+            PingPongFramebuffer taaPingPongFramebuffer = new PingPongFramebuffer(TAABuffer0, TAABuffer1);
+            PingPongTexture taaPingPongTexture = new PingPongTexture(TAABuffer1.colorTex[0], TAABuffer0.colorTex[0]);
+            PingPongTexture taaPingPongTextureD = new PingPongTexture(TAABuffer1.colorTex[1], TAABuffer0.colorTex[1]);
             renderActions.Add(new StartProfilerSectionAction("TAA"));
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["TAA"], pingPongFramebuffer, GBuffer.depthTex0, RGB11BitBuffer0.colorTex[0], pingPongTexture, pingPongTextureD));
-            renderActions.Add(new SwapTexturesAction(pingPongTexture));
-            renderActions.Add(new SwapTexturesAction(pingPongTextureD));
-            renderActions.Add(new SwapFramebuffersAction(pingPongFramebuffer));
+            renderActions.Add(new ShaderPass(ShaderManager.Instance["TAA"], taaPingPongFramebuffer, GBuffer.depthTex0, RGB11BitBuffer0.colorTex[0], taaPingPongTexture, taaPingPongTextureD));
+            renderActions.Add(new SwapTexturesAction(taaPingPongTexture));
+            renderActions.Add(new SwapTexturesAction(taaPingPongTextureD));
+            renderActions.Add(new SwapFramebuffersAction(taaPingPongFramebuffer));
             renderActions.Add(new StartProfilerSectionAction("Tonemapping"));
-            renderActions.Add(new ShaderPass(ShaderManager.Instance["Tonemapping"], RGB11BitBuffer0, pingPongTexture));
+            renderActions.Add(new ShaderPass(ShaderManager.Instance["Tonemapping"], RGB11BitBuffer0, taaPingPongTexture));
             renderActions.Add(new StartProfilerSectionAction("DOF"));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["DOFWeight"], DOFWeightBuffer, GBuffer.depthTex0));
             renderActions.Add(new ShaderPass(ShaderManager.Instance["DOFBlur"], RGB11BitBuffer1, DOFWeightBuffer.colorTex[0], RGB11BitBuffer0.colorTex[0], GBuffer.depthTex0));
@@ -518,12 +615,14 @@ namespace _3dTerrainGeneration.Engine.Graphics
             if (OptionManager.Instance["Graphics", "RTGI Enabled"])
             {
                 ShaderManager.Instance["RTGI"].SetVector2("taaOffset", taaJitter)
-                    .SetVector2("wh", new Vector2(GIBuffer0.Width, GIBuffer0.Height))
+                    .SetVector2("wh", new Vector2(GIBuffer0 != null ? GIBuffer0.Width : 0, GIBuffer0 != null ? GIBuffer0.Height : 0))
                     .SetVector3("skyLight", sky)
                     .SetVector3("sunLight", sunColor)
                     .SetMatrix4("projection", viewProjInvMatrix)
                     .SetMatrix4("_projection", viewProjMatrix)
                     .SetMatrix4("projectionPrev", prevProjMatrix)
+                    .SetMatrix4("viewMatrix", viewMatrix)
+                    .SetMatrix4("projMatrix", projMatrix)
                     .SetVector3("position", Camera.Position)
                     .SetVector3("viewDir", Camera.Front)
                     .SetVector3("sunDir", SunPosition)
@@ -559,14 +658,14 @@ namespace _3dTerrainGeneration.Engine.Graphics
                 .SetVector3("sun_dir", SunPosition)
                 .SetFloat("time", (float)(TimeUtil.Unix() / 100000d % 3600d));
 
-            ShaderManager.Instance["Volumetrics"].SetVector3("viewPos", Camera.Position)
-                .SetVector3("sun.color", sunColor)
-                .SetVector3("sun.position", SunPosition)
-                .SetMatrix4("projection", viewProjInvMatrix)
-                .SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 86400d))
-                .SetMatrix4Arr("matrices[0]", shadowMatrices)
-                .SetFloatArr("cuts[0]", shadowFars)
-                .SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
+            //ShaderManager.Instance["Volumetrics"].SetVector3("viewPos", Camera.Position)
+            //    .SetVector3("sun.color", sunColor)
+            //    .SetVector3("sun.position", SunPosition)
+            //    .SetMatrix4("projection", viewProjInvMatrix)
+            //    .SetFloat("time", (float)(TimeUtil.Unix() / 5000d % 86400d))
+            //    .SetMatrix4Arr("matrices[0]", shadowMatrices)
+            //    .SetFloatArr("cuts[0]", shadowFars)
+            //    .SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d));
 
             ShaderManager.Instance["Occlusion"].SetFloat("time", (float)(TimeUtil.Unix() / 1000d % 1d))
                 .SetMatrix4("_projection", viewProjMatrix)
@@ -643,8 +742,12 @@ namespace _3dTerrainGeneration.Engine.Graphics
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             SceneRenderer.Instance.Render((FragmentShader)ShaderManager.Instance["GBuffer"]);
 
-            GPUProfilter.Instance.StartSection("Shadow Layer");
-            RenderShadowMap();
+            if (OptionManager.Instance["Graphics", "Shadows Enabled"])
+            {
+                GPUProfilter.Instance.StartSection("Shadow Layer");
+                RenderShadowMap();
+            }
+
 
             GPUProfilter.Instance.StartSection("HUD Layer");
             HUDBuffer.Use();

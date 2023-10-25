@@ -28,11 +28,11 @@ namespace _3dTerrainGeneration.Game.GameWorld
         private PackedArray<Chunk> chunkArray;
         private TerrainGenerator terrainGenerator;
         private TerrainPopulationWorker populationWorker;
-        private TerrainGenerationWorker[] generationWorkers = new TerrainGenerationWorker[3];
-        private ChunkMeshWorker[] meshWorkers = new ChunkMeshWorker[4];
+        private TerrainGenerationWorker[] generationWorkers = new TerrainGenerationWorker[4];
+        private ChunkMeshWorker[] meshWorkers = new ChunkMeshWorker[2];
         private World world;
         private Vector3I originChunkCoord;
-        private int totalChunkCount;
+        private int totalChunkCount, viewDistanceChunks;
         private readonly Vector3I[] chunkIterationOrder;
         private ConcurrentQueue<Chunk> needPopulation = new ConcurrentQueue<Chunk>();
         private ConcurrentQueue<Chunk> unloadedChunks = new ConcurrentQueue<Chunk>();
@@ -41,10 +41,10 @@ namespace _3dTerrainGeneration.Game.GameWorld
         public ChunkManager(World world)
         {
             this.world = world;
-            OptionManager.Instance.RegisterOption("World", "View Distance", new DoubleOption(128, 2048, 1024));
-            OptionManager.Instance.RegisterOption("World", "LOD Bias", new DoubleOption(100, 2000, 500));
+            OptionManager.Instance.RegisterOption("World", "View Distance", 128, 2048, 512, 128);
+            OptionManager.Instance.RegisterOption("World", "Quality", 0, 100, 50);
 
-            int viewDistanceChunks = (int)OptionManager.Instance["World", "View Distance"] / Chunk.CHUNK_SIZE * 2;
+            viewDistanceChunks = (int)OptionManager.Instance["World", "View Distance"] / Chunk.CHUNK_SIZE * 2;
             totalChunkCount = viewDistanceChunks * viewDistanceChunks * viewDistanceChunks;
 
             List<Vector3I> order = new List<Vector3I>();
@@ -147,8 +147,20 @@ namespace _3dTerrainGeneration.Game.GameWorld
                         if (!chunks.ContainsKey(chunkPosition))
                         {
                             chunk = new Chunk(world, chunkPosition.X, chunkPosition.Y, chunkPosition.Z);
-                            AddChunk(chunk);
-                            SubmitWork(generationWorkers, chunk);
+                            //if (!ChunkIO.Load(chunk))
+                            //{
+                                AddChunk(chunk);
+                                SubmitWork(generationWorkers, chunk);
+                            //}
+                            //else
+                            //{
+                            //    AddChunk(chunk);
+                            //    chunk.State |= ChunkState.NeedsRemeshing;
+                            //    chunk.State &= ~ChunkState.AwaitingMeshGeneration;
+                            //    chunk.State &= ~ChunkState.AwaitingTerrainPopulation;
+                            //    chunk.State &= ~ChunkState.AwaitingTerrainGeneration;
+                            //    break;
+                            //}
                         }
                     }
 
@@ -193,14 +205,11 @@ namespace _3dTerrainGeneration.Game.GameWorld
                         }
                     }
 
-                    if (SceneRenderer.Instance.VramUsage >= SceneRenderer.Instance.VramAllocated * .9)
+                    for (int i = 0; i < chunkArray.Count; i++)
                     {
-                        List<Chunk> orderedChunks = chunks.Values.ToList();
-                        orderedChunks.Sort((c1, c2) => (c2 != null ? (originChunkCoord - c2.Position).LengthSq() : int.MaxValue) - (c1 != null ? (originChunkCoord - c1.Position).LengthSq() : int.MaxValue));
-
-                        for (int i = 0; i < 1 && i < orderedChunks.Count; i++)
+                        if (!IsChunkInViewRange(chunkArray[i], originChunkCoord))
                         {
-                            unloadQueue.Enqueue(orderedChunks[i]);
+                            unloadQueue.Enqueue(chunkArray[i]);
                         }
                     }
 
@@ -217,10 +226,16 @@ namespace _3dTerrainGeneration.Game.GameWorld
             });
         }
 
+        private bool IsChunkInViewRange(Chunk chunk, Vector3I origin)
+        {
+            return (chunk.Position - origin).Length() < viewDistanceChunks;
+        }
+
         private void UnloadChunk(Chunk chunk)
         {
             chunk.Unload();
             unloadedChunks.Enqueue(chunk);
+
             lock (chunkArray)
             {
                 chunkArray.Remove(chunk);
@@ -229,7 +244,8 @@ namespace _3dTerrainGeneration.Game.GameWorld
 
         public void RenderChunks(Vector3 origin, Matrix4x4 mat, bool ortho, Vector3 viewDirection = default)
         {
-            double lodBias = (double)OptionManager.Instance["World", "LOD Bias"].Value;
+            double lodBias = Math.Max(0, (1 - (double)SceneRenderer.Instance.VramUsage / SceneRenderer.Instance.VramAllocated) * (double)OptionManager.Instance["World", "Quality"].Value);
+
             originChunkCoord = new Vector3I((int)origin.X, (int)origin.Y, (int)origin.Z) / Chunk.CHUNK_SIZE;
 
             while (unloadQueue.TryDequeue(out Chunk unloadChunk))
@@ -245,14 +261,14 @@ namespace _3dTerrainGeneration.Game.GameWorld
                 {
                     Chunk chunk = chunkArray[i];
 
-                    if (ShouldRender(new Vector3(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE, mat, out float screenPct))
+                    if (ShouldRender(new Vector3(chunk.X, chunk.Y, chunk.Z) * Chunk.CHUNK_SIZE, mat, out float screenPct) && screenPct > 0)
                     {
 
                         if ((chunk.State & ChunkState.IsPopulated) != 0)
                         {
                             if (!ortho)
                             {
-                                int lod = (int)Math.Ceiling(Math.Clamp(Math.Log(1f / lodBias / screenPct * Chunk.CHUNK_SIZE) / Math.Log(2), 0, Chunk.LOD_COUNT - 1));
+                                int lod = (int)Math.Ceiling(Math.Clamp(Math.Log(1f / lodBias / screenPct) / Math.Log(2), 0, Chunk.LOD_COUNT - 1));
                                 chunk.SetLOD(lod);
                             }
 

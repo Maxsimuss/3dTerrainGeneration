@@ -1,4 +1,6 @@
-﻿using System;
+﻿using LibNoise.Combiner;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace _3dTerrainGeneration.Engine.Options
 {
@@ -6,15 +8,29 @@ namespace _3dTerrainGeneration.Engine.Options
     {
         private double min;
         private double max;
+        private double precision;
 
         private double value;
 
-        public DoubleOption(double min, double max, double value)
+        public DoubleOption(double min, double max, double value, double precision = 1)
         {
             this.min = min;
             this.max = max;
+            if (precision <= 0)
+            {
+                throw new ArgumentException("Precision must be larger than 0!");
+            }
+
+            this.precision = precision;
             Value = value;
         }
+
+        public double ValuePercentage
+        {
+            get => ((double)Value - min) / (max - min);
+            set => Value = (value * (max - min) + min);
+        }
+
 
         public override object Value
         {
@@ -24,7 +40,15 @@ namespace _3dTerrainGeneration.Engine.Options
             }
             set
             {
-                this.value = Math.Clamp((double)value, min, max);
+                double newValue = Math.Clamp(((int)((double)value / precision)) * precision, min, max);
+                if (newValue == this.value)
+                {
+                    return;
+                }
+
+                this.value = newValue;
+
+                OnChanged();
             }
         }
     }

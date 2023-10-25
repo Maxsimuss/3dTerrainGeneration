@@ -43,14 +43,17 @@ namespace _3dTerrainGeneration.Engine.Util
         {
             string source = Encoding.UTF8.GetString(GetResource("Shaders/" + path));
 
-            Console.WriteLine(source);
-
             return source + "\r\n\0";
         }
 
         public static string GetSoundPath(string name)
         {
             return GetResourcePath("Sounds/" + name);
+        }
+
+        public static string GetUserDataPath()
+        {
+            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/VoxelEngine/";
         }
     }
 }

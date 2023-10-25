@@ -4,6 +4,7 @@ using _3dTerrainGeneration.Engine.Graphics;
 using _3dTerrainGeneration.Engine.Graphics.UI;
 using _3dTerrainGeneration.Engine.Graphics.UI.Screens;
 using _3dTerrainGeneration.Engine.Input;
+using _3dTerrainGeneration.Engine.Options;
 using _3dTerrainGeneration.Engine.Util;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
@@ -32,6 +33,14 @@ namespace _3dTerrainGeneration.Engine
             window = new Graphics.Window();
             window.Resize += Window_Resize;
             window.Context.MakeCurrent();
+
+            OptionManager.Instance.OnOptionsChanged += (category, name) =>
+            {
+                if (category == "Audio" && name == "Volume")
+                {
+                    AudioEngine.Instance.Volume = (float)OptionManager.Instance["Audio", "Volume"] / 10;
+                }
+            };
         }
 
         private void Window_Resize(ResizeEventArgs obj)
@@ -46,11 +55,9 @@ namespace _3dTerrainGeneration.Engine
 
             GraphicsEngine.Instance.Game = game;
             game.EntryPoint(this);
-//#if DEBUG
+            //#if DEBUG
             UIRenderer.Instance.OpenScreen(new DebugHud());
-//#endif
-
-            window.CursorState = CursorState.Grabbed;
+            //#endif
 
             while (running)
             {
@@ -96,6 +103,8 @@ namespace _3dTerrainGeneration.Engine
         {
             //swap buffers for previous frame, hiding cpu -> gpu delay
             window.Context.SwapBuffers();
+
+            window.CursorState = UIRenderer.Instance.IsCursorGrabbed() ? CursorState.Grabbed : CursorState.Normal;
 
             window.ProcessInputEvents();
             GLFW.PollEvents();

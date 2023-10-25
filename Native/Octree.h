@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <mutex>
+#include <iostream>
 
 class OctreeNode
 {
@@ -14,6 +16,12 @@ public:
 		centerX = 0;
 		centerY = 0;
 		centerZ = 0;
+	}
+
+	~OctreeNode() {
+		if (!isLeaf) {
+			delete children;
+		}
 	}
 
 	OctreeNode(uint8_t x, uint8_t y, uint8_t z, uint8_t depth)
@@ -135,39 +143,96 @@ private:
 	}
 };
 
-class SparseVoxelOctree {
+class HybridVoxelOctree {
 public:
-	SparseVoxelOctree(int depth) {
-		root = OctreeNode(0, 0, 0, depth);
+	HybridVoxelOctree(int depth) {
+		node = OctreeNode(0, 0, 0, depth);
+		size = pow(2, depth);
+		uncompressedData = new uint32_t[size * size * size];
+		memset(uncompressedData, 0, size * size * size * sizeof(uint32_t));
 	}
 
-	void SetVoxel(int x, int y, int z, uint32_t value)
-	{
-		root.SetVoxel(x, y, z, value);
+	~HybridVoxelOctree() {
+		if (!isCompressed) {
+			delete[] uncompressedData;
+		}
 	}
 
-	uint32_t GetValue(int x, int y, int z)
-	{
-		return root.GetValue(x, y, z);
+	void SetVoxel(int x, int y, int z, uint32_t value) {
+		//mutex.lock();
+
+		if (isCompressed) {
+			node.SetVoxel(x, y, z, value);
+		}
+		else {
+			uncompressedData[(x * size + z) * size + y] = value;
+		}
+
+		//mutex.unlock();
+	}
+
+	uint32_t GetValue(int x, int y, int z) {
+
+		if (isCompressed) {
+			return node.GetValue(x, y, z);
+		}
+		else {
+			return uncompressedData[(x * size + z) * size + y];
+		}
+	}
+
+	void Compress() {
+		mutex.lock();
+
+		if (isCompressed) {
+			mutex.unlock();
+			return;
+		}
+
+		for (size_t i = 0; i < size * size * size; i++)
+		{
+			node.SetVoxel(i / size / size, i % size, i / size % size, uncompressedData[i]);
+		}
+
+		isCompressed = true;
+
+		delete[] uncompressedData;
+		mutex.unlock();
+	}
+
+	void CompressEmpty() {
+		mutex.lock();
+		if (isCompressed) {
+			mutex.unlock();
+			return;
+		}
+
+		isCompressed = true;
+		delete[] uncompressedData;
+		mutex.unlock();
 	}
 
 private:
-	OctreeNode root;
+	bool isCompressed = false;
+	int size = 0;
+	OctreeNode node;
+	uint32_t* uncompressedData;
+	std::mutex mutex;
 };
 
-extern "C" __declspec(dllexport) SparseVoxelOctree * CreateSVO(int depth) {
-	return new SparseVoxelOctree(depth);
+extern "C" __declspec(dllexport) HybridVoxelOctree * CreateSVO(int depth) {
+	return new HybridVoxelOctree(depth);
 }
 
-extern "C" __declspec(dllexport) void DeleteSVO(SparseVoxelOctree * svo) {
+extern "C" __declspec(dllexport) void DeleteSVO(HybridVoxelOctree * svo) {
 	delete svo;
 }
 
-extern "C" __declspec(dllexport) void SetVoxel(SparseVoxelOctree * svo, int x, int y, int z, uint32_t value) {
+extern "C" __declspec(dllexport) void SetVoxel(HybridVoxelOctree * svo, int x, int y, int z, uint32_t value) {
 	svo->SetVoxel(x, y, z, value);
 }
 
-extern "C" __declspec(dllexport) void FillArea(SparseVoxelOctree * svo, uint32_t * data, int x, int y, int z, int w, int h, int d) {
+extern "C" __declspec(dllexport) void FillArea(HybridVoxelOctree * svo, uint32_t * data, int x, int y, int z, int w, int h, int d) {
 	for (size_t _x = 0; _x < w; _x++)
 	{
 		for (size_t _z = 0; _z < d; _z++)
@@ -176,19 +241,27 @@ extern "C" __declspec(dllexport) void FillArea(SparseVoxelOctree * svo, uint32_t
 			{
 				uint32_t value = data[(_x * w + _z) * h];
 
-				svo->SetVoxel(x, y, z, value);
+				svo->SetVoxel(_x, _y, _z, value);
 			}
 		}
 	}
 }
 
-extern "C" __declspec(dllexport) void GetRow(SparseVoxelOctree * svo, uint32_t* data, int x, int z) {
-	for (size_t i = 0; i < 128; i++)
+extern "C" __declspec(dllexport) void GetRow(HybridVoxelOctree * svo, uint32_t * data, int x, int z, int size) {
+	for (size_t i = 0; i < size; i++)
 	{
 		data[i] = svo->GetValue(x, i, z);
 	}
 }
 
-extern "C" __declspec(dllexport) uint32_t GetValue(SparseVoxelOctree * svo, int x, int y, int z) {
+extern "C" __declspec(dllexport) uint32_t GetValue(HybridVoxelOctree * svo, int x, int y, int z) {
 	return svo->GetValue(x, y, z);
+}
+
+extern "C" __declspec(dllexport) void Compress(HybridVoxelOctree * svo) {
+	return svo->Compress();
+}
+
+extern "C" __declspec(dllexport) void CompressEmpty(HybridVoxelOctree * svo) {
+	return svo->CompressEmpty();
 }

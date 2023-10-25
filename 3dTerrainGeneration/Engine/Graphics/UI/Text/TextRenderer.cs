@@ -2,6 +2,7 @@
 using _3dTerrainGeneration.Engine.Graphics.Backend.Textures;
 using _3dTerrainGeneration.Engine.Util;
 using OpenTK.Graphics.OpenGL;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -67,7 +68,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
                 }
 
                 BitmapData data = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-                texture = new Texture2D(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba8, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, data.Scan0).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+                texture = new Texture2D(bitmap.Width, bitmap.Height, PixelInternalFormat.Rgba8).SetFilter<Texture2D>(TextureMinFilter.Nearest, TextureMagFilter.Nearest);
+                texture.UploadData(data.Scan0, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte);
                 bitmap.UnlockBits(data);
             }
             TextShader = new FragmentShader("2D/Textured.vert", "2D/Textured.frag");
@@ -95,7 +97,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
         public void DrawTextWithShadowCentered(float x, float y, float scale, string text, Vector4 color)
         {
             x -= scale * text.Length / 2;
-            y -= scale * GraphicsEngine.Instance.AspectRatio / 2;
+            y -= scale / 2;
             DrawTextWithShadow(x, y, scale, text, color);
         }
 
@@ -122,13 +124,20 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
 
         public void DrawTextCentered(float x, float y, float scale, string text, Vector4 color)
         {
-            x -= scale * text.Length / 2;
-            y -= scale * GraphicsEngine.Instance.AspectRatio / 2;
+            //x -= scale * text.Length / 2;
+            //y -= scale / 2;
             DrawText(x, y, scale, text, color);
         }
 
         public void DrawText(float x, float y, float scale, string text, Vector4 color)
         {
+            scale /= 50 * GraphicsEngine.Instance.AspectRatio;
+            y /= -50;
+            y += 1;
+            x /= 50 * GraphicsEngine.Instance.AspectRatio;
+            x -= 1;
+
+
             float scaleY = scale * GraphicsEngine.Instance.AspectRatio;
 
             float[] buffer = new float[text.Length * 24];
@@ -144,22 +153,22 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
                 char idx = text[n];
                 float u = idx % 256 * u_step;
 
-                vertex2(ref offset, x, y);
+                vertex2(ref offset, x, y - scaleY);
+                vertex2(ref offset, u, uvTop);
+
+                vertex2(ref offset, x + scale, y - scaleY);
+                vertex2(ref offset, u + u_stepReal, uvTop);
+
+                vertex2(ref offset, x + scale, y);
+                vertex2(ref offset, u + u_stepReal, 0);
+
+                vertex2(ref offset, x, y - scaleY);
                 vertex2(ref offset, u, uvTop);
 
                 vertex2(ref offset, x + scale, y);
-                vertex2(ref offset, u + u_stepReal, uvTop);
-
-                vertex2(ref offset, x + scale, y + scaleY);
                 vertex2(ref offset, u + u_stepReal, 0);
 
                 vertex2(ref offset, x, y);
-                vertex2(ref offset, u, uvTop);
-
-                vertex2(ref offset, x + scale, y + scaleY);
-                vertex2(ref offset, u + u_stepReal, 0);
-
-                vertex2(ref offset, x, y + scaleY);
                 vertex2(ref offset, u, 0);
 
                 x += scale;
@@ -172,6 +181,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.UI.Text
             TextShader.Use();
             TextShader.SetVector4("color", color);
             texture.ActiveBind();
+            GL.Disable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.CullFace);
             GL.DrawArrays(PrimitiveType.Triangles, 0, buffer.Length / 4);
 
             void vertex2(ref int offset, float x, float y)

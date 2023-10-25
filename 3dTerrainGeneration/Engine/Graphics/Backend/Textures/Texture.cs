@@ -86,6 +86,8 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Textures
             GL.BindTextureUnit(unit, Handle);
         }
 
+        public abstract void UploadData<T>(T[] data, PixelFormat pixelFormat, PixelType pixelType = PixelType.UnsignedByte) where T : struct;
+
         public Texture GenerateMipMap()
         {
             if (Mipmapped)

@@ -14,13 +14,13 @@ namespace _3dTerrainGeneration.Engine.Input
 
         public UserInputHandler()
         {
-            OptionManager.Instance.RegisterOption("Controls", "Mouse Sensitivity", new DoubleOption(0.01, 2, .15));
-            OptionManager.Instance.RegisterOption("Controls", "Move Forward", new KeyboardOption(Keys.W));
-            OptionManager.Instance.RegisterOption("Controls", "Move Backward", new KeyboardOption(Keys.S));
-            OptionManager.Instance.RegisterOption("Controls", "Move Left", new KeyboardOption(Keys.A));
-            OptionManager.Instance.RegisterOption("Controls", "Move Right", new KeyboardOption(Keys.D));
-            OptionManager.Instance.RegisterOption("Controls", "Jump", new KeyboardOption(Keys.Space));
-            OptionManager.Instance.RegisterOption("Controls", "Sneak", new KeyboardOption(Keys.LeftShift));
+            OptionManager.Instance.RegisterOption("Controls", "Mouse Sensitivity", 0.01, 2, .15, .01);
+            OptionManager.Instance.RegisterOption("Controls", "Move Forward", Keys.W);
+            OptionManager.Instance.RegisterOption("Controls", "Move Backward", Keys.S);
+            OptionManager.Instance.RegisterOption("Controls", "Move Left", Keys.A);
+            OptionManager.Instance.RegisterOption("Controls", "Move Right", Keys.D);
+            OptionManager.Instance.RegisterOption("Controls", "Jump", Keys.Space);
+            OptionManager.Instance.RegisterOption("Controls", "Sneak", Keys.LeftShift);
         }
 
         public void RegisterInputHandler(IEntityInputHandler handler)
@@ -69,6 +69,9 @@ namespace _3dTerrainGeneration.Engine.Input
 
             inputState.Yaw = mouseState.Delta.X * (float)OptionManager.Instance["Controls", "Mouse Sensitivity"];
             inputState.Pitch = mouseState.Delta.Y * (float)OptionManager.Instance["Controls", "Mouse Sensitivity"];
+
+            inputState.Left = mouseState.IsButtonDown(MouseButton.Button1);
+            inputState.Right = mouseState.IsButtonDown(MouseButton.Button2);
 
             inputState.Movement.X += keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Forward"]) ? 1 : 0;
             inputState.Movement.X -= keyboardState.IsKeyDown(OptionManager.Instance["Controls", "Move Backward"]) ? 1 : 0;

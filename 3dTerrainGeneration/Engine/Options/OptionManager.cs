@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace _3dTerrainGeneration.Engine.Options
@@ -31,7 +33,21 @@ namespace _3dTerrainGeneration.Engine.Options
 
         }
 
-        public void RegisterOption(string category, string name, Option option)
+        public void RegisterOption(string category, string name, Keys value)
+        {
+            RegisterOption(category, name, new KeyboardOption(value));
+        }
+        public void RegisterOption(string category, string name, bool value)
+        {
+            RegisterOption(category, name, new BoolOption(value));
+        }
+
+        public void RegisterOption(string category, string name, double min, double max, double value, double precision = 1)
+        {
+            RegisterOption(category, name, new DoubleOption(min, max, value, precision));
+        }
+
+        private void RegisterOption(string category, string name, Option option)
         {
             if (!options.ContainsKey(category))
             {
@@ -40,7 +56,13 @@ namespace _3dTerrainGeneration.Engine.Options
 
             if (!options[category].ContainsKey(name))
             {
+                option.Changed += () => OnOptionsChanged(category, name);
+
                 options[category].Add(name, option);
+            }
+            else
+            {
+                throw new InvalidOperationException(string.Format("'{0}' option is already registered!", name));
             }
         }
 

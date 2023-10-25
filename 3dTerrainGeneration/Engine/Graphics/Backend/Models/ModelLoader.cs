@@ -26,7 +26,7 @@ namespace _3dTerrainGeneration.Engine.Graphics.Backend.Models
                     Voxel vox = voxModel.Voxels[i];
                     Color color = vox.Color;
 
-                    meshData.SetBlock(vox.Position.X, vox.Position.Z, vox.Position.Y, Util.Color.ToInt(color.R, color.G, color.B));
+                    meshData.SetBlock(vox.Position.X, vox.Position.Z, -vox.Position.Y, Util.Color.ToInt(color.R, color.G, color.B));
                 }
 
                 meshes.Add(meshData.MeshSingle(emission));

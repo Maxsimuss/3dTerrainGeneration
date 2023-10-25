@@ -16,10 +16,11 @@ namespace _3dTerrainGeneration.Engine.World.Entity
         public AxisAlignedBBPrototype HitBox => AABB;
 
         public bool Visible = true;
+        public Vector3 Offset;
 
         protected int AnimationFrame = 0;
-        public Vector3 InterpolatedPosition => Position * GraphicsEngine.Instance.TickFraction + LastPosition * (1 - GraphicsEngine.Instance.TickFraction);
-        protected virtual Matrix4x4 ModelMatrix => Matrix4x4.CreateScale(MeshScale) * Matrix4x4.CreateTranslation(-AABB.width, 0, -AABB.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-Pitch)) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-Yaw)) * Matrix4x4.CreateTranslation(InterpolatedPosition);
+        public Vector3 InterpolatedPosition => GraphicsEngine.Instance.Lerp(LastPosition, Position);
+        protected virtual Matrix4x4 ModelMatrix => Matrix4x4.CreateScale(MeshScale) * Matrix4x4.CreateTranslation(Offset) * Matrix4x4.CreateTranslation(-AABB.width, 0, -AABB.width) * Matrix4x4.CreateRotationX((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-GraphicsEngine.Instance.Lerp(LastPitch, Pitch))) * Matrix4x4.CreateRotationY((float)OpenTK.Mathematics.MathHelper.DegreesToRadians(-GraphicsEngine.Instance.Lerp(LastYaw, Yaw))) * Matrix4x4.CreateTranslation(InterpolatedPosition);
 
 
         public DrawableEntity(IWorld world, int id) : base(world, id)
